@@ -18,6 +18,7 @@ import { deveAguardarParaFalar, deveAnalisarLogoAposResposta, podeTomarTurno, re
 import { alvosDaAcao, criarMemoriaVisual, mapearAcoesVisuais, resumirGestosRecentes } from "@/lib/presenca/acoesVisuais";
 import { deveForcarAnalise } from "@/lib/sessao/silencio";
 import { definirSessaoDaVoz } from "@/lib/voz/cliente";
+import { juntarReacao, slugDaReacao } from "@/lib/voz/reacao";
 import {
   analisar,
   calar,
@@ -27,6 +28,7 @@ import {
   falar,
   finalizarSessao,
   falarComMarcas,
+  falarReacao,
   usarServidor,
   type FalaNaTela,
   type FalaRecente,
@@ -34,7 +36,7 @@ import {
   type Sessao,
 } from "@/lib/sessao/cliente";
 import { criarLinhaDoTempo } from "@/lib/sessao/eventos";
-import { FilaDoAgente, type Descartado, type MotivoDoDescarte, type OrigemDaFala } from "@/lib/audio/filaDoAgente";
+import { FilaDoAgente, ReacaoRetida, type Descartado, type MotivoDoDescarte, type OrigemDaFala } from "@/lib/audio/filaDoAgente";
 import { apontarEAnotar } from "@/lib/presenca/coreografia";
 import type { MarcaDeFala } from "@/lib/presenca/vozSincronizada";
 import { interrupcaoAtrasada, motivoDoMomento, pausaDasMaosParaFalarMs, RITMO } from "@/lib/interrupcao/politica";
@@ -76,6 +78,8 @@ interface OpcoesDeFala {
   numeroPergunta?: number | null;
   /** Chamado logo depois que a fala saiu da fila e foi para o ar (a versão da fala já é a dela). */
   aoTocar?: () => void;
+  /** Já passou pela espera da reação (vencida ou saída da fila): não espera nem se junta de novo. */
+  semRetencao?: boolean;
 }
 
 type Acao = { evento: EventoEntrevista; agora: number };
@@ -260,6 +264,13 @@ export function useEntrevista(
   const filaDoAgente = useRef(new FilaDoAgente<{ texto: string; marcas?: MarcaDeFala[]; aoTocar?: () => void }>());
   const foiParaAFila = useRef(false);
   const dizerRef = useRef<(texto: string, marcas?: MarcaDeFala[], opcoes?: OpcoesDeFala) => Promise<void>>(async () => {});
+  /**
+   * Reação pura ("Hm.") espera 1,2 s pela fala seguinte, que sai junta dela. Se o prazo passa, a reação vai sozinha como
+   * gravação (lib/voz/reacao.ts). Silenciar e encerrar a limpam.
+   */
+  const reacaoRetida = useRef(new ReacaoRetida<OpcoesDeFala>((texto, opcoes) => {
+    void dizerRef.current(texto, undefined, { ...opcoes, semRetencao: true });
+  }));
   const registrarDescarte = useCallback((texto: string, origem: OrigemDaFala, motivo: MotivoDoDescarte) => {
     console.warn("[fala] descartada", { motivo, origem, texto });
     linhaDoTempo.current?.registrar("fala", { quem: "agente", texto, falaDescartada: motivo, origem });
@@ -271,6 +282,15 @@ export function useEntrevista(
     if (encerrandoRef.current && !opcoes.despedida) return;
     const { origem = "sempre", numeroPergunta = null, aoTocar } = opcoes;
     foiParaAFila.current = false;
+    if (vozHabilitadaRef.current && !opcoes.despedida && !opcoes.semRetencao) {
+      const retida = reacaoRetida.current.consumir();
+      if (retida) {
+        // A reação e a seguinte saem como uma fala: as duas marcas de "foi para o ar" são chamadas.
+        const aoTocarDuas = () => { retida.carga.aoTocar?.(); opcoes.aoTocar?.(); };
+        return dizerRef.current(juntarReacao(retida.texto, texto), marcas, { ...opcoes, aoTocar: aoTocarDuas });
+      }
+      if (!marcas && reacaoRetida.current.reter(texto, opcoes)) return;
+    }
     if (vozHabilitadaRef.current) {
       const admissao = filaDoAgente.current.admitir(
         { origem, carga: { texto, marcas, aoTocar }, fase: estadoAtual.current.fase, numeroPergunta },
@@ -326,7 +346,9 @@ export function useEntrevista(
       if (versao !== versaoDaFala.current) return;
       setFalaAtual((atual) => (versao === versaoDaFala.current && atual && atual.texto === texto && atual.ate !== ate ? { ...atual, ate } : atual));
     };
+    const reacao = marcas ? null : slugDaReacao(texto);
     if (marcas) await falarComMarcas(texto, marcas, aoProgresso, antesDeTocar);
+    else if (reacao) await falarReacao(reacao, texto, aoProgresso, antesDeTocar);
     else await falar(texto, aoProgresso, antesDeTocar);
     if (versao !== versaoDaFala.current) return;
     ultimaFalaDoAgenteEm.current = Date.now();
@@ -344,7 +366,7 @@ export function useEntrevista(
     });
     registrarDescartes(descartados);
     if (item) {
-      void dizerRef.current(item.carga.texto, item.carga.marcas, { origem: item.origem, numeroPergunta: item.numeroPergunta });
+      void dizerRef.current(item.carga.texto, item.carga.marcas, { origem: item.origem, numeroPergunta: item.numeroPergunta, semRetencao: true });
       item.carga.aoTocar?.();
     }
   }, [registrarDescarte, registrarDescartes]);
@@ -352,6 +374,7 @@ export function useEntrevista(
 
   const silenciar = useCallback(() => {
     registrarDescartes(filaDoAgente.current.limpar());
+    reacaoRetida.current.limpar();
     limparVisualDaConversa();
     versaoDaFala.current++;
     if (fimDaLegenda.current) clearTimeout(fimDaLegenda.current);
@@ -375,6 +398,7 @@ export function useEntrevista(
     cicloDaSala.current++;
     versaoDaFala.current++;
     filaDoAgente.current.limpar();
+    reacaoRetida.current.limpar();
     if (fimDaLegenda.current) clearTimeout(fimDaLegenda.current);
     calar();
     limparVisualDaConversa();

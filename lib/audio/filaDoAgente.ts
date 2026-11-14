@@ -1,3 +1,5 @@
+import { ESPERA_DA_REACAO_MS, slugDaReacao } from "../voz/reacao";
+
 /**
  * Fila única das falas do Totti. Uma fala nova que chega enquanto OUTRA está tocando (áudio audível) não corta a
  * atual: espera, ou é descartada se já não faz sentido. Módulo puro (sem áudio, sem React): o hook decide quando
@@ -118,5 +120,48 @@ export class FilaDoAgente<T> {
   /** Barge-in, silenciar, voz desligada, encerrar: nada do que esperava toca. */
   limpar(motivo: MotivoDoDescarte = "silenciado"): Descartado<T>[] {
     return this.remover(() => true, motivo);
+  }
+}
+
+/**
+ * Reação pura ("Hm.", "Uhum.") retida: não entra na fila nem toca sozinha. Espera ESPERA_DA_REACAO_MS pela fala seguinte
+ * (`consumir` tira a reação para sair junto dela, ver juntarReacao). Se o prazo passa, `vencer` recebe a reação para
+ * tocá-la como gravação (lib/voz/reacao.ts). Só uma fica retida por vez: a fila de quem usa garante a ordem.
+ */
+export class ReacaoRetida<T> {
+  private retida: { texto: string; carga: T; prazo: ReturnType<typeof setTimeout> } | null = null;
+
+  constructor(
+    private readonly vencer: (texto: string, carga: T) => void,
+    private readonly esperaMs = ESPERA_DA_REACAO_MS,
+  ) {}
+
+  /** Retém a fala se ela é reação pura e nenhuma outra está retida. false: quem chama segue como antes. */
+  reter(texto: string, carga: T): boolean {
+    if (this.retida || !slugDaReacao(texto)) return false;
+    const prazo = setTimeout(() => {
+      const retida = this.tirar();
+      if (retida) this.vencer(retida.texto, retida.carga);
+    }, this.esperaMs);
+    this.retida = { texto, carga, prazo };
+    return true;
+  }
+
+  /** Chegou uma fala seguinte: tira a reação retida (se houver) para sair junto dela. */
+  consumir(): { texto: string; carga: T } | null {
+    return this.tirar();
+  }
+
+  /** Silenciar, parar ou encerrar: a reação retida some sem tocar. */
+  limpar(): { texto: string; carga: T } | null {
+    return this.tirar();
+  }
+
+  private tirar(): { texto: string; carga: T } | null {
+    const retida = this.retida;
+    if (!retida) return null;
+    clearTimeout(retida.prazo);
+    this.retida = null;
+    return { texto: retida.texto, carga: retida.carga };
   }
 }

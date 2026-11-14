@@ -2,6 +2,7 @@ import { after, NextResponse } from "next/server";
 import { MAXIMO_CONTEXTO_DA_FALA, RespostaVoz } from "@/lib/voz/contrato";
 import { criarLimitador, ipDe, lerTexto } from "@/lib/agente/rotas/http";
 import { registrarUsoVoz } from "@/lib/voz/uso";
+import { AJUSTES_DA_VOZ, MODELO, VOZ } from "@/lib/voz/ajustes";
 import { VELOCIDADE_MAXIMA, VELOCIDADE_MINIMA, VELOCIDADE_PADRAO } from "@/lib/voz/velocidade";
 
 export const runtime = "nodejs";
@@ -9,14 +10,7 @@ export const dynamic = "force-dynamic";
 
 // Voz do agente: ElevenLabs com tempos por caractere (a legenda e a mão do agente seguem a fala).
 // Sem ELEVENLABS_API_KEY responde 501. Com servidor, a fala fica na legenda (nunca troca para a voz do navegador).
-// A voz do Totti é uma só, em todo o site (quadro, live coding, pré-entrevista): Fernando - Casual (pt-BR), no
-// eleven_flash_v2_5, com os ajustes abaixo. Escolhida ouvindo amostras em 2026-11-09. Fixa de propósito, sem variável
-// de ambiente: com os ajustes do painel (estilo 0,15, velocidade 1) o tom mudava de uma fala para outra e soava lenta.
-const VOZ = "jyRzzBWbHll8EUfOjmhe";
-// ~0,4 s numa fala curta (o turbo_v2_5 dá o mesmo tempo; o multilingual_v2, 0,65-0,8 s).
-const MODELO = "eleven_flash_v2_5";
-/** Estabilidade alta e estilo 0: a voz soa igual em toda fala. Velocidade 1,1 tira a lentidão. */
-const AJUSTES_DA_VOZ = { stability: 0.75, similarity_boost: 0.85, style: 0, use_speaker_boost: true, speed: VELOCIDADE_PADRAO } as const;
+// Voz, modelo e ajustes ficam em lib/voz/ajustes.ts (um arquivo de rota do Next só pode exportar handlers e config).
 const MAXIMO_CARACTERES = 2000;
 const porIp = criarLimitador(60, 60_000);
 const global = criarLimitador(300, 600_000);

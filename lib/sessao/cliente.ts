@@ -5,6 +5,7 @@ import type { MarcaDeFala } from "../presenca/vozSincronizada";
 import { escolherVozPt } from "../voz/escolherVoz";
 import { trechoDeContexto } from "../voz/contrato";
 import { velocidadeDaFala } from "../voz/velocidade";
+import { urlDaReacao } from "../voz/reacao";
 import { comFolga, marcarSaidaDeSom, quadrosAntesDaFala } from "../voz/folga";
 
 // Único ponto de acesso do quadro ao servidor.
@@ -372,6 +373,27 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
     }
   } catch {
     progresso(texto.length);
+  } finally {
+    if (controleDaVoz === controle) controleDaVoz = null;
+  }
+}
+
+/**
+ * Toca a gravação curta de uma reação ("Hm.", "Uhum.") sem fala seguinte (lib/voz/reacao.ts). Se a gravação não
+ * carrega, a reação some em silêncio: não cai na síntese. A gravação é carregada só quando a reação é tocada.
+ */
+export async function falarReacao(slug: string, texto: string, aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>): Promise<void> {
+  calar();
+  const controle = new AbortController();
+  controleDaVoz = controle;
+  try {
+    const { tocarGravacao } = await import("../voz/cliente");
+    await tocarGravacao(urlDaReacao(slug), texto, controle.signal, {
+      aoIniciar: () => {},
+      aoProgresso: (n) => { if (!controle.signal.aborted && controleDaVoz === controle) aoProgresso?.(Math.min(texto.length, n)); },
+    }, antesDeTocar);
+  } catch {
+    // Gravação ausente ou falha ao tocar: a reação fica de fora, sem erro.
   } finally {
     if (controleDaVoz === controle) controleDaVoz = null;
   }

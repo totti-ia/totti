@@ -176,3 +176,72 @@ const MAX_CHARS_GUARDADA = 40;
 export const reproduzirFala = criarVoz();
 /** Toca uma fala (o que a fila de falas do agente usa). */
 export type ReproduzirFala = (texto: string, sinal: AbortSignal, eventos: EventosVoz, antesDeTocar?: () => Promise<boolean>) => Promise<void>;
+
+/** Dura o texto de uma gravação de reação: a legenda anda nesse ritmo (a gravação real não tem alinhamento). */
+const DURACAO_MINIMA_DA_GRAVACAO_S = 0.6;
+const SEGUNDOS_POR_CARACTERE_DA_GRAVACAO = 0.1;
+
+/** Alinhamento da gravação: o texto distribuído igualmente na duração estimada. Só move a legenda. */
+function alinhamentoDaGravacao(texto: string): Alinhamento {
+  const caracteres = texto.split("");
+  const passo = Math.max(DURACAO_MINIMA_DA_GRAVACAO_S, caracteres.length * SEGUNDOS_POR_CARACTERE_DA_GRAVACAO) / caracteres.length;
+  return {
+    characters: caracteres,
+    character_start_times_seconds: caracteres.map((_, i) => i * passo),
+    character_end_times_seconds: caracteres.map((_, i) => (i + 1) * passo),
+  };
+}
+
+/**
+ * Toca a gravação curta de uma reação (public/audio/reacoes). O MP3 é buscado uma vez e guardado por URL. Se ele não
+ * carrega, a promessa rejeita e quem chama descarta a reação em silêncio: nunca cai na síntese.
+ */
+export function criarTocarGravacao(dependencias: { fetch?: typeof globalThis.fetch; tocar?: typeof tocarComAlinhamento } = {}) {
+  const buscar = dependencias.fetch ?? ((entrada: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(entrada, init));
+  const tocar = dependencias.tocar ?? tocarComAlinhamento;
+  const guardadas = new Map<string, Promise<ArrayBuffer>>();
+  const carregar = (url: string): Promise<ArrayBuffer> => {
+    let gravacao = guardadas.get(url);
+    if (!gravacao) {
+      gravacao = buscar(url).then((resposta) => {
+        if (!resposta.ok) throw new Error(`Gravação da reação indisponível (HTTP ${resposta.status})`);
+        return resposta.arrayBuffer();
+      });
+      guardadas.set(url, gravacao);
+      // Uma falha não fica guardada: a próxima reação tenta de novo.
+      gravacao.catch(() => guardadas.delete(url));
+    }
+    return gravacao;
+  };
+  return async function tocarGravacao(
+    url: string,
+    texto: string,
+    sinal: AbortSignal,
+    eventos: EventosVoz,
+    antesDeTocar?: () => Promise<boolean>,
+  ): Promise<void> {
+    const bytes = await carregar(url);
+    sinal.throwIfAborted();
+    if (antesDeTocar && !(await antesDeTocar())) return;
+    sinal.throwIfAborted();
+    const { bytes: audio, alinhamento } = comFolga(new Uint8Array(bytes.slice(0)), alinhamentoDaGravacao(texto), quadrosAntesDaFala());
+    let iniciou = false;
+    await tocar(new Blob([audio as BlobPart], { type: "audio/mpeg" }), alinhamento, {
+      sinal,
+      aoAguardarGesto: eventos.aoAguardarGesto,
+      aoProgresso: (n) => {
+        if (sinal.aborted) return;
+        if (!iniciou) { iniciou = true; eventos.aoIniciar("elevenlabs"); }
+        eventos.aoProgresso(n);
+      },
+    });
+    marcarSaidaDeSom();
+    sinal.throwIfAborted();
+    eventos.aoProgresso(texto.length);
+  };
+}
+
+/** A gravação de reação com o cache e o player padrão (a fila de falas usa esta). Ver lib/voz/reacao.ts. */
+export const tocarGravacao = criarTocarGravacao();
+/** Toca a gravação de uma reação (o que a fila de falas usa para "Hm.", "Uhum." sem fala seguinte). */
+export type ReproduzirGravacao = (url: string, texto: string, sinal: AbortSignal, eventos: EventosVoz, antesDeTocar?: () => Promise<boolean>) => Promise<void>;

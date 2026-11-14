@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
-import { criarVoz, dividirFala, MENSAGEM_VOZ_INDISPONIVEL } from "./cliente";
+import { criarTocarGravacao, criarVoz, dividirFala, MENSAGEM_VOZ_INDISPONIVEL } from "./cliente";
 import { trechoDeContexto } from "./contrato";
-import { comFolga, esquecerSaidaDeSom, QUADROS_ANTES, QUADROS_ANTES_DEPOIS_DE_PARADA } from "./folga";
+import { comFolga, esquecerSaidaDeSom, QUADROS_ANTES, QUADROS_ANTES_DEPOIS_DE_PARADA, segundosDeQuadros } from "./folga";
 import { tocarComAlinhamento } from "../presenca/vozSincronizada";
 import { RespostaVoz } from "./contrato";
 
@@ -402,4 +402,53 @@ test("contexto vizinho tem no máximo 1000 caracteres e não separa um par UTF-1
   const inicio = trechoDeContexto("a" + "🙂".repeat(600), false)!;
   assert.equal(inicio.length, 999);
   assert.ok(!/[\uD800-\uDBFF]$/u.test(inicio));
+});
+
+test("gravação de reação: busca uma vez por URL, toca com a folga e o texto no alinhamento", async () => {
+  esquecerSaidaDeSom();
+  let buscas = 0;
+  const tocados: { caracteres: string[]; inicio: number; tamanho: number }[] = [];
+  const tocarGravacao = criarTocarGravacao({
+    fetch: async (url) => {
+      buscas++;
+      assert.equal(url, "/audio/reacoes/hm.mp3");
+      return new Response(new Uint8Array([1, 2, 3]));
+    },
+    tocar: async (audio, alinhamento) => {
+      tocados.push({ caracteres: alinhamento.characters, inicio: alinhamento.character_start_times_seconds[0], tamanho: audio.size });
+    },
+  });
+  await tocarGravacao("/audio/reacoes/hm.mp3", "Hm.", new AbortController().signal, eventos());
+  await tocarGravacao("/audio/reacoes/hm.mp3", "Hm.", new AbortController().signal, eventos());
+  assert.equal(buscas, 1, "a gravação fica guardada por URL");
+  assert.equal(tocados.length, 2);
+  assert.deepEqual(tocados[0].caracteres, ["H", "m", "."]);
+  // Primeira fala depois de a saída estar parada: a folga maior antes da voz.
+  assert.equal(tocados[0].inicio, segundosDeQuadros(QUADROS_ANTES_DEPOIS_DE_PARADA));
+  assert.ok(tocados[0].tamanho > 3, "o silêncio da folga entra no áudio");
+});
+
+test("gravação que não carrega rejeita e não fica guardada: a próxima tenta de novo", async (t) => {
+  semAvisos(t);
+  let buscas = 0;
+  const tocarGravacao = criarTocarGravacao({
+    fetch: async () => {
+      buscas++;
+      return buscas === 1 ? new Response(null, { status: 404 }) : new Response(new Uint8Array([9]));
+    },
+    tocar: async () => {},
+  });
+  await assert.rejects(tocarGravacao("/audio/reacoes/ta.mp3", "Tá.", new AbortController().signal, eventos()));
+  await tocarGravacao("/audio/reacoes/ta.mp3", "Tá.", new AbortController().signal, eventos());
+  assert.equal(buscas, 2);
+});
+
+test("gravação espera a vez com antesDeTocar e não toca se o turno desistiu", async () => {
+  let tocou = false;
+  const tocarGravacao = criarTocarGravacao({
+    fetch: async () => new Response(new Uint8Array([1])),
+    tocar: async () => { tocou = true; },
+  });
+  await tocarGravacao("/audio/reacoes/certo.mp3", "Certo.", new AbortController().signal, eventos(), async () => false);
+  assert.equal(tocou, false);
 });
