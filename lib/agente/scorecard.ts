@@ -7,7 +7,7 @@ import { neutralizar, tentativasEmTextos } from "../seguranca/injecao";
 import { z } from "zod";
 import type { EventoArmazenado } from "./armazenamento/repositorio";
 import { ErroLlm, type LlmCliente } from "./llm/cliente";
-import { criterioSoPorFala, type Criterio, type Kit, type Problema } from "./kits/tipos";
+import { criterioSoPorFala, eliminatoriosDoPlano, kitComRubricaDaVaga, provocacaoDoCriterio, type Criterio, type Kit, type Problema, type Provocacao } from "./kits/tipos";
 import { ehItemGenerico, ehPedidoDeRepeticao, falaDeProximaConversa, fatoDeCobertura, semTermosInternos, textoCulpaOCandidatoPorPedido } from "../totti/relatorio";
 import {
   montarSistemaDinamicoScorecard,
@@ -19,7 +19,7 @@ import {
 export { NIVEIS_ADAPTACAO, ehItemGenerico };
 import { tempoDaEntrevista, type EstadoSessao } from "./sessao/estado";
 import { extrairIdsDoGrafo } from "./sessao/politica";
-import type { SquadRule } from "../contracts";
+import type { RegraDaSquad } from "../squad-memory/config";
 import { blocoDasRegras, regrasDoCriterio } from "../squad-memory/prompt";
 
 export const MODELO_FINAL_PADRAO = "anthropic/claude-opus-5.5";
@@ -34,6 +34,9 @@ export function timeoutScorecardMs(): number {
 /** O GLM-5.2 da Featherless usa 6–11,7 mil tokens com o raciocínio; com 6000 a resposta saía cortada (ver lib/llm, papel relatorio). */
 export const MAX_TOKENS_SCORECARD = 12_000;
 export const SEM_EVIDENCIA = "Sem evidência suficiente para atribuir nota a este critério.";
+/** Critério que depende de o Totti puxar o assunto (escopo, mudança de cenário, falhas) e ele não puxou: sem nota, sem culpa. */
+export const NAO_PROVOCADO = "O Totti não provocou este ponto; sem evidência.";
+const AFIRMACAO_SEM_PROVA = "A justificativa original foi removida: afirmava algo que as provas citadas não sustentam.";
 
 // ---------------------------------------------------------------------------------------------
 // Esquemas
@@ -66,6 +69,13 @@ export const EsquemaSaidaScorecardLlm = z.object({
   resumo_da_solucao: z.string().default(""),
   /** Como a entrevista foi: o que foi bem, o que faltou e a reação à mudança. "" em scorecards antigos. */
   resumo_da_entrevista: z.string().default(""),
+  /** Regras de reprovação da vaga (só quando o plano tem). Fora da nota geral. */
+  eliminatorios: z.array(z.object({
+    regra: z.string(),
+    status: z.enum(["atendida", "violada", "nao_observada"]),
+    justificativa: z.string(),
+    evidencias: z.array(z.object({ horario: z.string(), texto: z.string() })),
+  })).nullable().optional(),
   /** Como o candidato reagiu à mudança no problema. null quando não houve mudança. Fora da nota geral. */
   adaptacao: z.object({
     nota: z.number().nullable(),
@@ -90,7 +100,7 @@ export type CriterioAvaliado = {
   justificativa: string;
   evidencias: Evidencia[];
   /** Regras da squad que afetam este critério: a tela marca "critério aprendido com o time". */
-  regras_squad?: SquadRule[];
+  regras_squad?: RegraDaSquad[];
 };
 
 /** A mudança no problema e como o candidato se adaptou. Não entra na nota geral. */
@@ -105,6 +115,14 @@ export type AdaptacaoAvaliada = {
   /** Fatos medidos pela linha do tempo, sem o modelo. */
   desenhos_depois: number;
   falas_depois: number;
+};
+
+/** Uma regra de reprovação da vaga e se o candidato a cumpriu. Não vira nota. */
+export type EliminatorioAvaliado = {
+  regra: string;
+  status: "atendida" | "violada" | "nao_observada";
+  justificativa: string;
+  evidencias: Evidencia[];
 };
 
 export type Recomendacao = "avancar" | "avancar_com_ressalvas" | "nao_avancar" | "evidencia_insuficiente";
@@ -127,6 +145,8 @@ export type Scorecard = {
   ajustes: string[];
   /** Presente quando o entrevistador trouxe a mudança no problema. */
   adaptacao?: AdaptacaoAvaliada;
+  /** Regras de reprovação do plano da vaga, uma por regra. Ausente: o plano não tem. */
+  eliminatorios?: EliminatorioAvaliado[];
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -256,7 +276,7 @@ export type ParametrosGuardas = {
   sessaoId: string;
   candidatoId: string;
   problemaId: string;
-  rubrica: (Pick<Criterio, "id"> & Partial<Pick<Criterio, "niveis" | "nome" | "provaSoPorFala">>)[];
+  rubrica: (Pick<Criterio, "id"> & Partial<Pick<Criterio, "niveis" | "nome" | "provaSoPorFala" | "provocadoPor">>)[];
   fontes: FontesDeProva;
   origem: "llm" | "fake";
   agora?: () => Date;
@@ -265,7 +285,72 @@ export type ParametrosGuardas = {
   duracao?: DuracaoDaSessao | null;
   /** Sinais esperados do problema: dizem o que faltou observar nos critérios sem prova. */
   problema?: Pick<Problema, "sinaisEsperados">;
+  /** O que o Totti puxou e disse (do estado). Ausente: as guardas de provocação e de resposta ao Totti ficam desligadas. */
+  conversa?: ContextoDaConversa;
+  /** Regras de reprovação do plano (texto exato). */
+  eliminatorios?: string[];
 };
+
+/** O que o estado da sessão diz sobre a participação do Totti: base das guardas "sem provocação, sem nota" e "evasivo". */
+export type ContextoDaConversa = {
+  provocado: Record<Provocacao, boolean>;
+  /** Falas e perguntas do Totti que o servidor gerou, em ordem de horário (ms). */
+  falasDoTotti: { em: number; texto: string }[];
+};
+
+const TEXTO_DE_ESCOPO = /(escopo|o que entra|fica fora|priorizar|delimit|foco do (desenho|problema)|resolve (o|um) problema|fluxo central)/;
+const TEXTO_DE_ESCALA = /(escal|volume|carga|pico|trafego|milhoes|10x|dez vezes|crescer|crescimento)/;
+const TEXTO_DE_FALHAS = /(falh|cair|caiu|fora do ar|idempot|duplic|retry|retentativ|timeout|indisponi|queda|cobrar duas|cobranca dupla)/;
+
+/** Quem puxou o quê, lido do estado (que só guarda o que o servidor gerou): `escopoProvocadoEm`, `empecilho` e as perguntas do Totti. */
+export function contextoDaConversa(estado: EstadoSessao): ContextoDaConversa {
+  const falasDoTotti: ContextoDaConversa["falasDoTotti"] = [
+    ...estado.perguntas.flatMap((q) => [{ em: q.feitaEm, texto: q.pergunta }, ...(q.seguimentos ?? []).map((t) => ({ em: q.feitaEm, texto: t }))]),
+    ...estado.conversa.filter((f) => f.quem === "agente").map((f) => ({ em: f.em, texto: f.texto })),
+    ...(estado.empecilho ? [{ em: estado.empecilho.anunciadoEm, texto: `${estado.empecilho.fala} ${estado.empecilho.requisito}` }] : []),
+  ].sort((a, b) => a.em - b.em);
+  const falou = (re: RegExp) => falasDoTotti.some((f) => re.test(normalizar(f.texto)));
+  return {
+    falasDoTotti,
+    provocado: {
+      escopo: typeof estado.escopoProvocadoEm === "number" || falou(TEXTO_DE_ESCOPO),
+      mudanca: Boolean(estado.empecilho) || falou(TEXTO_DE_ESCALA),
+      falhas: falou(TEXTO_DE_FALHAS),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Comunicação justa: o que nunca é prova negativa
+// ---------------------------------------------------------------------------------------------
+
+const MAX_PALAVRAS_DE_PEDIDO = 16;
+const PEDIDO_DE_ESCLARECIMENTO = /(^| )(o que (e|eh|seria|significa|quer dizer|voce quer dizer|voce esta dizendo)|como assim|que (que )?(e|eh) (isso|esse|essa|um|uma)|nao entendi|nao sei o que (e|eh|significa)|pode (me )?explicar|quer dizer o que|significa o que)( |$)/;
+const PEDIDO_DE_TEMPO = /(^| )(calma|um (minuto|momento|segundo|instante)|so (um|uns) (minuto|momento|segundo|instante)s?|deixa eu pensar|deixa eu ver|me da (um|uns) (minuto|momento|segundo)s?|to pensando|estou pensando|ainda pensando|pensando ainda|ja volto|pera ai|espera ai|um instantinho)( |$)/;
+
+/** Pergunta de esclarecimento do candidato sobre um termo ("o que é correio?"): boa comunicação, nunca prova negativa. */
+export function ehEsclarecimentoDoCandidato(texto: string): boolean {
+  const n = normalizar(texto);
+  return n !== "" && n.split(" ").length <= MAX_PALAVRAS_DE_PEDIDO && PEDIDO_DE_ESCLARECIMENTO.test(n);
+}
+
+/** Pedido de tempo ("calma, tô pensando ainda"): neutro, não é hesitação nem evasão. */
+export function ehPedidoDeTempoDoCandidato(texto: string): boolean {
+  const n = normalizar(texto);
+  return n !== "" && n.split(" ").length <= MAX_PALAVRAS_DE_PEDIDO && PEDIDO_DE_TEMPO.test(n);
+}
+
+const AFIRMA_EVASAO = /(evasiv|esquiv|nao respond|fugiu d|desvi(ou|a) d|respostas? (vagas?|confusas?)|nao soube responder)/;
+
+/** A fala (horário ISO) é a primeira do candidato depois de uma fala do Totti, até 5 min depois dela: ou seja, responde ao Totti. */
+function respondeAoTotti(horario: string, falas: FontesDeProva["falas"], totti: ContextoDaConversa["falasDoTotti"]): boolean {
+  const t = Date.parse(horario);
+  if (!Number.isFinite(t)) return false;
+  const pergunta = [...totti].reverse().find((f) => f.em < t);
+  if (!pergunta || t - pergunta.em > 5 * 60_000) return false;
+  const primeira = falas.map((f) => Date.parse(f.horario)).filter((h) => Number.isFinite(h) && h > pergunta.em).sort((a, b) => a - b)[0];
+  return primeira === t;
+}
 
 export type DuracaoDaSessao = { decorridoMin: number; previstoMin: number };
 
@@ -385,14 +470,28 @@ export function aplicarGuardas(saida: SaidaParaGuardas, p: ParametrosGuardas): S
   const { fontes } = p;
   const vistos = new Set<string>();
 
-  const criterios: CriterioAvaliado[] = p.rubrica.map(({ id, niveis, nome, provaSoPorFala }) => {
-    const candidatos = saida.criterios.filter((c) => c.criterio === id);
+  // O modelo devolve o id da rubrica; na rubrica da vaga o id é o NOME do critério do plano. Aceita o id exato e, na falta
+  // dele, o nome com outra caixa, acento ou pontuação, em vez de descartar como desconhecido.
+  const idDaRubrica = new Map<string, string>();
+  for (const r of p.rubrica) {
+    for (const chave of [r.id, ...(r.nome ? [r.nome] : [])]) if (!idDaRubrica.has(normalizar(chave))) idDaRubrica.set(normalizar(chave), r.id);
+  }
+  const resolverId = (criterio: string) => (p.rubrica.some((r) => r.id === criterio) ? criterio : idDaRubrica.get(normalizar(criterio)));
+  const naoProvocados = new Set<string>();
+
+  const criterios: CriterioAvaliado[] = p.rubrica.map(({ id, niveis, nome, provaSoPorFala, provocadoPor }) => {
+    const candidatos = saida.criterios.filter((c) => resolverId(c.criterio) === id);
     if (candidatos.length > 1) ajustes.push(`critério ${id} repetido: usei o primeiro`);
     const c = candidatos[0];
     vistos.add(id);
+    // Depende de o Totti puxar o assunto e ele não puxou: sem nota (a menos que o candidato tenha feito sozinho, de forma positiva).
+    const dependeDe = provocacaoDoCriterio({ nome: nome ?? id, provocadoPor });
+    const fezSozinho = fontes.observacoes.some((o) => o.criterio === id && o.sinal === "positivo" && o.espontaneo);
+    const semProvocacao = Boolean(dependeDe && p.conversa && !p.conversa.provocado[dependeDe] && !fezSozinho);
+    if (semProvocacao) naoProvocados.add(id);
     if (!c) {
       ajustes.push(`critério ${id} ausente na saída do modelo`);
-      return { criterio: id, nota: null, justificativa: SEM_EVIDENCIA, evidencias: [] };
+      return { criterio: id, nota: null, justificativa: semProvocacao ? NAO_PROVOCADO : SEM_EVIDENCIA, evidencias: [] };
     }
 
     const evidencias: Evidencia[] = [];
@@ -407,6 +506,14 @@ export function aplicarGuardas(saida: SaidaParaGuardas, p: ParametrosGuardas): S
         // nunca prova nota nenhuma. Se era a única prova, a nota cai para "sem prova" logo abaixo.
         if (ehPedidoDeRepeticao(e.texto)) {
           ajustes.push(`evidência de fala descartada em ${id}: pedido de repetição ou esclarecimento não é prova`);
+          continue;
+        }
+        if (ehEsclarecimentoDoCandidato(e.texto)) {
+          ajustes.push(`evidência de fala descartada em ${id}: pergunta de esclarecimento do candidato não é prova negativa`);
+          continue;
+        }
+        if (ehPedidoDeTempoDoCandidato(e.texto)) {
+          ajustes.push(`evidência de fala descartada em ${id}: pedido de tempo não é hesitação`);
           continue;
         }
         const origem = fontes.falas[r.indice];
@@ -444,22 +551,41 @@ export function aplicarGuardas(saida: SaidaParaGuardas, p: ParametrosGuardas): S
       ajustes.push(`nota de ${id} removida: sem evidência`);
       nota = null;
     }
-    if (nota === null) justificativa = SEM_EVIDENCIA;
+    if (semProvocacao && nota !== null) {
+      ajustes.push(`nota de ${id} removida: o Totti não provocou este ponto`);
+      nota = null;
+    }
+    // Quem só responde quando perguntado não é penalizado: sem provocação não há prova, nem a favor nem contra.
+    if (semProvocacao) evidencias.length = 0;
+    if (nota === null) justificativa = semProvocacao ? NAO_PROVOCADO : SEM_EVIDENCIA;
     else if (evidencias.length < c.evidencias.length) justificativa = "Avaliação limitada às referências verificadas abaixo; a justificativa original foi removida após descarte de evidências.";
     else if (textoCulpaOCandidatoPorPedido(justificativa)) {
       ajustes.push(`justificativa de ${id} trocada: culpava o candidato por pedir repetição`);
       justificativa = LIMITADA_AS_REFERENCIAS;
+    } else if (p.conversa && AFIRMA_EVASAO.test(normalizar(justificativa))
+      && !evidencias.some((e) => e.tipo === "fala" && respondeAoTotti(e.horario, fontes.falas, p.conversa!.falasDoTotti))) {
+      // "Evasivo" só se prova com uma fala que responde a uma pergunta do Totti.
+      ajustes.push(`justificativa de ${id} trocada: afirmava evasão sem fala que responda a uma pergunta do Totti`);
+      justificativa = AFIRMACAO_SEM_PROVA;
+      if (nota !== null && nota <= 2) {
+        ajustes.push(`nota de ${id} removida: a nota baixa se apoiava numa afirmação sem prova`);
+        nota = null;
+        justificativa = SEM_EVIDENCIA;
+      }
     }
     return { criterio: id, nota, justificativa, evidencias };
   });
 
   for (const c of saida.criterios) {
-    if (!vistos.has(c.criterio)) ajustes.push(`critério desconhecido ignorado: ${c.criterio}`);
+    const id = resolverId(c.criterio);
+    if (id === undefined || !vistos.has(id)) ajustes.push(`critério desconhecido ignorado: ${c.criterio}`);
   }
 
   const notas = criterios.map((c) => c.nota).filter((n): n is number => n !== null);
   const notaGeral = notas.length ? arred1(notas.reduce((a, b) => a + b, 0) / notas.length) : null;
-  const insuficiente = notas.length === 0 || notas.length * 2 < criterios.length;
+  // Critério que o Totti não provocou não pesa contra a cobertura: a falta de prova não é do candidato.
+  const avaliaveis = criterios.length - naoProvocados.size;
+  const insuficiente = notas.length === 0 || notas.length * 2 < avaliaveis;
   if (insuficiente) ajustes.push("menos da metade dos critérios com evidência: recomendação neutra");
   let recomendacao: Recomendacao = insuficiente ? "evidencia_insuficiente"
     : notaGeral! < 2 ? "nao_avancar" : notaGeral! < 3 ? "avancar_com_ressalvas" : "avancar";
@@ -469,7 +595,7 @@ export function aplicarGuardas(saida: SaidaParaGuardas, p: ParametrosGuardas): S
   // entrevista curta com metade da rubrica sem prova (como a encerrada aos 8 de 15 minutos) não permite concluir isso.
   const duracao = p.duracao ?? null;
   const duracaoSuficiente = duracao !== null && duracao.decorridoMin >= FRACAO_MINIMA_DE_DURACAO * duracao.previstoMin;
-  const coberturaSuficiente = criterios.length > 0 && notas.length / criterios.length >= FRACAO_MINIMA_DE_COBERTURA;
+  const coberturaSuficiente = avaliaveis > 0 && notas.length / avaliaveis >= FRACAO_MINIMA_DE_COBERTURA;
   if (recomendacao === "nao_avancar" && !duracaoSuficiente && !coberturaSuficiente) {
     recomendacao = "evidencia_insuficiente";
     ajustes.push("recomendação 'não avançar' trocada por evidência insuficiente: entrevista curta e menos de 2/3 dos critérios com prova");
@@ -503,7 +629,9 @@ export function aplicarGuardas(saida: SaidaParaGuardas, p: ParametrosGuardas): S
   const pontosFortes = saida.pontos_fortes.filter(aproveitavel).map(legivel);
   const doModelo = saida.pontos_a_aprofundar.filter(t => aproveitavel(t) && !ehItemGenerico(t));
   const faltas = reverResumo ? [
-    ...semNota.map(c => textoDoQueFaltou(nomeLegivel(c.criterio), c.criterio, soPorFala.get(c.criterio) ?? false, sinais)),
+    ...semNota.map(c => naoProvocados.has(c.criterio)
+      ? `${nomeLegivel(c.criterio)}: ${NAO_PROVOCADO.charAt(0).toLowerCase()}${NAO_PROVOCADO.slice(1)}`
+      : textoDoQueFaltou(nomeLegivel(c.criterio), c.criterio, soPorFala.get(c.criterio) ?? false, sinais)),
   ] : [];
   const pontosAAprofundar = [...doModelo, ...faltas].map(legivel);
 
@@ -605,6 +733,50 @@ export function avaliarAdaptacao(saida: SaidaScorecardLlm["adaptacao"], estado: 
   };
 }
 
+/**
+ * Regras de reprovação do plano: uma entrada por regra, na ordem do plano. Prova só com fala do candidato que exista de
+ * verdade (e que não seja pedido de repetição, esclarecimento ou de tempo); "atendida" e "violada" sem prova viram "não
+ * observada". Uma regra violada tira o "avançar" sem ressalvas; quem decide continua sendo a recrutadora.
+ */
+export function avaliarEliminatorios(saida: SaidaScorecardLlm["eliminatorios"], regras: string[], fontes: FontesDeProva): { eliminatorios: EliminatorioAvaliado[]; ajustes: string[] } {
+  const ajustes: string[] = [];
+  const eliminatorios = regras.map((regra): EliminatorioAvaliado => {
+    const dado = (saida ?? []).find((e) => normalizar(e.regra) === normalizar(regra));
+    if (!dado) return { regra, status: "nao_observada", justificativa: SEM_EVIDENCIA, evidencias: [] };
+    const evidencias: Evidencia[] = [];
+    for (const ev of dado.evidencias) {
+      const r = citacaoExiste(ev.texto, fontes.falas);
+      if (!r.ok || ehPedidoDeRepeticao(ev.texto) || ehEsclarecimentoDoCandidato(ev.texto) || ehPedidoDeTempoDoCandidato(ev.texto)) {
+        ajustes.push(`evidência da regra de reprovação descartada: citação não encontrada ou não é prova`);
+        continue;
+      }
+      evidencias.push({ tipo: "fala", horario: fontes.falas[r.indice]?.horario ?? ev.horario, texto: ev.texto });
+    }
+    if (dado.status !== "nao_observada" && evidencias.length === 0) {
+      ajustes.push(`regra de reprovação "${regra}" marcada como não observada: sem fala do candidato que a sustente`);
+      return { regra, status: "nao_observada", justificativa: SEM_EVIDENCIA, evidencias: [] };
+    }
+    const justificativa = dado.status === "nao_observada" ? SEM_EVIDENCIA
+      : evidencias.length < dado.evidencias.length ? "Avaliação limitada às referências verificadas abaixo; a justificativa original foi removida após descarte de evidências."
+      : dado.justificativa.trim() || SEM_EVIDENCIA;
+    return { regra, status: dado.status, justificativa, evidencias: dado.status === "nao_observada" ? [] : evidencias };
+  });
+  return { eliminatorios, ajustes };
+}
+
+function comEliminatorios(scorecard: Scorecard, saida: SaidaScorecardLlm["eliminatorios"], regras: string[], fontes: FontesDeProva): Scorecard {
+  if (regras.length === 0) return scorecard;
+  const { eliminatorios, ajustes } = avaliarEliminatorios(saida, regras, fontes);
+  const violou = eliminatorios.some((e) => e.status === "violada");
+  const ressalva = violou && scorecard.recomendacao === "avancar";
+  return {
+    ...scorecard,
+    eliminatorios,
+    ...(ressalva ? { recomendacao: "avancar_com_ressalvas" as const } : {}),
+    ajustes: [...scorecard.ajustes, ...ajustes, ...(ressalva ? ["recomendação rebaixada para avançar com ressalvas: uma regra de reprovação da vaga foi violada"] : [])],
+  };
+}
+
 function comAdaptacao(scorecard: Scorecard, saida: SaidaScorecardLlm["adaptacao"], estado: EstadoSessao, fontes: FontesDeProva): Scorecard {
   const { adaptacao, ajustes } = avaliarAdaptacao(saida, estado, fontes);
   return { ...scorecard, ajustes: [...scorecard.ajustes, ...ajustes], ...(adaptacao ? { adaptacao } : {}) };
@@ -631,17 +803,19 @@ function resumoDoEvento(e: EventoArmazenado): string {
       return `mudanças: ${cortar(String(d.mudancas ?? ""), 600).replace(/\n/g, " ; ")}`;
     case "fala":
     case "resposta":
+      // O texto do Totti vem do estado (só guarda o que o servidor gerou); o evento bruto veio do navegador e só dá horário e ordem.
+      if (d.quem === "agente") return "o entrevistador falou (o texto está em \"conversa\" e \"perguntasDoTotti\")";
       return `${d.quem ? String(d.quem) + ": " : ""}${cortar(String(d.texto ?? ""), 600)}`;
     case "analise":
-      return `status=${String(d.status ?? "")}${d.pergunta ? ` pergunta="${cortar(String(d.pergunta), 300)}"` : ""}${
+      return `status=${String(d.status ?? "")}${d.pergunta ? " (o entrevistador perguntou; o texto está em \"perguntasDoTotti\")" : ""}${
         Array.isArray(d.observacoes) ? ` observacoes=${JSON.stringify(d.observacoes).slice(0, 500)}` : ""
       }`;
     case "pergunta":
-      return `candidato abriu a pergunta do entrevistador: ${cortar(String(d.pergunta ?? ""), 300)}`;
+      return "candidato abriu a pergunta do entrevistador (o texto está em \"perguntasDoTotti\")";
     case "fase":
       return `fase=${String(d.fase ?? "")}`;
     case "empecilho":
-      return `o entrevistador trouxe uma mudança no problema: ${cortar(String(d.fala ?? ""), 600)} (escrito no quadro: ${cortar(String(d.requisito ?? ""), 100)})`;
+      return "o entrevistador trouxe uma mudança no problema (o texto está em \"mudanca\")";
     default:
       return "";
   }
@@ -665,7 +839,17 @@ export function montarEntradaDoPrompt(entrada: EntradaScorecard, fontes: FontesD
   const regrasDaSquad = blocoDasRegras(entrada.estado.plano?.regrasSquad, "observar");
   const e = entrada.estado.empecilho;
   const mudanca = e ? { horario: new Date(e.anunciadoEm).toISOString(), fala: e.fala, exige: e.exige } : undefined;
+  const ctx = contextoDaConversa(entrada.estado);
+  const perguntasDoTotti = [...new Map(ctx.falasDoTotti.map((f) => [`${f.em}|${f.texto}`, f])).values()]
+    .map((f) => ({ horario: new Date(f.em).toISOString(), texto: neutralizar(cortar(f.texto, 400)) }));
+  const provocacao = {
+    escopo: typeof entrada.estado.escopoProvocadoEm === "number" ? new Date(entrada.estado.escopoProvocadoEm).toISOString() : null,
+    mudanca: e ? new Date(e.anunciadoEm).toISOString() : null,
+    falhas: ctx.provocado.falhas,
+    escopoRedirecionamentos: entrada.estado.escopoRedirecionamentos ?? 0,
+  };
   return { linhaDoTempo, conversa, observacoes, grafoFinal: cortar(neutralizar(fontes.grafoFinal), 20_000), imagens,
+    perguntasDoTotti, provocacao,
     ...(regrasDaSquad ? { regrasDaSquad } : {}), ...(mudanca ? { mudanca } : {}) };
 }
 
@@ -679,8 +863,15 @@ export type DepsScorecard = {
   aoUsar?: (uso: { modelo?: string; provedor?: string; reservaDisparada?: boolean; ms: number; entrada?: number; saida?: number; cache?: number; custo?: number }) => void;
 };
 
+/** Os critérios que valem para esta sessão: os do plano da vaga, ou a rubrica fixa do kit quando não há plano. */
+export function kitDaSessao(kit: Kit, estado: EstadoSessao): Kit {
+  return kitComRubricaDaVaga(kit, estado.plano);
+}
+
 export async function gerarScorecard(deps: DepsScorecard, entrada: EntradaScorecard): Promise<Scorecard> {
   const fontes = extrairFontes(entrada.estado, entrada.eventos, entrada.imagens);
+  const kit = kitDaSessao(deps.kit, entrada.estado);
+  const eliminatorios = eliminatoriosDoPlano(entrada.estado.plano);
   const timeoutMs = timeoutScorecardMs();
   const controle = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -692,7 +883,7 @@ export async function gerarScorecard(deps: DepsScorecard, entrada: EntradaScorec
   });
   try {
     const r = await Promise.race([prazo, deps.llm.completarJson({
-      sistema: { estatico: montarSistemaEstaticoScorecard(deps.kit, deps.problema) },
+      sistema: { estatico: montarSistemaEstaticoScorecard(kit, deps.problema, eliminatorios) },
       mensagens: [{ role: "user", content: montarSistemaDinamicoScorecard(montarEntradaDoPrompt(entrada, fontes)) + "\nEscreva o scorecard desta entrevista conforme as regras do sistema." }],
       schema: EsquemaSaidaScorecardLlm,
       nomeSchema: NOME_SCHEMA_SCORECARD,
@@ -704,17 +895,19 @@ export async function gerarScorecard(deps: DepsScorecard, entrada: EntradaScorec
       sinal: controle.signal,
     })]);
     deps.aoUsar?.({ modelo: r.modelo, provedor: r.provedor, reservaDisparada: r.reservaDisparada, ms: r.ms, entrada: r.uso?.entrada, saida: r.uso?.saida, cache: r.uso?.cache, custo: r.uso?.custo });
-    return comAlertaDeInjecao(comAdaptacao(marcarRegrasDaSquad(aplicarGuardas(r.dados, {
+    return comAlertaDeInjecao(comEliminatorios(comAdaptacao(marcarRegrasDaSquad(aplicarGuardas(r.dados, {
       sessaoId: entrada.sessaoId,
       candidatoId: entrada.candidatoId,
       problemaId: deps.problema.id,
-      rubrica: deps.kit.criterios,
+      rubrica: kit.criterios,
       fontes,
       origem: "llm",
       agora: deps.agora,
       duracao: duracaoDaSessao(entrada.estado, entrada.eventos),
       problema: deps.problema,
-    }), entrada.estado), r.dados.adaptacao, entrada.estado, fontes), entrada.eventos);
+      conversa: contextoDaConversa(entrada.estado),
+      eliminatorios,
+    }), entrada.estado), r.dados.adaptacao, entrada.estado, fontes), r.dados.eliminatorios, eliminatorios, fontes), entrada.eventos);
   } finally {
     clearTimeout(timer);
   }
@@ -723,8 +916,9 @@ export async function gerarScorecard(deps: DepsScorecard, entrada: EntradaScorec
 /** Scorecard determinístico (AGENTE_FAKE=1): monta a saída a partir do livro de observações e passa pelas mesmas guardas. */
 export function gerarScorecardFalso(deps: Omit<DepsScorecard, "llm">, entrada: EntradaScorecard): Scorecard {
   const fontes = extrairFontes(entrada.estado, entrada.eventos, entrada.imagens);
+  const kit = kitDaSessao(deps.kit, entrada.estado);
 
-  const criterios = deps.kit.criterios.map((c) => {
+  const criterios = kit.criterios.map((c) => {
     const obs = fontes.observacoes.filter((o) => o.criterio === c.id && o.desenho && extrairIdsDoGrafo(o.desenho.grafo).size > 0);
     if (obs.length === 0) return { criterio: c.id, nota: null, justificativa: "Sem observações.", evidencias: [] };
     const positivos = obs.some(o => o.sinal === "positivo");
@@ -751,17 +945,18 @@ export function gerarScorecardFalso(deps: Omit<DepsScorecard, "llm">, entrada: E
     resumo_da_entrevista: "[fake] Resumo da entrevista não foi escrito: scorecard determinístico.",
   };
   // Sem modelo não há julgamento da adaptação: só os números medidos pela linha do tempo.
-  return comAlertaDeInjecao(comAdaptacao(marcarRegrasDaSquad(aplicarGuardas(saida, {
+  return comAlertaDeInjecao(comEliminatorios(comAdaptacao(marcarRegrasDaSquad(aplicarGuardas(saida, {
     sessaoId: entrada.sessaoId,
     candidatoId: entrada.candidatoId,
     problemaId: deps.problema.id,
-    rubrica: deps.kit.criterios,
+    rubrica: kit.criterios,
     fontes,
     origem: "fake",
     agora: deps.agora,
     duracao: duracaoDaSessao(entrada.estado, entrada.eventos),
     problema: deps.problema,
-  }), entrada.estado), null, entrada.estado, fontes), entrada.eventos);
+    conversa: contextoDaConversa(entrada.estado),
+  }), entrada.estado), null, entrada.estado, fontes), undefined, eliminatoriosDoPlano(entrada.estado.plano), fontes), entrada.eventos);
 }
 
 /**

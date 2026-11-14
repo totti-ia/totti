@@ -40,7 +40,7 @@ import {
 } from "@/lib/vagas/workspace";
 import type { InterviewConfig } from "@/lib/contracts";
 import { buscaNormalizada, comConvites, useConvitesFeitos } from "@/lib/vagas/candidatos";
-import { comReais, useEntrevistasReais } from "@/lib/vagas/entrevistas";
+import { comReais, comUltimoRelatorio, useEntrevistasReais } from "@/lib/vagas/entrevistas";
 import { curvaSaida, curvaSuave } from "@/lib/design/motion";
 import TituloRevelado from "@/components/totti/TituloRevelado";
 import Casca from "./Casca";
@@ -52,8 +52,8 @@ type IdGrupo = "plano" | "totti" | "decidir";
 
 /** Quantas linhas cada seção mostra antes do "Mostrar mais". */
 const POR_VEZ = 5;
-// Dentro de cada seção, quem tem mais relatório esperando vem primeiro.
-const ORDEM_PADRAO: OrdemVagas = "pendentes";
+// Dentro de cada seção, as vagas mexidas por último vêm primeiro (as reais antes das de exemplo).
+const ORDEM_PADRAO: OrdemVagas = "recentes";
 
 const hrefVaga = (id: string, etapa: "escores" | "entrevistas") => `/vagas/vaga?id=${encodeURIComponent(id)}&etapa=${etapa}`;
 const hrefRascunho = (id: string) => `/vagas/nova?rascunho=${encodeURIComponent(id)}`;
@@ -72,7 +72,7 @@ function Conteudo({ vagas, rascunhos }: { vagas: VagaEmpresa[]; rascunhos: Rascu
     () =>
       vagas.map((v) => {
         const funil = comConvites(comReais(v.funil, v.resumo ? reais?.[v.resumo.configId] : undefined), convites[v.id]);
-        const comFunil = { ...v, funil };
+        const comFunil = { ...comUltimoRelatorio(v, v.resumo ? reais?.[v.resumo.configId] : undefined), funil };
         return { ...comFunil, estagio: estagioDa(comFunil) };
       }),
     [vagas, convites, reais],

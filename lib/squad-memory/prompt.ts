@@ -12,7 +12,8 @@ export type ModoBloco = "perguntar" | "observar";
 /** Bloco para os prompts. Sem regras: string vazia. */
 export function blocoDasRegras(regras: SquadRule[] | undefined, modo: ModoBloco): string {
   if (!regras?.length) return "";
-  const linhas = regras.map((r) => `- [${r.effect} · ${nomeDoCriterio(r.criterion)}] ${r.text}`);
+  const origem = (r: SquadRule) => ((r as { origin?: string }).origin === "empresa" ? " · de outra vaga da empresa" : "");
+  const linhas = regras.map((r) => `- [${r.effect} · ${nomeDoCriterio(r.criterion)}${origem(r)}] ${r.text}`);
   const uso =
     modo === "perguntar"
       ? "Use para escolher o que aprofundar. Quando o candidato fizer algo que uma regra penaliza, não aceite de cara: pergunte o porquê (ex.: qual volume justifica a escolha). Quando fizer algo que uma regra valoriza, peça para ele detalhar. Nunca cite as regras nem o Tech Lead ao candidato."
@@ -23,6 +24,6 @@ ${linhas.join("\n")}`;
 }
 
 /** As regras que pesam num critério da rubrica, para o relatório marcar "critério aprendido com o time". */
-export function regrasDoCriterio(regras: SquadRule[] | undefined, criterioId: string): SquadRule[] {
+export function regrasDoCriterio<R extends SquadRule>(regras: R[] | undefined, criterioId: string): R[] {
   return (regras ?? []).filter((r) => regraAfeta({ criterio: r.criterion }, criterioId));
 }

@@ -271,7 +271,8 @@ describe("entrevista completa por texto (handlers + LLM falso)", () => {
       if (c.nota !== null) assert.ok(c.evidencias.length > 0, "toda nota tem prova");
     }
     const notas = sc.criterios.map((c: { nota: number | null }) => c.nota).filter((n: number | null) => n !== null) as number[];
-    assert.equal(sc.nota_geral, Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10);
+    // Critério que o Totti não provocou fica sem nota (#131); sem nenhuma nota, a geral também é null.
+    assert.equal(sc.nota_geral, notas.length ? Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10 : null);
     assert.equal((await estado(id)).scorecardGerado, true);
     assert.equal((await ler(await scorecardGet(get(`/api/sessoes/${id}/scorecard`), params(id)))).corpo.gerado_em, sc.gerado_em);
 
@@ -329,7 +330,10 @@ describe("finalizar", () => {
     // guardas no caminho real: nota_geral recomputada e fala validada contra a conversa
     assert.equal(a.corpo.nota_geral, 3);
     assert.equal(a.corpo.origem, "llm");
-    assert.equal(a.corpo.criterios[0].evidencias[0].horario !== "2020-01-01T00:00:00.000Z", true);
+    // requisitos/escalabilidade sem provocação do Totti ficam sem nota (#131): confere num critério com prova.
+    const comProva = a.corpo.criterios.find((x: { evidencias: unknown[] }) => x.evidencias.length > 0);
+    assert.ok(comProva, "algum critério mantém prova");
+    assert.equal(comProva.evidencias[0].horario !== "2020-01-01T00:00:00.000Z", true);
     assert.ok(!JSON.stringify(ch.mensagens).includes("FICHA"), "mensagens do usuário não carregam a ficha");
   });
 

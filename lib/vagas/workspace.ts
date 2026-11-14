@@ -34,6 +34,13 @@ export type VagaEmpresa = {
   contexto?: string;
   /** Há quantos dias a vaga foi aberta (relativo, para a demonstração não envelhecer). */
   abertaHaDias: number;
+  /**
+   * Quando a vaga mexeu por último (ms): criação, plano publicado, convite enviado, relatório pronto. Ordena o painel.
+   * Sem valor (vagas de exemplo), vale "agora menos `abertaHaDias`".
+   */
+  atualizadaEm?: number;
+  /** Vaga de exemplo (fixture): na ordem "mais recentes" vem depois das reais. */
+  mockada?: boolean;
   etapa: Etapa;
   resumo?: Resumo;
   /** Quantos se inscreveram, foram convidados, estão fazendo e concluíram a entrevista. */
@@ -133,7 +140,8 @@ function gravar(s: Salvo) {
 }
 
 function todas(s: Salvo): VagaEmpresa[] {
-  return [...s.novas, ...INICIAIS, ...SINTETICAS].map((v) => ({ ...v, ...s.mudancas[v.id] }));
+  const mockadas = [...INICIAIS, ...SINTETICAS].map((v) => ({ ...v, mockada: true }));
+  return [...s.novas, ...mockadas].map((v) => ({ ...v, ...s.mudancas[v.id] }));
 }
 
 /** As vagas e os rascunhos. `null` enquanto ainda não leu o navegador (evita piscar o estado de partida). */
@@ -160,6 +168,17 @@ export function useVagas() {
   }, []);
 
   return { vagas: estado?.vagas ?? null, rascunhos: estado?.rascunhos ?? null, atualizar };
+}
+
+/**
+ * Marca a vaga como mexida agora (sobe no "mais recentes"). Chame quando o plano é publicado (já feito em
+ * `publicarVaga`), um convite sai ou um relatório fica pronto. Só navegador (localStorage); fora dele não faz nada.
+ */
+export function tocarVaga(id: string, quando: number = Date.now()) {
+  if (typeof localStorage === "undefined") return;
+  const s = ler();
+  s.mudancas[id] = { ...s.mudancas[id], atualizadaEm: quando };
+  gravar(s);
 }
 
 /** Lê um rascunho direto do navegador (para abrir o Totti já na conversa salva). */
@@ -242,6 +261,7 @@ export function publicarVaga(rascunhoId: string | null, config: InterviewConfig)
     descricao,
     contexto: r?.contexto,
     abertaHaDias: 0,
+    atualizadaEm: Date.now(),
     etapa: "entrevistas",
     resumo: {
       configId: config.id,
@@ -521,12 +541,21 @@ export const NOME_ORDEM: Record<OrdemVagas, string> = {
   az: "Ordem alfabética (A–Z)",
 };
 
+const DIA_MS = 86_400_000;
+
+/** Quando a vaga mexeu por último; as de exemplo, sem registro, valem "agora menos os dias de abertas". */
+export const atualizadaEmDe = (v: Pick<VagaEmpresa, "atualizadaEm" | "abertaHaDias">, agora = Date.now()) =>
+  v.atualizadaEm ?? agora - v.abertaHaDias * DIA_MS;
+
 /** Comparador da lista; o empate cai no volume de inscritos e depois no nome. */
-export function compararVagas(ordem: OrdemVagas): (a: VagaEmpresa, b: VagaEmpresa) => number {
+export function compararVagas(ordem: OrdemVagas, agora = Date.now()): (a: VagaEmpresa, b: VagaEmpresa) => number {
   const porNome = (a: VagaEmpresa, b: VagaEmpresa) => a.cargo.localeCompare(b.cargo, "pt-BR");
   const porVolume = (a: VagaEmpresa, b: VagaEmpresa) => b.funil.inscritos - a.funil.inscritos || porNome(a, b);
   if (ordem === "az") return porNome;
-  if (ordem === "recentes") return (a, b) => a.abertaHaDias - b.abertaHaDias || porVolume(a, b);
+  // Mais recentes: as reais antes das de exemplo; dentro de cada grupo, a que mexeu por último primeiro.
+  if (ordem === "recentes")
+    return (a, b) =>
+      Number(!!a.mockada) - Number(!!b.mockada) || atualizadaEmDe(b, agora) - atualizadaEmDe(a, agora) || porVolume(a, b);
   if (ordem === "pendentes") return (a, b) => novosDa(b) - novosDa(a) || porVolume(a, b);
   return porVolume;
 }

@@ -25,6 +25,7 @@
     "test:armazenamento": "tsx --test lib/storage/__tests__/kv.test.ts lib/agente/armazenamento/__tests__/*.test.ts",
     "test:supabase": "tsx --env-file=.env --test lib/storage/__tests__/supabase.integration.test.ts",
     "test:painel": "tsx --test lib/painel/__tests__/*.test.ts",
+    "test:relatorio": "tsx --test lib/relatorio/__tests__/*.test.ts",
     "test:resultados": "tsx --test lib/vagas/__tests__/*.test.ts app/api/__tests__/resultados.test.ts",
     "test:execucao": "tsx --test lib/execution/__tests__/*.test.ts",
     "test:email": "tsx --test lib/email/__tests__/*.test.ts",

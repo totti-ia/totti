@@ -143,6 +143,10 @@ export async function executarCenarioScorecard(c: CenarioScorecard, modeloReal?:
         primeiro.evidencias = [{ tipo: "desenho", horario: "inválido", texto: null, elementos: [], imagem: `imagem 1 (${horarioDesenho})` }]; break;
       case "encerramento_precoce": break;
     }
+    // O Totti puxou o escopo e a escala: critérios que dependem da provocação dele só ganham nota assim (ver NAO_PROVOCADO).
+    const antes = (await repo.obter(id))!;
+    await repo.salvarEstado(id, { ...antes.estado, escopoProvocadoEm: T0 + 5000, escopoRedirecionamentos: 1,
+      conversa: [...antes.estado.conversa, { quem: "agente", texto: "E se o volume de acessos crescer dez vezes, o que muda?", em: T0 + 6000 }] });
     relogio = T0 + (c.variante === "encerramento_precoce" ? 25_000 : 1_800_000);
     const final = await finalizarHandler(post(`/api/sessoes/${id}/finalizar`, {}), params);
     assert.equal(final.status, 200, await final.clone().text());
@@ -205,7 +209,12 @@ export function montarCasoEncerradoPeloCandidato(): {
   // 3 + 6 + 5 + 1 = 15 minutos previstos.
   let estado = estadoInicial({ criterios: kit.criterios.map(c => c.id), tempos: { REQUISITOS: 180, ALTO_NIVEL: 360, APROFUNDAMENTO: 300, FECHAMENTO: 60 } });
   estado = { ...estado, iniciadaEm: T_CASO, fase: "ENCERRADA",
-    conversa: falas.map(f => ({ quem: "candidato" as const, texto: f.texto, em: Date.parse(f.horario) })),
+    // O Totti puxou o escopo e a escala: sem isso, os critérios que dependem dele ficam sem nota (NAO_PROVOCADO).
+    escopoProvocadoEm: Date.parse(mmss(1, 0)), escopoRedirecionamentos: 1,
+    conversa: [
+      ...falas.map(f => ({ quem: "candidato" as const, texto: f.texto, em: Date.parse(f.horario) })),
+      { quem: "agente" as const, texto: "E se o volume de acessos crescer dez vezes, o que muda no desenho?", em: Date.parse(mmss(6, 0)) },
+    ],
     observacoes: [{
       criterio: "comunicacao", sinal: "negativo", espontaneo: false, fase: "APROFUNDAMENTO", em: Date.parse(mmss(7, 24)),
       evidencia: "Candidato pediu repetições sucessivas e demonstrou dificuldade em acompanhar os questionamentos",
