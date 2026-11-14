@@ -118,6 +118,8 @@ ${adaptation}${learning}
 - score = null só quando a sessão não deu NENHUMA oportunidade de observar o critério (nem pergunta, nem fala, nem código que mostre). Comunicação é observável em qualquer conversa em que ele explica ou responde algo de conteúdo; se as únicas falas dele foram pedir repetição ou esclarecimento, a nota de comunicação é null.
 - Colagem grande de código é um alerta: diga isso em concerns se houver. Código colado só conta como mérito (abordagem, bordas) se ele explicar direito por que funciona; se disse que copiou ou não soube explicar, abordagem no máximo 2.
 - Os testes escondidos rodaram depois que a sessão acabou e já viraram a nota de corretude: não os cite como evidência de outro critério.
+- Os "Sinais objetivos" (execuções, testes escondidos, dicas, colagens) são FATOS medidos pelo sistema. Nunca os contradiga: com execuções, não diga que ele não rodou ou não testou o código; com testes escondidos reprovados, não diga que a solução está correta. A recomendação final sai deles e não é sua.
+- "Quando perguntado", "ao ser perguntado" e parecidos só valem se o entrevistador fez a pergunta ANTES, na linha do tempo ou na cobertura. Sem pergunta, descreva o que ele fez por conta própria.
 - Cada evidência cita o momento com o mm:ss EXATO de uma linha da sessão (o que vem entre colchetes). Nunca invente um tempo.
 - Evidência é um fato observável, curto, na terceira pessoa ("Explicou que o loop interno começa em i+1 para não somar o elemento com ele mesmo."). Sem adjetivos vazios.
 - summary: 2 ou 3 frases para a recrutadora, sem jargão desnecessário.
