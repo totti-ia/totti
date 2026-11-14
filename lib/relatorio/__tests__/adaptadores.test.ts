@@ -29,7 +29,8 @@ describe("relatorioDoQuadro", () => {
     assert.equal(r.recomendacao, RELATORIO_EXEMPLO.recomendacao);
     assert.equal(r.notaGeral, RELATORIO_EXEMPLO.notaGeral);
     assert.equal(r.criterios.length, RELATORIO_EXEMPLO.criterios.length);
-    assert.deepEqual(r.eliminatorios, []);
+    // O exemplo do quadro traz as regras de reprovação do plano (frente A da #131).
+    assert.equal(r.eliminatorios.length, RELATORIO_EXEMPLO.eliminatorios?.length ?? 0);
   });
 
   it("a prova de fala vira prova com o minuto em milissegundos", () => {
