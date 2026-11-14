@@ -8,6 +8,7 @@ import {
 } from "../empecilho";
 import { candidatasDoPedidoDeFim } from "../fechamento";
 import { runInterviewerTurn } from "../interviewer";
+import { buildInterviewerUser, linhaDoFechamentoNaIde, type InterviewerTurnInput } from "../prompts/interviewer";
 import { assuntoJaExplorado, cortarAberturaDeMolde, trechosParaPrompt } from "../perguntaDaAnalise";
 import { decideBlip, estadoDaBola, lastBlipDecision, motivoDoConteudo, tetoDaPerguntaNaIde } from "../policy";
 import { SISTEMA_DO_FILTRO } from "../spoilerFilter";
@@ -49,6 +50,11 @@ afterEach(() => {
 });
 
 const base = { highlight: null, end: false, gaveHint: false, evidence: null, challenge: null, probeOutcome: null };
+/** O mínimo para montar a mensagem do turno do entrevistador. */
+const entradaMinima: InterviewerTurnInput = {
+  mode: "candidate", fase: "implementando", elapsedLabel: "10:00", remainingLabel: "20:00", language: "python",
+  numberedCode: "1 | pass", uncovered: [], previousConversations: "", messages: [{ role: "candidate", text: "não" }],
+};
 const CODIGO = "def two_sum(nums, target):\n    vistos = {}\n    for i, n in enumerate(nums):\n        falta = target - n\n        if falta in vistos:\n            return [vistos[falta], i]\n        vistos[n] = i\n";
 
 function sessao(nome: string, durationMin = 30): { s: SessionState; relogio: { agora: number } } {
@@ -168,6 +174,27 @@ describe("fim pedido pelo candidato (itens 8 e 9)", () => {
     assert.equal(r.despedida, undefined);
     assert.match(r.reply, /^Lista vazia devolve uma lista vazia\./);
     assert.match(r.reply, /\?$/);
+  });
+
+  test("na última palavra, o modelo sabe a etapa e o \"não\" que ele marca como fim despede (acréscimo do #135)", async () => {
+    const { s, relogio } = sessao("ultima-palavra");
+    escrever(s, 30_000);
+    relogio.agora = 600_000;
+    saidas.push({ ...base, respond: true, concluded: false, finish: true, candidatoPerguntou: true, reply: "Lista vazia devolve uma lista vazia." });
+    const r1 = await runInterviewerTurn(s, { messages: [{ role: "candidate", text: "pode encerrar, mas e se a lista vier vazia" }] });
+    assert.equal(s.fechamento?.etapa, "ultima_palavra");
+    assert.match(buildInterviewerUser({ ...entradaMinima, fechamento: s.fechamento?.etapa }), /Fechamento da entrevista: .*finish = true/);
+    saidas.push({ ...base, respond: false, concluded: false, finish: true, candidatoPerguntou: false, reply: "" });
+    const r2 = await runInterviewerTurn(s, { messages: [{ role: "candidate", text: "pode encerrar, mas e se a lista vier vazia" }, { role: "agent", text: r1.reply }, { role: "candidate", text: "não" }] });
+    assert.equal(r2.despedida, true);
+  });
+
+  test("a linha da etapa do fechamento só entra na última palavra e nas perguntas finais", () => {
+    assert.equal(linhaDoFechamentoNaIde(undefined), "");
+    assert.equal(linhaDoFechamentoNaIde("anuncio"), "");
+    assert.match(linhaDoFechamentoNaIde("ultima_palavra"), /candidatoPerguntou = true/);
+    assert.match(linhaDoFechamentoNaIde("perguntas_finais"), /sem pergunta nova/);
+    assert.doesNotMatch(buildInterviewerUser(entradaMinima), /Fechamento da entrevista/);
   });
 
   test("as perguntas do pedido de fim são só a revisão da abordagem e os critérios que faltam", () => {

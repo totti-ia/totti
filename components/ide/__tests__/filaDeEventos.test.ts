@@ -75,3 +75,13 @@ test("parar encerra os reenvios", async () => {
   await fila.enfileirar("run");
   assert.equal(tentativas, 1);
 });
+
+test("retomar depois de parar volta a enviar (StrictMode desmonta e monta de novo na entrada)", async () => {
+  const enviados: string[] = [];
+  const fila = new FilaDeEventos<string, void>({ enviar: async (e) => { enviados.push(e); } });
+  fila.parar();
+  await fila.enfileirar("parado");
+  fila.retomar();
+  await fila.enfileirar("run");
+  assert.deepEqual(enviados, ["run"]);
+});

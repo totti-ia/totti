@@ -13,6 +13,7 @@ import { dado, dadoEmLinha, REGRA_DADOS } from "@/lib/seguranca/injecao";
 import { blocoDaPersona } from "@/lib/totti/persona";
 import { avisoDeFalaCortada } from "@/lib/totti/interrupcao";
 import { candidatoPerguntou as perguntouNaFala } from "@/lib/totti/turno";
+import type { EtapaDoFechamento } from "@/lib/totti/fechamento";
 
 export function buildInterviewerSystem(config: InterviewConfig, problem: Problem): string {
   const pub = problem.public;
@@ -201,6 +202,22 @@ export interface InterviewerTurnInput {
   /** Conversas anteriores já formatadas (pergunta + falas), pra dar continuidade e não repetir. */
   previousConversations: string;
   messages: ChatMessage[];
+  /** A etapa do fechamento comum em andamento (lib/totti/fechamento.ts); ausente fora dele. */
+  fechamento?: EtapaDoFechamento;
+}
+
+/**
+ * O que o modelo precisa saber da etapa do fechamento. Com `candidatoPerguntou` na saída, quem decide a última palavra é
+ * a leitura do modelo, não uma lista de palavras (lib/totti/fechamento.ts): por isso ele precisa saber quando marcar
+ * `finish` e `candidatoPerguntou`. A sequência (próxima pergunta, despedida) é do sistema. Mesma ideia do quadro
+ * (`linhaDoFechamento`, lib/agente/prompts/entrevistador-v2.ts).
+ */
+export function linhaDoFechamentoNaIde(etapa: EtapaDoFechamento | undefined): string {
+  if (etapa !== "ultima_palavra" && etapa !== "perguntas_finais") return "";
+  const agora = etapa === "ultima_palavra"
+    ? `você perguntou se ele quer acrescentar algo. Se ele disser que não tem mais nada ("não", "nada", "pode encerrar", "é isso"), finish = true, respond = false e reply "". Se ele perguntar algo, candidatoPerguntou = true e responda. Se ele trouxer um assunto, responda em até duas frases, sem pergunta nova`
+    : "ele responde às suas perguntas finais. Reaja em uma frase curta e neutra, sem pergunta nova (a próxima pergunta é escolhida pelo sistema); só se ele não entendeu a pergunta, explique-a em uma frase. Se ele perguntar algo, candidatoPerguntou = true e responda";
+  return `\nFechamento da entrevista: ${agora}. Não mande voltar ao código e não se despeça: a despedida é do sistema. Se ele pedir para encerrar, finish = true.`;
 }
 
 /**
@@ -250,7 +267,7 @@ Critérios ainda não explorados: ${input.uncovered.length ? input.uncovered.joi
     ? `\nATENÇÃO: a última fala do candidato tem uma PERGUNTA PARA VOCÊ: respond = true, e a sua fala começa respondendo a ela, de forma direta (sem avaliar o código dele). Dúvida sobre o enunciado ou sobre o que uma linha dele faz (o que a linha faz, não se está certa) se responde. Só depois, se couber, uma pergunta sua.`
     : "";
   return `Modo: ${input.mode}. Fase: ${input.fase}. Tempo de sessão: ${input.elapsedLabel} (faltam ${input.remainingLabel}). Linguagem: ${input.language}.
-${blip}${mudanca}
+${blip}${mudanca}${linhaDoFechamentoNaIde(input.fechamento)}
 Dica leve disponível: ${input.availableHint ?? dicaSemValor(input.hintsPolicy)}
 Notas internas do analista: ${dadoEmLinha("leitura_do_analista", input.analystNotes ?? "", "(nenhuma)")}
 Hipótese interna sobre o que ele está tentando fazer agora (contexto seu, o candidato não vê; use só para escolher a pergunta certa, NUNCA a dê como resposta pronta, não a recite nem a confirme): ${dadoEmLinha("hipotese", input.hypothesis ?? "", "(nenhuma)")}

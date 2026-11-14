@@ -216,6 +216,7 @@ async function turno(
       conversasFeitas(session).filter((c) => c.pergunta !== found?.question.question && (found || c.pergunta !== CONVERSA_LIVRE)),
     ),
     messages: req.messages,
+    fechamento: session.fechamento?.etapa,
   };
 
   const perguntou = candidatoPerguntou(req.messages);

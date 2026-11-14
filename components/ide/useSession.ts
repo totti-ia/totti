@@ -85,7 +85,11 @@ export function useSession(
     },
     definitivo: (err) => err instanceof ErroDefinitivo,
   });
-  useEffect(() => () => filaRef.current?.parar(), []);
+  // Retoma ao montar: no StrictMode a limpeza roda uma vez logo na entrada, e a fila (guardada no ref) ficaria parada.
+  useEffect(() => {
+    filaRef.current?.retomar();
+    return () => filaRef.current?.parar();
+  }, []);
 
   const sendEvent = useCallback(
     async (input: EventInput): Promise<void> => {

@@ -51,6 +51,14 @@ export class FilaDeEventos<E = unknown, R = unknown> {
     this.parada = true;
   }
 
+  /**
+   * Volta a enviar depois de `parar`. O React em desenvolvimento (StrictMode) desmonta e monta o componente de novo
+   * logo na entrada: sem isto, a limpeza da primeira montagem deixava a fila parada para sempre e nada era enviado.
+   */
+  retomar(): void {
+    this.parada = false;
+  }
+
   private async tentar(evento: E): Promise<void> {
     const esperas = this.o.esperasMs ?? ESPERAS_MS;
     const dormir = this.o.dormir ?? dormirDeVerdade;
