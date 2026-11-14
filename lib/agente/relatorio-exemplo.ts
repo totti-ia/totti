@@ -43,7 +43,7 @@ export const RELATORIO_EXEMPLO: RelatorioVisto = {
       significado: "Reconhece o gargalo quando provocado, mas a solução fica vaga.",
       justificativa:
         "O banco único só foi questionado depois da pergunta do entrevistador. A resposta trouxe um cache, sem dizer o que vai nele nem como é invalidado.",
-      aprendidoComOTime: [{ texto: "Penaliza quem escolhe o banco sem estimar o volume de escrita", efeito: "penaliza" }],
+      aprendidoComOTime: [{ texto: "Penaliza quem escolhe o banco sem estimar o volume de escrita", efeito: "penaliza", origem: "vaga" }],
       provas: [
         { tipo: "desenho", momento: "12:05", elementos: ["Postgres"], imagem: null, observacao: "banco único, sem cache, recebendo toda a leitura" },
         { tipo: "fala", momento: "13:20", texto: "Dá para colocar um Redis na frente... guardando os mais acessados." },
@@ -106,6 +106,14 @@ export const RELATORIO_EXEMPLO: RelatorioVisto = {
     desenhosDepois: 3,
     falasDepois: 5,
   },
+  eliminatorios: [
+    {
+      regra: "Cobrar o cliente duas vezes",
+      status: "atendida",
+      justificativa: "Explicou que a gravação usa uma chave de idempotência, então uma nova tentativa não cobra de novo.",
+      provas: [{ tipo: "fala", momento: "21:10", texto: "Se der timeout, eu tento de novo com a mesma chave, aí não cobra duas vezes." }],
+    },
+  ],
 };
 
 const SEM_PROVA = "Sem evidência suficiente para atribuir nota a este critério.";

@@ -2,7 +2,7 @@
 // Só servidor: troca ids por nomes legíveis (critério, elemento do desenho) e liga cada prova
 // de desenho à imagem do quadro daquele momento. Nada da ficha ou dos sinais esperados sai daqui.
 import type { EventoArmazenado, SessaoArmazenada } from "./armazenamento/repositorio";
-import type { Kit, Problema } from "./kits/tipos";
+import { kitComRubricaDaVaga, type Kit, type Problema } from "./kits/tipos";
 import { NIVEIS_ADAPTACAO, type Recomendacao, type Scorecard } from "./scorecard";
 
 export type ProvaVista =
@@ -25,7 +25,15 @@ export type CriterioVisto = {
   justificativa: string;
   provas: ProvaVista[];
   /** Regras da squad que pesaram neste critério ("critério aprendido com o time"). */
-  aprendidoComOTime?: { texto: string; efeito: "valoriza" | "penaliza" }[];
+  aprendidoComOTime?: { texto: string; efeito: "valoriza" | "penaliza"; origem?: "vaga" | "empresa" }[];
+};
+
+/** Regra de reprovação da vaga ("cobrar duas vezes") e se o candidato a cumpriu. Fora da nota. */
+export type EliminatorioVisto = {
+  regra: string;
+  status: "atendida" | "violada" | "nao_observada";
+  justificativa: string;
+  provas: ProvaVista[];
 };
 
 /** A mudança no problema que o entrevistador trouxe e como o candidato se adaptou (fora da nota geral). */
@@ -65,6 +73,8 @@ export type RelatorioVisto = {
   ajustes: string[];
   demonstracao: boolean;
   adaptacao: AdaptacaoVista | null;
+  /** Regras de reprovação do plano da vaga. Ausente quando o plano não tem. */
+  eliminatorios?: EliminatorioVisto[];
 };
 
 const MARCAS_FINAIS_DE_CONEXAO = [" (ponta perto, sem encostar)", " (tracejada)", " (seta solta)", " (linha solta)"];
@@ -165,7 +175,9 @@ export function montarRelatorio(p: {
   eventos: EventoArmazenado[];
   imagens: { numero: number; horario: string }[];
 }): RelatorioVisto {
-  const { sessao, scorecard, kit, eventos } = p;
+  const { sessao, scorecard, eventos } = p;
+  // Os critérios do relatório são os da vaga (plano da sessão); a rubrica fixa do kit só vale sem plano.
+  const kit = kitComRubricaDaVaga(p.kit, sessao.estado.plano);
   const ordenados = [...eventos].sort((a, b) => Date.parse(a.horario) - Date.parse(b.horario));
   // A entrevista começa quando sai da espera (primeiro evento de fase), não quando a página abriu.
   const primeiraFase = ordenados.find((e) => e.tipo === "fase");
@@ -200,7 +212,7 @@ export function montarRelatorio(p: {
       nota,
       significado: nota !== null && def ? def.niveis[nota as 1 | 2 | 3 | 4] ?? null : null,
       justificativa: c.justificativa,
-      aprendidoComOTime: (c.regras_squad ?? []).map((r) => ({ texto: r.text, efeito: r.effect })),
+      aprendidoComOTime: (c.regras_squad ?? []).map((r) => ({ texto: r.text, efeito: r.effect, ...(r.origin ? { origem: r.origin } : {}) })),
       provas: c.evidencias.map((e): ProvaVista =>
         e.tipo === "fala"
           ? { tipo: "fala", momento: formatarMomento(e.horario, inicio), texto: e.texto ?? "" }
@@ -252,5 +264,13 @@ export function montarRelatorio(p: {
       desenhosDepois: scorecard.adaptacao.desenhos_depois,
       falasDepois: scorecard.adaptacao.falas_depois,
     } : null,
+    ...(scorecard.eliminatorios?.length ? {
+      eliminatorios: scorecard.eliminatorios.map((e): EliminatorioVisto => ({
+        regra: e.regra,
+        status: e.status,
+        justificativa: e.justificativa,
+        provas: e.evidencias.map((ev): ProvaVista => ({ tipo: "fala", momento: formatarMomento(ev.horario, inicio), texto: ev.texto ?? "" })),
+      })),
+    } : {}),
   };
 }

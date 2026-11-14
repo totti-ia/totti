@@ -16,7 +16,20 @@ export const Criterio = z.object({
  * em modo estrito e não deve ser forçado a preenchê-lo. Quando true, o critério só se prova com fala do
  * candidato (desenho não vale) e não tem pergunta própria: aparece nas respostas aos outros critérios.
  */
-export type Criterio = z.infer<typeof Criterio> & { provaSoPorFala?: boolean };
+export type Criterio = z.infer<typeof Criterio> & {
+  provaSoPorFala?: boolean;
+  /** O que a recrutadora escreveu sobre o critério (só critérios do plano da vaga). Dado, não instrução. */
+  descricao?: string;
+  /** Peso dado pela recrutadora (só critérios do plano). Informa o prompt; a nota geral segue a média simples. */
+  peso?: number;
+  /** O critério é do plano da vaga (o `id` é o nome exato dele). Falso/ausente: rubrica fixa do kit. */
+  doPlano?: boolean;
+  /** O critério só tem o que avaliar se o Totti puxou o assunto: sem a provocação na linha do tempo, não há nota. */
+  provocadoPor?: Provocacao;
+};
+
+/** O que o Totti precisa puxar para o critério poder ser avaliado (o candidato não é julgado por só responder quando perguntado). */
+export type Provocacao = "escopo" | "mudanca" | "falhas";
 
 /** Pergunta provável do candidato e a resposta oficial (a "ficha de requisitos ocultos"). */
 export const ItemFicha = z.object({ pergunta: z.string(), resposta: z.string() });
@@ -141,4 +154,73 @@ export function kitSemTermosInternos<K extends Pick<Kit, "criterios">>(kit: K): 
       return { ...c, nome: nome || "Comunicação", ...(criterioSoPorFala(c) ? { provaSoPorFala: true } : {}) };
     }),
   };
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// Rubrica da vaga: os critérios do plano da recrutadora (a rubrica fixa do kit é só a reserva)
+// ---------------------------------------------------------------------------------------------
+
+/** O que o scorecard lê do plano da sessão (`PlanoDaSessao`, lib/agente/plano.ts). Campos que ainda não existem lá são opcionais. */
+export type PlanoParaRubrica = {
+  criterios?: { nome: string; descricao?: string; peso?: number; niveis?: Criterio["niveis"] }[];
+  /** Regras de reprovação ("cobrar duas vezes") que a recrutadora disse na pré-entrevista. */
+  eliminatorios?: string[];
+};
+
+/** Escala padrão quando o plano não traz níveis gerados: vale para qualquer critério, sem inventar conteúdo. */
+export const NIVEIS_PADRAO_DO_PLANO: Criterio["niveis"] = {
+  1: "Não mostrou o comportamento esperado neste critério",
+  2: "Mostrou em parte, com lacunas ou só de forma vaga",
+  3: "Mostrou com clareza e justificou o que fez",
+  4: "Mostrou com profundidade: comparou alternativas e antecipou os pontos de atenção",
+};
+
+const sem = (t: string) => semAcento(t);
+
+/** Que provocação do Totti o critério do plano exige, lida do nome e da descrição. */
+export function provocacaoDoCriterio(c: { id?: string; nome: string; descricao?: string; provocadoPor?: Provocacao }): Provocacao | undefined {
+  if (c.provocadoPor) return c.provocadoPor;
+  const t = sem(c.nome); // só o nome: a descrição cita falhas e escala em critérios que não dependem de provocação
+  if (/(escopo|requisit)/.test(t)) return "escopo";
+  if (/(falha|idempot|resilien|confiab|gargalo|tolerancia a|disponibilid|reprocess)/.test(t)) return "falhas";
+  if (/(escalab|mudanc|adapta|pressao|evolu[ci])/.test(t)) return "mudanca";
+  return undefined;
+}
+
+/** Os critérios do plano como critérios do scorecard. O `id` é o nome exato (é o `criterio` das observações do quadro). */
+export function criteriosDoPlano(plano: PlanoParaRubrica | null | undefined): Criterio[] {
+  const vistos = new Set<string>();
+  const saida: Criterio[] = [];
+  for (const c of plano?.criterios ?? []) {
+    const nome = c.nome.trim();
+    if (!nome || vistos.has(nome)) continue;
+    vistos.add(nome);
+    const descricao = c.descricao?.trim() || undefined;
+    const provocadoPor = provocacaoDoCriterio({ nome, descricao });
+    saida.push({
+      id: nome,
+      nome,
+      niveis: c.niveis ?? NIVEIS_PADRAO_DO_PLANO,
+      doPlano: true,
+      ...(descricao ? { descricao } : {}),
+      ...(c.peso !== undefined ? { peso: c.peso } : {}),
+      ...(provocadoPor ? { provocadoPor } : {}),
+    });
+  }
+  return saida;
+}
+
+/**
+ * O kit com a rubrica DA VAGA: com plano, `criterios` são os do plano; sem plano (ou sem critérios nele), o kit volta
+ * como veio (a rubrica fixa é a reserva). Idempotente. Só servidor.
+ */
+export function kitComRubricaDaVaga<K extends Pick<Kit, "criterios">>(kit: K, plano: PlanoParaRubrica | null | undefined): K {
+  const doPlano = criteriosDoPlano(plano);
+  return doPlano.length ? { ...kit, criterios: doPlano } : kit;
+}
+
+/** As regras de reprovação do plano (sem vazias nem repetidas). */
+export function eliminatoriosDoPlano(plano: PlanoParaRubrica | null | undefined): string[] {
+  return [...new Set((plano?.eliminatorios ?? []).map((r) => r.trim()).filter(Boolean))];
 }

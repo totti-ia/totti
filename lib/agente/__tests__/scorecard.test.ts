@@ -145,6 +145,8 @@ describe("scorecard: auxiliares", () => {
     const { estado } = fontes();
     const comObs = {
       ...estado,
+      // O Totti puxou o assunto da carga: sem isso a escalabilidade não teria nota.
+      conversa: [...estado.conversa, { quem: "agente" as const, texto: "E se o volume de acessos crescer dez vezes?", em: Date.parse(T1) }],
       observacoes: [
         { criterio: "escalabilidade", sinal: "negativo" as const, espontaneo: false, evidencia: "banco único", em: Date.parse(T2), fase: "APROFUNDAMENTO" as const,
           desenho: { horario: T1, grafo: GRAFO } },
@@ -320,7 +322,7 @@ describe("scorecard: regressões de proveniência", () => {
     const itens = sc.pontos_a_aprofundar.join(" | ");
     assert.ok(itens.includes("Componentes e fluxo: sem prova"));
     assert.ok(itens.includes("Dados e consistência: sem prova"));
-    assert.ok(itens.includes("Requisitos e escopo: sem prova"), "não expande duas vezes um nome já legível");
+    assert.ok(itens.includes("Requisitos e escopo: o Totti não provocou este ponto"), "não expande duas vezes um nome já legível; escopo sem provocação não é falta do candidato");
     assert.ok(sc.pontos_a_aprofundar.every(t => !t.startsWith("Aprofundar")), "nunca 'Aprofundar X.'");
     assert.ok(!sc.pontos_a_aprofundar.join(" ").includes("componentes_fluxo"));
   });

@@ -11,7 +11,7 @@ import { ErroLlm } from "../llm/cliente";
 import { resolverAvaliacao } from "../kits";
 import type { SessaoArmazenada } from "../armazenamento";
 import { atualizarNoIndice, cartaoDoScorecard } from "../resultados";
-import { gerarScorecard, gerarScorecardFalso, type Scorecard } from "../scorecard";
+import { gerarScorecard, gerarScorecardFalso, kitDaSessao, type Scorecard } from "../scorecard";
 import { criteriosSemEvidencia, transicionar } from "../sessao/estado";
 import { contexto, type Contexto } from "./contexto";
 import { erro, json, type ParamsId } from "./http";
@@ -133,7 +133,7 @@ async function gerarEGuardar(ctx: Contexto, id: string, sessao: SessaoArmazenada
         state: "done",
         overallScore: sc.nota_geral ?? undefined,
         recommendation: sc.recomendacao,
-        cartao: cartaoDoScorecard(sc, alvo.kit),
+        cartao: cartaoDoScorecard(sc, kitDaSessao(alvo.kit, estado)),
       });
       return sc;
     } catch (e) {

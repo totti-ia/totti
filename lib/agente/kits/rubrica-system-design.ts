@@ -5,6 +5,7 @@ export const RUBRICA_SYSTEM_DESIGN: Criterio[] = [
   {
     id: "requisitos",
     nome: "Requisitos e escopo",
+    provocadoPor: "escopo",
     niveis: {
       1: "Começou a desenhar sem perguntar nada",
       2: "Perguntou pouco, esqueceu a escala",
@@ -25,6 +26,7 @@ export const RUBRICA_SYSTEM_DESIGN: Criterio[] = [
   {
     id: "escalabilidade",
     nome: "Escalabilidade",
+    provocadoPor: "mudanca",
     niveis: {
       1: "Não considerou carga",
       2: "Citou escalar sem dizer como",
