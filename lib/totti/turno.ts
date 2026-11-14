@@ -177,6 +177,10 @@ export type SaidaDoLiveCoding = {
   gaveHint?: boolean;
   highlight?: unknown;
   probeOutcome?: { kind: string } | null;
+  /** Ele pediu tempo para pensar (#130, item 7): não é resposta nem "não sei". */
+  pediuTempo?: boolean;
+  /** O modelo leu que ele perguntou (ver `LeituraDoTurno.candidatoPerguntou`; #130, item 8). */
+  candidatoPerguntou?: boolean;
 };
 
 /** Os campos da saída do quadro (`SaidaPerguntar`) que a leitura usa. O resto passa sem ser lido. */
@@ -213,10 +217,14 @@ export function deSaidaDoLiveCoding(saida: SaidaDoLiveCoding, situacao: Situacao
   const intencao: Intencao =
     saida.finish === true ? "encerrar"
     : saida.concluded === true ? "concluiu"
+    : saida.pediuTempo === true ? "pensando_alto"
     : sondagem === "nao_conseguiu" ? "nao_sabe"
     : sondagem === "recusou" ? "pulou"
     : intencaoSemMarca(responder, situacao);
-  return leitura({ responder, texto: saida.reply, intencao, concluiu: saida.concluded === true, encerrar: saida.finish === true, apontar: saida.highlight });
+  return leitura({
+    responder, texto: saida.reply, intencao, concluiu: saida.concluded === true, encerrar: saida.finish === true, apontar: saida.highlight,
+    ...(saida.candidatoPerguntou !== undefined ? { candidatoPerguntou: saida.candidatoPerguntou } : {}),
+  });
 }
 
 export function deSaidaDoQuadro(saida: SaidaDoQuadro, situacao: SituacaoDoTurno): LeituraDoTurno {

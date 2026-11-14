@@ -2,13 +2,14 @@ import { after, NextResponse } from "next/server";
 import { runAnalyst } from "@/lib/agents/analyst";
 import { disparaAnalise } from "@/lib/agents/gatilhos";
 import { startEvaluation, waitForEvaluation } from "@/lib/agents/evaluator";
-import { decideBlip, enqueueCola, enqueueKickoff } from "@/lib/agents/policy";
+import { faseDaEntrevista } from "@/lib/agents/fase";
+import { decideBlip, enqueueCola, enqueueKickoff, enqueueRunFalhou } from "@/lib/agents/policy";
 import { resolveConfig } from "@/lib/config/store";
 import { prewarmPyodide } from "@/lib/execution/pyodide-node";
 import { EventsResponse, SessionEvent, type InterviewConfig } from "@/lib/contracts";
 import { problems } from "@/lib/problems";
 import { guardarSessao, sessaoViva } from "@/lib/session/persistencia";
-import { appendEvent, getOrCreateSession } from "@/lib/session/store";
+import { appendEvent, eventoRepetido, getOrCreateSession } from "@/lib/session/store";
 import { comRegrasDaSquad } from "@/lib/squad-memory/config";
 import { hidratarSquadMemory } from "@/lib/squad-memory/store";
 import { hasProblem } from "@/problems";
@@ -46,6 +47,11 @@ export async function POST(request: Request) {
   // Outra instância pode ter a sessão (Vercel): restaura antes de criar uma nova por cima.
   if (event.type !== "session_started") await sessaoViva(event.sessionId);
   const session = getOrCreateSession(event.sessionId, config);
+  // Reenvio da fila da IDE (o evento chegou, mas a resposta se perdeu): já está na linha do tempo, não entra de novo.
+  if (eventoRepetido(session, event)) {
+    const response: EventsResponse = { fase: faseDaEntrevista(session) };
+    return NextResponse.json(response);
+  }
   appendEvent(session, event);
   if (session.fechamento && session.fechamentoCodigoInicial !== undefined) {
     const suspender = voltouATrabalhar(session.fechamento, event, session.fechamentoCodigoInicial);
@@ -69,6 +75,8 @@ export async function POST(request: Request) {
   // Colou um bloco: a pergunta sobre ele entra na fila na hora, sem LLM. A análise do código novo roda depois da
   // resposta: esperar por ela (6 a 15 s) atrasava a pergunta que já está pronta.
   const colou = event.type === "paste" && enqueueCola(session, event);
+  // Rodou e falhou: a fala curta sobre o resultado entra na fila na hora; o Totti nunca deixa o run passar calado.
+  if (event.type === "run") enqueueRunFalhou(session, event);
   if (colou) {
     after(() => runAnalyst(session, event).then(() => guardarSessao(session)).catch((err) => console.error("[events] analista falhou:", err)));
   } else if (disparaAnalise(event, session)) {
@@ -83,6 +91,7 @@ export async function POST(request: Request) {
   const { blip, dismissBlipId } = decideBlip(session, event.t);
   // Snapshots e pausas são frequentes: gravam depois da resposta. Início e fim já gravaram antes.
   after(() => guardarSessao(session));
-  const response: EventsResponse = { blip, dismissBlipId };
+  const response: EventsResponse = { blip, dismissBlipId, fase: faseDaEntrevista(session) };
+  if (event.type === "run") console.info(`[events] run recebido (${event.result.passed}/${event.result.total}) na sessão ${event.sessionId.slice(0, 8)}`);
   return NextResponse.json(response);
 }

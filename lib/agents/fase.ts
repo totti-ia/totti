@@ -4,7 +4,7 @@
  * código (pelos eventos), não o LLM: estável, barato e igual entre execuções.
  */
 import { allPassed } from "@/lib/agents/policy";
-import type { SessionEvent } from "@/lib/contracts";
+import type { FaseDaEntrevista, SessionEvent } from "@/lib/contracts";
 import { latestCode } from "@/lib/session/store";
 import type { SessionState } from "@/lib/session/types";
 import { getProblem } from "@/problems";
@@ -16,7 +16,7 @@ import { getProblem } from "@/problems";
  * funcionando: o último run passou em tudo e ele não mexeu depois.
  * otimizando: já funcionou e ele voltou a mexer (sozinho ou num desafio que topou).
  */
-export type Fase = "entendendo" | "implementando" | "depurando" | "funcionando" | "otimizando";
+export type Fase = FaseDaEntrevista;
 
 type RunEvent = Extract<SessionEvent, { type: "run" }>;
 

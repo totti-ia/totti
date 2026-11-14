@@ -62,16 +62,38 @@ export function getOrCreateSession(sessionId: string, config: InterviewConfig = 
   return session;
 }
 
+/**
+ * Eventos que a IDE reenvia até o servidor confirmar (components/ide/useSession.ts): o código, a colagem, o run e o
+ * fim. Um reenvio pode chegar depois de eventos mais novos, então eles entram na linha do tempo na ordem do `t`.
+ */
+const EVENTOS_REENVIADOS = new Set<SessionEvent["type"]>(["snapshot", "paste", "run", "session_ended"]);
+
+/** O mesmo evento já está na linha do tempo (o reenvio chegou depois de o primeiro envio já ter entrado). */
+export function eventoRepetido(session: SessionState, event: SessionEvent): boolean {
+  if (!EVENTOS_REENVIADOS.has(event.type)) return false;
+  return session.events.some((e) => e.type === event.type && e.t === event.t);
+}
+
+/** Posição para inserir pelo `t`: depois do último que não é mais novo (no caso comum, o fim). */
+function posicaoPorT<T extends { t: number }>(lista: T[], t: number): number {
+  let i = lista.length;
+  while (i > 0 && lista[i - 1].t > t) i--;
+  return i;
+}
+
 export function appendEvent(session: SessionState, event: SessionEvent): void {
-  session.events.push(event);
+  if (EVENTOS_REENVIADOS.has(event.type)) session.events.splice(posicaoPorT(session.events, event.t), 0, event);
+  else session.events.push(event);
 
   switch (event.type) {
     case "session_started":
       session.language = event.language;
       break;
-    case "snapshot":
-      session.codeHistory.push({ t: event.t, version: event.version, language: event.language, code: event.code });
+    case "snapshot": {
+      const versao = { t: event.t, version: event.version, language: event.language, code: event.code };
+      session.codeHistory.splice(posicaoPorT(session.codeHistory, event.t), 0, versao);
       break;
+    }
     case "language_changed":
       session.language = event.language;
       break;

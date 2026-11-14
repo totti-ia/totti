@@ -78,6 +78,16 @@ export function limiarDoFechamentoNoQuadro(duracaoTotalMs: number): number {
   return duracaoTotalMs > 0 ? FRACAO_PARA_FECHAR * duracaoTotalMs : TEMPO_PARA_FECHAR_MS;
 }
 
+/**
+ * O limiar de tempo do live coding (#130, item 10): a mesma fração do quadro, mas nunca menos que uma pergunta final
+ * e a despedida. Numa vaga de 30 min fecha faltando 4,5 min; numa de 10 min, faltando 1:45 (com 15% seria 1:30, e não
+ * caberia pergunta nenhuma).
+ */
+export function limiarDoFechamentoNaIde(duracaoTotalMs: number): number {
+  if (duracaoTotalMs <= 0) return TEMPO_PARA_FECHAR_MS;
+  return Math.max(FRACAO_PARA_FECHAR * duracaoTotalMs, TEMPO_POR_PERGUNTA_FINAL_MS + RESERVA_PARA_A_DESPEDIDA_MS);
+}
+
 /** Quando o APROFUNDAMENTO acaba, como fração do tempo total: faltam FRACAO_PARA_FECHAR para o fim (#129, decisão F). */
 export const FRACAO_DO_FIM_DO_APROFUNDAMENTO = 1 - FRACAO_PARA_FECHAR;
 /** Um APROFUNDAMENTO que começa depois do fim previsto ainda tem este tempo (s). */

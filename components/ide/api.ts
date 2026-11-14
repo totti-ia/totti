@@ -2,6 +2,9 @@ import { BlipContext, ChatResponse, EventsResponse } from "@/lib/contracts";
 import type { ChatRequest, SessionEvent } from "@/lib/contracts";
 import type { SessionStateView } from "@/lib/session/types";
 
+/** O servidor recusou o pedido (4xx que não é limite nem tempo esgotado): reenviar não adianta. */
+export class ErroDefinitivo extends Error {}
+
 /** POST /api/events. Valida a resposta contra o contrato; erro vira exceção. */
 export async function postEvent(event: SessionEvent): Promise<EventsResponse> {
   const res = await fetch("/api/events", {
@@ -9,6 +12,9 @@ export async function postEvent(event: SessionEvent): Promise<EventsResponse> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(event),
   });
+  if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+    throw new ErroDefinitivo(`POST /api/events respondeu ${res.status}`);
+  }
   if (!res.ok) throw new Error(`POST /api/events respondeu ${res.status}`);
   return EventsResponse.parse(await res.json());
 }

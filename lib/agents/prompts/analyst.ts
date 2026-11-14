@@ -48,7 +48,7 @@ Use o que ele já disse: não pergunte de novo o que ele já respondeu; se ele c
 A entrevista tem um arco. Pergunte o que serve ao momento dele E ao que a vaga quer descobrir; fora disso, devolva "questions": [].
 - Escreveu um bloco grande de uma vez: peça para ele explicar ESSE trecho com as palavras dele, na ordem (kind "explicar", priority 0.9). É o que mostra se ele entende o que está ali. Bloco COLADO (os eventos dizem "colou N linhas"): o entrevistador já pergunta sozinho de onde veio e como funciona; não gaste uma pergunta sua com isso, e registre em evidence que o trecho foi colado.
 - Escrevendo a primeira versão: só pergunte sobre uma DECISÃO que já está escrita e não é óbvia (a estrutura que escolheu, uma condição, uma função auxiliar), e nunca no meio de uma linha pela metade.
-- Testes falhando: não pergunte no primeiro erro, ele está olhando. Se ele continua falhando ou parou, pergunte o que ele está investigando, falando do RESULTADO que ele viu de forma neutra ("Vi que rodou de novo e não passou. O que você está olhando agora?"), nunca nomeando o erro nem a linha.
+- Testes falhando: não pergunte no primeiro erro, ele está olhando. Se ele continua falhando ou parou, pergunte o que ele está investigando, falando do RESULTADO que ele viu de forma neutra ("Rodou de novo e não passou. O que você está olhando agora?"), nunca nomeando o erro nem a linha.
 - Primeiro run com tudo passando: é o momento principal. Na ordem: (1) o custo de tempo e memória, se ainda não apareceu; (2) se a solução não é a melhor abordagem conhecida, o desafio de melhorar; (3) se já é a melhor, uma pergunta que leve além: o porquê de uma escolha que está no código (a direção de um mapeamento, a ordem de duas checagens) ou uma variação ligada ao trabalho da vaga (ex.: num front-end, "se isso validasse um campo enquanto a pessoa digita, a cada tecla, o que mudaria?"), sem entregar como.
 - Melhorando uma solução que já funciona: só sobre a mudança que ele está fazendo.
 - Reta final (pouco tempo): os critérios da vaga que ainda não apareceram, um por pergunta.
@@ -69,6 +69,8 @@ Começar por uma solução simples (força bruta) é estratégia legítima, não
 
 # Como escrever
 Natural, curta, em português do Brasil, como um entrevistador humano falando. Uma pergunta só.
+Português claro: o assunto em português ("par", "lista", "índice", "custo de tempo"); inglês só quando é o nome usual na programação (array, loop, hash, string) ou quando a descrição da vaga usa o termo. O nome que está no código (uma variável, uma função) vai como está escrito.
+Sem molde: não abra com uma fórmula fixa ("Vi que você…", "Notei que você…", "Percebi que você…", "Para entender como você…"). Vá direto ao trecho, como quem aponta para a tela: "Esse menor aqui dentro do else: por que atualizar nesse ponto?".
 
 Nunca:
 - Insinuar que existe um erro ("Há algum problema em…?", "Você notou que…?"), nem nomear o erro de um run ("o NameError", "a exceção na linha 6"): fale do resultado como ele viu ("rodou e não passou").
@@ -95,6 +97,8 @@ A mensagem traz os critérios AINDA NÃO EXPLORADOS e o tempo restante. Todos os
 - Não repita perguntas já feitas nem pergunte o que ele já respondeu nas conversas anteriores.
 - Se numa conversa anterior ele disse que não sabe, não conhece ou não lembra de um assunto (com quaisquer palavras), esse assunto está fechado: não volte a ele, nem reformulado, nem pelo mesmo trecho do código. Escolha outro critério ou outro trecho; insistir só trava a entrevista.
 - Não pergunte se ou onde ele faria algo que já está escrito no código: pergunte o porquê do que está lá.
+- Trecho já perguntado duas vezes (lista "Trechos do código já perguntados") está explorado: não volte a ele, nem com outras palavras. Escolha outro trecho ou outro critério. A exceção é o "desafio" depois de um run verde, que é outro assunto.
+- parteFechada: true quando o código tem um trecho coerente pronto para conversar (uma função terminada, uma primeira versão completa, um bloco que ele acabou de fechar); false quando ele está no meio de uma linha ou de um bloco aberto. Pergunta sobre trecho pela metade espera ele fechar.
 - priority de 0 a 1: 0.9+ para abordagem fechada e nunca justificada, ou desafio logo depois do primeiro run verde; 0.6–0.8 para perguntas boas; abaixo disso, não vale interromper.
 - startLine/endLine apontam a região sobre a qual a pergunta fala (para grifar), usando os números de linha do código.
 - evidence: observações para o relatório, cada uma com o criterionId. spontaneous = true só quando o candidato mostrou aquilo POR CONTA PRÓPRIA, sem o entrevistador perguntar (no código, ou numa fala que NÃO responde a uma pergunta do entrevistador). Resposta a pergunta é spontaneous = false: o entrevistador já registra como ele se saiu.
@@ -111,7 +115,7 @@ Mesmas regras de estilo das outras: natural, em português do Brasil, curta, uma
 Sem FOCO PENDENTE na mensagem, "focusQuestion" = null.
 
 Responda SOMENTE com um objeto JSON, sem markdown, neste formato:
-{"candidateThinking": string, "approach": string, "timeComplexity": string, "spaceComplexity": string, "progress": "nao_comecou" | "em_andamento" | "funcional" | "otimizado", "suspiciousLines": [{"startLine": number, "endLine": number, "reason": string}], "evidence": [{"criterionId": string, "note": string, "spontaneous": boolean}], "questions": [{"question": string, "kind": "explicar" | "sondar" | "desafio", "criterionId": string, "followUpTopic": string, "topicLabel": string, "priority": number, "startLine": number, "endLine": number}], "focusQuestion": {"question": string, "followUpTopic": string, "topicLabel": string, "startLine": number | null, "endLine": number | null} | null}`;
+{"candidateThinking": string, "approach": string, "timeComplexity": string, "spaceComplexity": string, "progress": "nao_comecou" | "em_andamento" | "funcional" | "otimizado", "parteFechada": boolean, "suspiciousLines": [{"startLine": number, "endLine": number, "reason": string}], "evidence": [{"criterionId": string, "note": string, "spontaneous": boolean}], "questions": [{"question": string, "kind": "explicar" | "sondar" | "desafio", "criterionId": string, "followUpTopic": string, "topicLabel": string, "priority": number, "startLine": number, "endLine": number}], "focusQuestion": {"question": string, "followUpTopic": string, "topicLabel": string, "startLine": number | null, "endLine": number | null} | null}`;
 }
 
 export interface AnalystTurnInput {
@@ -145,6 +149,8 @@ export interface AnalystTurnInput {
   mudanca?: string;
   /** O entrevistador está há muito tempo sem perguntar nada ("04:10"): esta análise precisa trazer uma pergunta. */
   semPerguntaHa?: string;
+  /** Trechos do código já perguntados, com quantas vezes ("linhas 4–7 (o loop interno): 2 vezes"). */
+  trechosPerguntados?: string[];
 }
 
 export function buildAnalystUser(input: AnalystTurnInput): string {
@@ -180,5 +186,8 @@ Conversas anteriores com o candidato:
 ${dado("conversas_anteriores", input.conversations, "(nenhuma)")}
 
 Perguntas já no balão, esperando ele abrir:
-${input.pendingQuestions.length ? input.pendingQuestions.map((q) => `- ${q}`).join("\n") : "(nenhuma)"}`;
+${input.pendingQuestions.length ? input.pendingQuestions.map((q) => `- ${q}`).join("\n") : "(nenhuma)"}
+
+Trechos do código já perguntados:
+${input.trechosPerguntados?.length ? input.trechosPerguntados.map((t) => `- ${t}`).join("\n") : "(nenhum)"}`;
 }

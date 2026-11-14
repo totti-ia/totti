@@ -16,7 +16,8 @@ import type { EstadoFechamento } from "@/lib/totti/fechamento";
  * empecilho: o Totti traz uma mudança no problema (lib/agents/empecilho.ts); a primeira fala é o anúncio.
  * cola: ele colou um bloco de código de uma vez; o Totti sempre pede para explicar (lib/agents/policy.ts).
  */
-export type QuestionKind = "explicar" | "sondar" | "desafio" | "retorno" | "encerramento" | "empecilho" | "cola";
+/** run_falhou: a fala curta do Totti depois de um run que falhou (lib/agents/policy.ts `enqueueRunFalhou`). */
+export type QuestionKind = "explicar" | "sondar" | "desafio" | "retorno" | "encerramento" | "empecilho" | "cola" | "run_falhou";
 
 /** O bloco que o candidato colou, guardado com a pergunta sobre ele. */
 export interface Cola {
@@ -90,6 +91,11 @@ export interface QueuedQuestion {
   keyMoment?: string;
   /** Pergunta de foco da vaga (pressão, escala, uso de IA): é de processo, sem trecho de código. */
   focusArea?: FocusArea;
+  /**
+   * A análise que a gerou viu um trecho coerente pronto (função terminada, primeira versão completa): a pergunta pode
+   * sair passado o piso entre perguntas. Sem isso, só no teto (ver `motivoDoConteudo` em policy.ts; #130, item 11).
+   */
+  parteFechada?: boolean;
   /** Candidato clicou "agora não": a pergunta só volta a partir deste t. */
   snoozedUntil?: number;
   /** Critério da config que a pergunta explora. */
@@ -184,6 +190,14 @@ export interface SessionState {
   fechamentoBlipId?: string;
   /** Quantas etapas o candidato concluiu antes deste turno. */
   conclusoes?: number;
+  /** Quando ele disse por último que concluiu uma etapa (t da sessão). Não é consumido pela análise, como `etapaConcluidaEm`. */
+  ultimaConclusaoEm?: number;
+  /** Quando ele pediu tempo para pensar pela última vez (t da sessão): conta como fala do Totti para a regra da bola (#130, item 7). */
+  pediuTempoEm?: number;
+  /** O Totti já disse a reação ao pedido de tempo ("Claro, sem pressa."): nas seguintes ele fica calado. */
+  reacaoAoPensarDita?: boolean;
+  /** Quando o Totti quebrou o silêncio pela última vez (t da sessão): uma vez por período sem ação do candidato (#130, item 6). */
+  silencioQuebradoEm?: number;
   report?: ReportStatus;
   /** Relógio da sessão em ms; só a simulação (scripts/simulate.ts) define. Senão, Date.now() - startedAt. */
   clock?: () => number;

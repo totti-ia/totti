@@ -9,7 +9,9 @@ import { mudancaParaPrompt } from "@/lib/agents/empecilho";
 import { conversasFeitas, faseDaEntrevista, formatarConversas, regiaoAlterada } from "@/lib/agents/fase";
 import { buildAnalystSystem, buildAnalystUser } from "@/lib/agents/prompts/analyst";
 import { focoPendente } from "@/lib/agents/focoQuota";
-import { allPassed, COLA_MIN_LINES, isCandidateIdle, ritmoDaSessao } from "@/lib/agents/policy";
+import { allPassed, COLA_MIN_LINES, isCandidateIdle, ritmoDaSessao, tetoDaPerguntaNaIde } from "@/lib/agents/policy";
+import { assuntoJaExplorado, cortarAberturaDeMolde, trechosParaPrompt } from "@/lib/agents/perguntaDaAnalise";
+import { emPortugues } from "@/lib/totti/guardas";
 import { interrupcaoAtrasada, orcamentoDeInterrupcoes } from "@/lib/interrupcao/politica";
 import { checkQuestion } from "@/lib/agents/spoilerFilter";
 import { PRIORIDADE_FOCO } from "@/lib/agents/focoQuota";
@@ -165,6 +167,7 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
     const problem = getProblem(session.config.problemId);
     const fase = faseDaEntrevista(session);
     const system = buildAnalystSystem(session.config, problem);
+    const semPergunta = interrupcaoAtrasada(ritmoDaSessao(session, trigger.t)) || tetoDaPerguntaNaIde(session, trigger.t);
     const user = buildAnalystUser({
       fase,
       changedRegion: book.lastCompletedCode === undefined ? undefined : regiaoAlterada(book.lastCompletedCode, code),
@@ -191,16 +194,18 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
       hasWorkingSolution: hasWorkingSolution(session),
       mudanca: mudancaParaPrompt(session, formatElapsed),
       // Sem pergunta há um ritmo inteiro (e com cota livre): a análise não pode voltar de mãos vazias.
-      semPerguntaHa: interrupcaoAtrasada(ritmoDaSessao(session, trigger.t))
+      // Na IDE, também quando a pergunta da análise chegou ao teto (3 min) e ele escreveu algo novo desde então (#130, item 11).
+      semPerguntaHa: semPergunta
         ? formatElapsed(trigger.t - (session.blips.at(-1)?.createdAt ?? 0))
         : undefined,
+      trechosPerguntados: trechosParaPrompt(session),
     });
 
     // Papel "codigo": gemini-3.7-flash no OpenRouter, com o GLM da Featherless de reserva (ver lib/llm/index.ts).
     const perguntaBloqueada = perguntaBloqueadaAgora(session, trigger.t);
     const result = await completeJson({ role: "codigo", system, user, schema: AnalystOutput, semReserva: perguntaBloqueada });
     registrarUsoLlm(session, "analise", result);
-    const { questions, focusQuestion, ...insights } = result.data;
+    const { questions, focusQuestion, parteFechada, ...insights } = result.data;
 
     // Cada análise substitui a fila, mas sobrevivem: pergunta adiada pelo candidato ("agora não") e
     // pergunta de momento-chave ainda esperando uma regra (senão a análise seguinte a derrubaria antes
@@ -235,12 +240,24 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
       questions
         // Desafio só com código funcionando: antes disso, "dá pra melhorar?" soaria como "tem erro".
         .filter((q) => q.kind !== "desafio" || working)
-        .map((q) => ({ question: q, lines: clampLines(q, lineCount) }));
+        .map((q) => ({ question: q, lines: clampLines(q, lineCount) }))
+        // Trecho já perguntado duas vezes está explorado (#130, item 13). No teto sem pergunta, passa: melhor repetir o
+        // trecho do que deixar a entrevista parada.
+        .filter(({ question, lines }) => {
+          const repetido = !semPergunta && !keyMoment && assuntoJaExplorado({ kind: question.kind, lines }, session);
+          if (repetido) console.info(`[analyst] pergunta descartada (trecho já explorado): ${question.question}`);
+          return !repetido;
+        });
     // Pergunta de foco: só vale se o código pediu (focoParaPedir) e o modelo devolveu; sem trecho de código.
     if (focoParaPedir && focusQuestion?.question.trim()) {
       const { startLine, endLine, ...rest } = focusQuestion;
       const lines = startLine ? clampLines({ startLine, endLine: endLine ?? startLine }, lineCount) : undefined;
       candidates.push({ question: { ...rest, priority: PRIORIDADE_FOCO }, lines, focusArea: focoParaPedir });
+    }
+    // Sem abertura de molde e em português claro (#130, itens 13 e 14), antes do filtro, que lê o texto final.
+    const termosDaVaga = session.config.jobDescription ?? "";
+    for (const c of candidates) {
+      c.question = { ...c.question, question: emPortugues(cortarAberturaDeMolde(c.question.question).texto, termosDaVaga) };
     }
     // O tema de aprofundamento também vai pro entrevistador, então passa pelo filtro junto.
     const verdicts = await Promise.all(
@@ -275,6 +292,7 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
         status: "queued",
         keyMoment: focusArea ? undefined : keyMoment,
         focusArea,
+        parteFechada: parteFechada === true || keyMoment !== undefined,
         fase,
         kind: question.kind ?? "explicar",
         criterionId: question.criterionId && criterionIds.has(question.criterionId) ? question.criterionId : undefined,

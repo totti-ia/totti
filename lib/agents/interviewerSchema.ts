@@ -21,8 +21,20 @@ export const InterviewerOutput = z.object({
   respond: z.boolean().optional(),
   /** O candidato avisou que concluiu uma etapa do trabalho e quer avançar (pela intenção, não por palavra fixa). */
   concluded: z.boolean().optional(),
-  /** O candidato pediu para encerrar a ENTREVISTA inteira agora (não só a conversa): a IDE se despede e fecha. */
+  /**
+   * O candidato quer encerrar a ENTREVISTA inteira ("terminei", "quero sair", "pode encerrar"), não só uma parte: o
+   * fechamento passa pelos critérios que faltam (até 2 perguntas) e se despede (#130, item 9).
+   */
   finish: z.boolean().optional(),
+  /** Com finish: ele precisa sair agora ("tenho que ir já"). O fechamento vai direto à despedida, sem perguntas. */
+  urgent: z.boolean().optional(),
+  /** Ele pediu tempo para pensar ("calma, tô pensando", "deixa eu pensar"): não é resposta nem pergunta (#130, item 7). */
+  pediuTempo: z.boolean().optional(),
+  /**
+   * Ele fez uma pergunta ou pediu esclarecimento que espera resposta, mesmo sem "?" ("não entendi o que é um par"). No
+   * fechamento, a pergunta é respondida antes de qualquer despedida (#130, item 8).
+   */
+  candidatoPerguntou: z.boolean().optional(),
   /** A fala, como um entrevistador humano falaria: 1–2 frases curtas. */
   reply: z.string().default(""),
   /** Linhas pra grifar junto com a fala, ou null quando não fala de um trecho. */

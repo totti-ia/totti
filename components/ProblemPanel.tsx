@@ -3,17 +3,21 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronUp, FileText, Shuffle } from "lucide-react";
 import { duracaoLenta, curvaSaida, entrada } from "@/lib/design/motion";
-import type { EmpecilhoPublico } from "@/lib/contracts";
+import type { EmpecilhoPublico, FaseDaEntrevista } from "@/lib/contracts";
 import type { PublicProblem } from "@/lib/problems";
 import { formatMs } from "@/lib/format";
 
-/** Fase da entrevista, derivada do tempo decorrido (só rótulo visual). */
-export function fase(elapsedMs: number, durationMs: number): string {
-  const f = durationMs > 0 ? elapsedMs / durationMs : 0;
-  if (f < 0.15) return "Entendimento";
-  if (f < 0.8) return "Implementação";
-  return "Revisão";
-}
+/**
+ * Rótulo da fase que o servidor decidiu pelos eventos (lib/agents/fase.ts). Antes o rótulo vinha do tempo decorrido
+ * e, com a duração ainda não carregada, ficava "Entendimento" a entrevista inteira.
+ */
+export const ROTULO_DA_FASE: Record<FaseDaEntrevista, string> = {
+  entendendo: "Entendendo",
+  implementando: "Implementando",
+  depurando: "Depurando",
+  funcionando: "Funcionando",
+  otimizando: "Otimizando",
+};
 
 /** Texto com `código` entre crases em <code> e **destaque** em <strong>. */
 function Texto({ children }: { children: string }) {
@@ -36,6 +40,8 @@ type Props = {
   problem: PublicProblem;
   elapsedMs: number;
   durationMs: number;
+  /** Fase de verdade, vinda do servidor. Sem ela, nenhum rótulo (nunca um palpite pelo tempo). */
+  fase?: FaseDaEntrevista | null;
   aberto: boolean;
   onToggle: (aberto: boolean) => void;
   /** Mudança que o Totti trouxe no meio da entrevista (empecilho), se já veio. */
@@ -89,9 +95,9 @@ function BlocoMudanca({ mudanca }: { mudanca: EmpecilhoPublico }) {
  * que recolhe para uma pílula. Só a parte pública do problema.
  * Animação só com opacity/transform (entrada de lib/design/motion).
  */
-export default function ProblemPanel({ problem, elapsedMs, durationMs, aberto, onToggle, mudanca }: Props) {
+export default function ProblemPanel({ problem, elapsedMs, durationMs, fase, aberto, onToggle, mudanca }: Props) {
   const tempo = `${formatMs(elapsedMs)} / ${formatMs(durationMs)}`;
-  const chip = fase(elapsedMs, durationMs);
+  const chip = fase ? ROTULO_DA_FASE[fase] : null;
 
   return (
     <div className="origin-top-left">
@@ -108,9 +114,11 @@ export default function ProblemPanel({ problem, elapsedMs, durationMs, aberto, o
               <div>
                 <h1 className="titulo text-subtitulo">{problem.title}</h1>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="rounded-full bg-marca-suave px-2 py-0.5 text-mini font-medium text-marca">
-                    {chip}
-                  </span>
+                  {chip && (
+                    <span className="rounded-full bg-marca-suave px-2 py-0.5 text-mini font-medium text-marca">
+                      {chip}
+                    </span>
+                  )}
                   <span className="label-pequena numero">{tempo}</span>
                 </div>
                 <div className="label-pequena mt-1">

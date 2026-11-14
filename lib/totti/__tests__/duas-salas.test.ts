@@ -90,7 +90,8 @@ describe("as mesmas travas nas duas salas (casos reais de 11/11)", () => {
 
   it("\"Terminou.\" depois de \"terminei\": o eco não é falado em nenhuma das duas", async () => {
     const noQuadro = await falaNoQuadro("Terminou.", "Eu acho que é isso, terminei.");
-    const noCodigo = await falaNoLiveCoding("Terminou.", "Eu acho que é isso, terminei.");
+    // No live coding o "terminei" solto já abre o fechamento antes do modelo (#130, item 9): aqui ele diz de quê.
+    const noCodigo = await falaNoLiveCoding("Terminou.", "Eu acho que é isso, terminei a explicação.");
     for (const fala of [noQuadro, noCodigo]) assert.doesNotMatch(fala, /terminou/i, fala);
     // Ele respondia a uma pergunta do Totti: no lugar do eco entra a mesma reação neutra nas duas salas.
     assert.match(noQuadro, /^Certo\./);

@@ -33,6 +33,12 @@ export const AnalystOutput = z.object({
   timeComplexity: z.string(),
   spaceComplexity: z.string(),
   progress: z.enum(["nao_comecou", "em_andamento", "funcional", "otimizado"]),
+  /**
+   * Um trecho coerente ficou pronto desde a última análise (uma função terminada, a primeira versão completa, uma
+   * correção que fecha): só então a pergunta vira balão, passado o piso (#130, item 11). No meio de uma linha ou de um
+   * bloco pela metade, false.
+   */
+  parteFechada: z.boolean().optional(),
   suspiciousLines: z
     .array(z.object({ startLine: z.number().int(), endLine: z.number().int(), reason: z.string() }))
     .max(5),

@@ -4,6 +4,7 @@
  * decideBlip só levanta blip com o candidato parado e a sessão ativa (regra fica lá dentro).
  */
 import { NextRequest, NextResponse } from "next/server";
+import { faseDaEntrevista } from "@/lib/agents/fase";
 import { decideBlip } from "@/lib/agents/policy";
 import type { EventsResponse } from "@/lib/contracts";
 import { sessionNow } from "@/lib/session/store";
@@ -21,6 +22,6 @@ export async function GET(request: NextRequest) {
   const t = sessionNow(session);
   const { blip, dismissBlipId } = decideBlip(session, t);
   if (blip || dismissBlipId) await guardarSessao(session);
-  const response: EventsResponse = { blip, dismissBlipId };
+  const response: EventsResponse = { blip, dismissBlipId, fase: faseDaEntrevista(session) };
   return NextResponse.json(response);
 }

@@ -243,11 +243,21 @@ export const Blip = z.object({
 });
 export type Blip = z.infer<typeof Blip>;
 
+/** Fase do live coding decidida pelo servidor pelos eventos (lib/agents/fase.ts). A IDE só mostra. */
+export const FaseDaEntrevista = z.enum(["entendendo", "implementando", "depurando", "funcionando", "otimizando"]);
+export type FaseDaEntrevista = z.infer<typeof FaseDaEntrevista>;
+
 /**
  * Resposta de POST /api/events e de GET /api/blip/pending (a IDE consulta a cada ~3 s).
- * `dismissBlipId`: o balão com esse id expirou sem clique — a IDE deve tirá-lo da tela.
+ * `dismissBlipId`: o balão com esse id foi substituído por outro — a IDE deve tirá-lo da tela.
+ * `fase`: a fase de verdade da entrevista, para o painel do problema.
  */
-export const EventsResponse = z.object({ blip: Blip.optional(), dismissBlipId: z.string().optional(), despedida: z.string().optional() });
+export const EventsResponse = z.object({
+  blip: Blip.optional(),
+  dismissBlipId: z.string().optional(),
+  despedida: z.string().optional(),
+  fase: FaseDaEntrevista.optional(),
+});
 export type EventsResponse = z.infer<typeof EventsResponse>;
 
 /** Resposta de GET /api/blip/:id/context — o que a conversa (voz ou texto) recebe ao abrir. */

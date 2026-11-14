@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { liberouAPergunta } from "@/components/ide/useConversa";
+import { liberouAPergunta } from "@/lib/conversa/licenca";
 import { grifoComProposito } from "@/lib/agents/interviewer";
 
 test("pedido de licença: 'pode' abre a pergunta; 'espera' e 'agora não' deixam para depois", () => {
@@ -86,7 +86,7 @@ test("ritmo das perguntas: escreveu uma linha e falou há pouco, a próxima espe
   let agora = 0;
   s.clock = () => agora;
   const pergunta = (n: number, question: string, createdAt: number) =>
-    s.queue.push({ id: `q-${n}`, question, followUpTopic: "x", priority: 0.8, createdAt, status: "queued", kind: "explicar", fase: "implementando" } as never);
+    s.queue.push({ id: `q-${n}`, question, followUpTopic: "x", priority: 0.8, createdAt, status: "queued", kind: "explicar", fase: "implementando", parteFechada: true } as never);
   appendEvent(s, { type: "session_started", sessionId: id, t: 0, configId: DEFAULT_CONFIG.id, problemId: DEFAULT_CONFIG.problemId, language: "python" });
   appendEvent(s, { type: "snapshot", sessionId: id, t: 30_000, code: "def f(nums, target):\n    vistos = {}\n    pass\n", version: 1, language: "python" });
   appendEvent(s, { type: "pause", sessionId: id, t: 40_000, idleMs: 10_000 });

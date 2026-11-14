@@ -16,14 +16,44 @@ import { getProblem } from "@/problems";
 export const PREFIXO_TESTE = PREFIXO_TESTE_MUDANCA;
 /** A partir dessa fração do tempo: o candidato já teve tempo de montar uma direção. */
 const A_PARTIR_DA_FRACAO = 0.3;
-/** Precisa sobrar esse tempo para dar para adaptar; depois disso o empecilho não entra mais. */
+/**
+ * Precisa sobrar esse tempo para dar para adaptar; depois disso o empecilho não entra mais. Era 8 min fixos, e com
+ * `durationMin` ≤ 11 a mudança nunca entrava (#130, item 15): agora é o menor entre 8 min e 30% da duração.
+ */
 const MINIMO_RESTANTE_MS = 8 * 60_000;
+const MINIMO_RESTANTE_FRACAO = 0.3;
 /** Linhas escritas além do código inicial: sem uma ideia no código, não há o que adaptar. */
 const MINIMO_LINHAS = 4;
 /** Respiro depois da última conversa e do último balão. */
 const RESPIRO_MS = 20_000;
 /** Não corta quem acabou de mexer no código: espera esse tempo sem mudança. */
 const QUIETO_MS = 10_000;
+/**
+ * Garantia (#130, item 15, a mesma fração do quadro): passado isso do tempo sem a mudança, os requisitos relaxam (uma
+ * linha escrita basta e quem digita sem parar também recebe). O piso depois da última pergunta continua valendo.
+ */
+export const GARANTIA_DO_EMPECILHO_A_PARTIR_DA_FRACAO = 0.6;
+/** Piso depois da última pergunta do Totti (o mesmo do quadro, `RITMO_QUADRO.pisoEntrePerguntasMs`). */
+export const PISO_DEPOIS_DA_PERGUNTA_MS = 120_000;
+/** "Terminei essa parte" há tão pouco tempo: a hora natural para a mudança (a brecha do quadro, `concluiuHaPouco`). */
+const CONCLUSAO_RECENTE_MS = 45_000;
+
+/** Tempo mínimo que precisa sobrar para a mudança entrar, pela duração. */
+export function minimoRestanteDoEmpecilhoMs(duracaoMs: number): number {
+  return Math.min(MINIMO_RESTANTE_MS, duracaoMs * MINIMO_RESTANTE_FRACAO);
+}
+
+/** A questão tem mudança prevista que ainda não saiu (e a sessão aceita mudança). */
+export function mudancaPendente(session: SessionState): boolean {
+  return session.config.mode !== "system_design" && !session.empecilho && empecilhoDaQuestao(session) !== undefined;
+}
+
+/** A mudança está devida: passou da fração da garantia, ou ele acabou de dizer que concluiu uma etapa. */
+export function empecilhoGarantido(session: SessionState, t: number): boolean {
+  const duracao = session.config.durationMin * 60_000;
+  const concluiuHaPouco = session.ultimaConclusaoEm !== undefined && t - session.ultimaConclusaoEm < CONCLUSAO_RECENTE_MS;
+  return t >= duracao * GARANTIA_DO_EMPECILHO_A_PARTIR_DA_FRACAO || concluiuHaPouco;
+}
 
 type RunEvent = Extract<SessionEvent, { type: "run" }>;
 
@@ -48,18 +78,24 @@ export function esperaDoEmpecilho(session: SessionState, t: number): string | un
   if (session.config.mode === "system_design") return "sem empecilho no system design";
   if (session.empecilho) return "empecilho já saiu";
   if (!empecilhoDaQuestao(session)) return "questão sem empecilho";
+  // O fechamento começou (pedido de fim, tempo): a mudança pendente é pulada (#130, item 9).
+  if (session.fechamento) return "empecilho: o fechamento já começou";
   const duracao = session.config.durationMin * 60_000;
-  if (duracao - t < MINIMO_RESTANTE_MS) return "empecilho: tempo curto demais para adaptar";
-  if (t < duracao * A_PARTIR_DA_FRACAO) return "empecilho: cedo";
-  if (faseDaEntrevista(session) === "entendendo" || linesWrittenBeyondStarter(session) < MINIMO_LINHAS) {
+  if (duracao - t < minimoRestanteDoEmpecilhoMs(duracao)) return "empecilho: tempo curto demais para adaptar";
+  const garantia = empecilhoGarantido(session, t);
+  if (!garantia && t < duracao * A_PARTIR_DA_FRACAO) return "empecilho: cedo";
+  const linhas = linesWrittenBeyondStarter(session);
+  if (garantia ? linhas < 1 : faseDaEntrevista(session) === "entendendo" || linhas < MINIMO_LINHAS) {
     return "empecilho: ainda sem ideia no código";
   }
+  // O piso depois da última pergunta vale até na garantia (como no quadro): a mudança não emenda numa pergunta.
+  const ultimoBalao = session.blips.at(-1);
+  if (ultimoBalao && t - ultimoBalao.createdAt < PISO_DEPOIS_DA_PERGUNTA_MS) return "empecilho: piso depois da última pergunta";
   const ultimaConversa = session.lastConversationEndedAt;
   if (ultimaConversa !== undefined && t - ultimaConversa < RESPIRO_MS) return "empecilho: respiro depois da conversa";
-  const ultimoBalao = session.blips.at(-1);
-  if (ultimoBalao && t - ultimoBalao.createdAt < RESPIRO_MS) return "empecilho: respiro depois do último balão";
+  // Na garantia, quem digita sem parar também recebe a mudança: basta a pausa curta do momento (policy.pickBlip).
   const ultimaMudanca = session.codeHistory.at(-1)?.t ?? 0;
-  if (t - ultimaMudanca < QUIETO_MS) return "empecilho: acabou de mexer no código";
+  if (!garantia && t - ultimaMudanca < QUIETO_MS) return "empecilho: acabou de mexer no código";
   return undefined;
 }
 

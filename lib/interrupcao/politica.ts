@@ -88,6 +88,20 @@ export const RITMO_QUADRO = {
   tetoSemPerguntaMs: 180_000,
 } as const;
 
+/**
+ * Ritmo por conteúdo do live coding (#130, item 11), o equivalente do `RITMO_QUADRO`: a pergunta da análise só vira
+ * balão quando um trecho coerente ficou pronto (função terminada, primeira versão completa), e não a cada pausa de 8 s.
+ * Só a IDE usa (lib/agents/policy.ts, `motivoDoConteudo`); o quadro não lê estes valores.
+ */
+export const RITMO_IDE = {
+  /** Nunca duas perguntas da análise em menos de tanto tempo. Marco (run verde, colagem) e quebra de silêncio não respeitam. */
+  pisoEntrePerguntasMs: 120_000,
+  /** Passado tanto tempo sem pergunta e com código novo, a pergunta sai mesmo sem parte fechada. */
+  tetoSemPerguntaMs: 180_000,
+  /** Mãos paradas e calado há tanto tempo: a pergunta é a quebra de silêncio, sem esperar parte fechada nem piso. */
+  quebraDeSilencioMs: 60_000,
+} as const;
+
 /** Interrupções que a entrevista comporta (fora abertura, encerramento e mudança no problema). */
 export function orcamentoDeInterrupcoes(duracaoMin: number): number {
   const n = Math.round(Math.max(0, duracaoMin) / RITMO.minutosPorInterrupcao);

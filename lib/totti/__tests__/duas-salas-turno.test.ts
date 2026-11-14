@@ -119,7 +119,9 @@ describe("tabela de casos: a mesma decisão nas duas salas", () => {
     { nome: "respondeu, e o modelo só reagiu", fala: "um avisa o outro por um evento", leituras: [{ fala: "Tá." }], momento: { respondendo: true }, espera: { responde: true, conclui: false, encerra: false } },
     { nome: "não sabe responder à pergunta do Totti", fala: "não sei, nunca pensei nisso", leituras: [{ fala: "Tranquilo, deixa isso de lado. E como você testaria?", naoSabe: true }], momento: { respondendo: true }, espera: { responde: true, conclui: false, encerra: false } },
     { nome: "terminou, e o modelo marcou", fala: "pronto, terminei essa parte", leituras: [{ fala: "Certo.", concluiu: true }], momento: { paradoHaS: 10 }, espera: { responde: true, conclui: true, encerra: false } },
-    { nome: "terminou com as mãos paradas, e o modelo não marcou", fala: "Eu acho que é isso, terminei.", leituras: [{ quieto: true }], momento: { paradoHaS: 10 }, espera: { responde: true, conclui: true, encerra: false } },
+    // #130, item 9: no live coding, o "terminei" solto é o fim da entrevista: o fechamento abre com as perguntas finais
+    // (nem conclusão de etapa, nem despedida direta). No quadro segue sendo conclusão.
+    { nome: "terminou com as mãos paradas, e o modelo não marcou", fala: "Eu acho que é isso, terminei.", leituras: [{ quieto: true }], momento: { paradoHaS: 10 }, espera: { responde: true, conclui: false, encerra: false }, esperaNoQuadro: { responde: true, conclui: true, encerra: false } },
     { nome: "disse \"terminei\" de uma parte e segue mexendo", fala: "terminei essa parte, agora vou para a outra", leituras: [{ quieto: true }], momento: { paradoHaS: 0 }, espera: { responde: false, conclui: false, encerra: false } },
     // Decisão revisada (#129): no quadro, sem critérios no plano, o pedido vai à última palavra antes da despedida (e só
     // com urgência, direto). O live coding segue direto à despedida: a diferença é a da sala, não a da regra comum.
@@ -169,9 +171,10 @@ describe("o que cada regra comum faz com a fala, nas duas salas", () => {
     assert.doesNotMatch(r.quadro.texto, /código/);
   });
 
-  it("\"terminei\" sem fala do modelo: o Totti avisa que vai olhar o que ele fez", async () => {
+  it("\"terminei\" sem fala do modelo: no quadro o Totti avisa que vai olhar; no live coding o fechamento começa", async () => {
     const r = await nasDuas("Eu acho que é isso, terminei.", [{ quieto: true }], { paradoHaS: 10 });
     assert.match(r.quadro.texto, /olhada no desenho|olho o que você fez/);
-    assert.match(r.codigo.texto, /olhada no código|olho o que você fez/);
+    // #130, item 9: o "terminei" solto encerra a entrevista no live coding, passando antes pelas perguntas finais.
+    assert.match(r.codigo.texto, /antes de terminar.*\?$/);
   });
 });

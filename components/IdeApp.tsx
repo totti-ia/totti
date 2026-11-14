@@ -20,7 +20,7 @@ import { useMidiaLocal } from "@/lib/presenca/useMidiaLocal";
 import { useTranscricao } from "@/lib/presenca/useTranscricao";
 import { useInterrupcao } from "@/lib/voz/useInterrupcao";
 import { comoFuncionaLiveCoding, DESPEDIDA_LIVE_CODING } from "@/lib/conversa/instrucoes";
-import { TEMPO_PARA_FECHAR_MS } from "@/lib/totti/fechamento";
+import { limiarDoFechamentoNaIde } from "@/lib/totti/fechamento";
 import { criarEncerrarComDespedida } from "./ide/encerrarComDespedida";
 import { deveAguardarParaFalar, podeTomarTurno } from "@/lib/conversa/turnos";
 import { pausaDasMaosParaFalarMs } from "@/lib/interrupcao/politica";
@@ -380,7 +380,9 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
     setConfirmandoFim(false);
     if (!session.sessionId || finalizandoRef.current) return;
     try {
-      await capture.flushSnapshot().catch(() => {});
+      // O código final e os runs chegam antes do encerramento (com teto: rede caída não segura o botão).
+      void capture.flushSnapshot().catch(() => {});
+      await session.esperarEventos(5000);
       const res = await postEncerramento(session.sessionId, "concluiu");
       if (res.blip) { if (conversa.fioRef.current) conversa.fecharFio("button"); void conversa.abrirFio(res.blip); return; }
       if (res.despedida) { await encerrarComDespedida("button", res.despedida); return; }
@@ -452,7 +454,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   const remaining = Math.max(0, DURATION_MS - session.elapsedMs);
   const fechamentoTempoPedidoRef = useRef(false);
   useEffect(() => {
-    if (!sessionId || session.ended || finalizando || conversa.fio || remaining > Math.min(TEMPO_PARA_FECHAR_MS, DURATION_MS * 0.2)) return;
+    if (!sessionId || session.ended || finalizando || conversa.fio || remaining > limiarDoFechamentoNaIde(DURATION_MS)) return;
     if (fechamentoTempoPedidoRef.current) return;
     fechamentoTempoPedidoRef.current = true;
     void postEncerramento(sessionId, "tempo").then((res) => {
@@ -497,6 +499,22 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
             />
           </div>
           <RunResults state={run} total={problemaRodado.visibleTests.length} />
+          {/*
+            Sem microfone, a conversa continua por escrito (a fala do Totti segue na voz e na legenda). No fluxo da
+            coluna, abaixo dos testes: solta por cima (absolute), a caixa cobria o painel de testes.
+          */}
+          {semMicrofone && !session.ended && (
+            <form onSubmit={enviarDigitado} className="mt-2 flex w-[min(480px,100%)] shrink-0 gap-2">
+              <input
+                value={digitado}
+                onChange={(e) => setDigitado(e.target.value)}
+                disabled={encerrando}
+                aria-label="Escrever para o Totti"
+                placeholder={escuta.erro ?? "Microfone desligado: escreva para o Totti e aperte Enter"}
+                className="vidro min-w-0 flex-1 rounded-full px-4 py-2 text-[14px] shadow-cartao outline-none"
+              />
+            </form>
+          )}
         </div>
 
         {/* Coluna da questão: o painel do problema e, logo abaixo dele, os botões */}
@@ -505,6 +523,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
             problem={problem}
             elapsedMs={session.elapsedMs}
             durationMs={DURATION_MS}
+            fase={session.fase}
             aberto={problemaAberto}
             onToggle={setProblemaAberto}
             mudanca={mudanca}
@@ -600,20 +619,6 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
             </p>
           </div>
         )}
-        {/* Sem microfone, a conversa continua por escrito (a fala do Totti segue na voz e na legenda) */}
-        {semMicrofone && !session.ended && (
-          <form onSubmit={enviarDigitado} className="absolute bottom-4 left-4 z-10 flex w-[min(480px,calc(100%-2rem))] gap-2 md:left-[392px]">
-            <input
-              value={digitado}
-              onChange={(e) => setDigitado(e.target.value)}
-              disabled={encerrando}
-              aria-label="Escrever para o Totti"
-              placeholder={escuta.erro ?? "Microfone desligado: escreva para o Totti e aperte Enter"}
-              className="vidro min-w-0 flex-1 rounded-full px-4 py-2 text-[14px] shadow-cartao outline-none"
-            />
-          </form>
-        )}
-
         <ConfirmarEncerrar
           aberto={confirmandoFim}
           onCancelar={() => setConfirmandoFim(false)}
