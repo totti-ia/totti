@@ -6,6 +6,7 @@ import { erroMicrofone, type EstadoTranscricao, type EventosTranscricao, type Se
 import { focoAudio } from "../audio/foco";
 import { criarMedidorUsoTranscricao } from "./uso";
 import { iniciarCapturaAntecipada, type CapturaAntecipada } from "./capturaAntecipada";
+import { ErroTokenTranscricao } from "../presenca/tokenTranscricao";
 
 type CapturaAtual = {
   controlador: AbortController; sessao?: SessaoTranscricao; antecipada?: CapturaAntecipada; liberar?: () => void;
@@ -17,6 +18,24 @@ type CapturaAtual = {
  * em paralelo ao pedido do token: o reconhecimento do navegador abre o próprio microfone e não usa esse áudio.
  */
 let ultimoProvedor: "elevenlabs" | "navegador" | null = null;
+
+/** Pedido da sessão de transcrição: o primeiro token e as reconexões do Scribe passam por aqui. */
+async function pedirSessaoTranscricao(signal: AbortSignal) {
+  const resposta = await fetch("/api/transcricao/sessao", { method: "POST", signal, cache: "no-store" });
+  const dados = await resposta.json() as { provedor?: string; token?: string; erro?: string };
+  return { resposta, dados };
+}
+
+/**
+ * Token novo para reconectar (como em B): sem token com resposta OK, ou com erro 4xx (exceto 429) e 503, repetir
+ * não adianta e vira `permanente`.
+ */
+async function renovarToken(signal: AbortSignal): Promise<string> {
+  const { resposta, dados } = await pedirSessaoTranscricao(signal);
+  if (resposta.ok && dados.token) return dados.token;
+  const permanente = resposta.ok || resposta.status === 503 || (resposta.status >= 400 && resposta.status < 500 && resposta.status !== 429);
+  throw new ErroTokenTranscricao(dados.erro ?? `Erro HTTP ${resposta.status} em /api/transcricao/sessao`, permanente);
+}
 
 export function useTranscricao({ aoTexto, bloqueada = false, obterStream, liberarStream, sessaoId, termos }: {
   aoTexto: (texto: string) => void;
@@ -97,10 +116,7 @@ export function useTranscricao({ aoTexto, bloqueada = false, obterStream, libera
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador não oferece acesso ao microfone.");
       // Começa a ouvir já: o token e o socket levam ~1 s, e era esse o começo da fala que se perdia.
       if (ultimoProvedor !== "navegador") atual.antecipada ??= iniciarCapturaAntecipada({ stream: obterStream?.() });
-      const resposta = await fetch("/api/transcricao/sessao", {
-        method: "POST", signal: atual.controlador.signal, cache: "no-store",
-      });
-      const dados = await resposta.json() as { provedor?: string; token?: string; erro?: string };
+      const { resposta, dados } = await pedirSessaoTranscricao(atual.controlador.signal);
       if (!vigente()) return;
       if (!resposta.ok) throw new Error(dados.erro ?? "Não consegui iniciar a transcrição.");
       if (dados.provedor === "elevenlabs" && dados.token) {
@@ -112,6 +128,7 @@ export function useTranscricao({ aoTexto, bloqueada = false, obterStream, libera
         atual.sessao = await iniciarScribe({
           token: dados.token, termos: vocabulario.current, captura: atual.antecipada,
           signal: atual.controlador.signal, eventos,
+          obterToken: () => renovarToken(atual.controlador.signal),
         });
       } else if (dados.provedor === "navegador") {
         ultimoProvedor = "navegador";
