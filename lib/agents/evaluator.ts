@@ -13,7 +13,7 @@ import { allPassed } from "@/lib/agents/policy";
 import { buildEvaluatorSystem, buildEvaluatorUser } from "@/lib/agents/prompts/evaluator";
 import { dadoEmLinha, tentativasDeInjecao, type TentativaDeInjecao } from "@/lib/seguranca/injecao";
 import { ehItemGenerico, ehPedidoDeRepeticao, FRACAO_DE_ENCERRAMENTO_ANTECIPADO, fatoDeCobertura, mencionaDuracao, semTermosInternos, textoCulpaOCandidatoPorPedido } from "@/lib/totti/relatorio";
-import { CONCEITOS_EMPECILHO, type Report, type SessionEvent } from "@/lib/contracts";
+import { CONCEITOS_EMPECILHO, type InterviewConfig, type Report, type SessionEvent } from "@/lib/contracts";
 import { formatMs } from "@/lib/format";
 import { completeJson } from "@/lib/llm";
 import { registrarUsoLlm } from "./uso";
@@ -148,12 +148,14 @@ async function evaluate(session: SessionState, status: ReportStatus, rota: "prim
   const output = await judge(system, user, judgedIds, status, session, rota);
   const byId = new Map(output.criteria.map((c) => [c.id, c]));
 
-  const scoredCriteria = config.criteria.map((c) => {
+  const criteriosDaConta = comCorretude(config.criteria);
+  const fatos = fatosDaSessao(session, hidden);
+  const scoredCriteria = criteriosDaConta.map((c) => {
     if (c.id === OBJECTIVE_CRITERION) return { id: c.id, name: c.name, ...correctness(session, hidden, endT) };
     const rawJudged = byId.get(c.id);
     // Pedir para repetir, dizer que não entendeu, corrigir o entrevistador ou pedir para encerrar é neutro: nunca é
     // prova. Se era a única prova de uma nota baixa, o critério fica sem nota.
-    const judged = rawJudged && descartarProvaDePedido(rawJudged, falasDoCandidatoPorMomento(session));
+    const judged = rawJudged && descartarAfirmacoesSemFato(descartarProvaDePedido(rawJudged, falasDoCandidatoPorMomento(session)), fatos, timeline.labels);
     if (!judged || !judgedIds.includes(c.id) || judged.score === null) {
       return { id: c.id, name: c.name, score: null, evidence: [{ t: endT, text: judged?.semProva ? "Sem fala de conteúdo do candidato para avaliar." : "Não explorado na entrevista." }] };
     }
@@ -175,7 +177,7 @@ async function evaluate(session: SessionState, status: ReportStatus, rota: "prim
   });
 
   // Média só dos critérios explorados (corretude sempre tem nota).
-  const scored = config.criteria.flatMap((c, i) => {
+  const scored = criteriosDaConta.flatMap((c, i) => {
     const score = criteria[i].score;
     return score === null ? [] : [{ score, weight: c.weight }];
   });
@@ -184,13 +186,13 @@ async function evaluate(session: SessionState, status: ReportStatus, rota: "prim
   const overall = Math.round(Math.min(4, Math.max(1, weighted)) * 10) / 10;
   const tests = testCounts(session, hidden);
   // Encerramento antes do tempo é fato de cobertura: dito sem adjetivo e sem peso na nota.
-  const textos = limparTextosDoRelatorio(output, fatoDeEncerramentoAntecipado(endT, config.durationMin, criteria.filter((c) => c.score === null).length, criteria.length));
+  const textos = limparTextosDoRelatorio(output, fatoDeEncerramentoAntecipado(endT, config.durationMin, criteria.filter((c) => c.score === null).length, criteria.length), fatos);
 
   return {
     sessionId: session.sessionId,
     configId: config.id,
     roleTitle: config.roleTitle,
-    recommendation: overall >= 3 ? "avancar" : overall >= 2 ? "talvez" : "nao_avancar",
+    recommendation: recomendacaoDe(overall, tests),
     overallScore: overall,
     criteria,
     summary: textos.summary,
@@ -249,10 +251,13 @@ export function fatoDeEncerramentoAntecipado(endMs: number, previstoMin: number,
 export function limparTextosDoRelatorio<T extends Pick<EvaluatorOutput, "summary" | "strengths" | "concerns" | "nextSteps">>(
   output: T,
   fato: string | null,
+  fatos?: FatosDaSessao,
 ): Pick<EvaluatorOutput, "summary" | "strengths" | "concerns" | "nextSteps"> {
-  const bom = (t: string) => t.trim() !== "" && !textoCulpaOCandidatoPorPedido(t) && !ehItemGenerico(t);
+  const bom = (t: string) => t.trim() !== "" && !textoCulpaOCandidatoPorPedido(t) && !ehItemGenerico(t) && !(fatos && afirmaOQueOsFatosDesmentem(t, fatos));
   const lista = (xs: string[]) => xs.filter(bom).map(semTermosInternos);
-  const resumo = bom(output.summary) ? semTermosInternos(output.summary.trim()) : "";
+  // No resumo, sai só a frase que contradiz os fatos; o resto fica.
+  const resumoFiltrado = fatos ? output.summary.split(/(?<=[.!?])\s+/).filter((f) => !afirmaOQueOsFatosDesmentem(f, fatos)).join(" ") : output.summary;
+  const resumo = bom(resumoFiltrado) ? semTermosInternos(resumoFiltrado.trim()) : "";
   const comFato = fato && !mencionaDuracao(resumo) ? [resumo, fato].filter(Boolean).join(" ") : resumo;
   return { summary: comFato, strengths: lista(output.strengths), concerns: lista(output.concerns), nextSteps: lista(output.nextSteps) };
 }
@@ -283,6 +288,83 @@ export function descartarProvaDePedido<T extends { score: number | null; evidenc
     return (falas.length > 0 && falas.every(ehPedidoDeRepeticao)) || ehPedidoDeRepeticao(e.text);
   };
   const evidence = judged.evidence.filter((e) => !ehPedido(e));
+  if (evidence.length === judged.evidence.length) return judged;
+  if (evidence.length === 0) return { ...judged, score: null, evidence, semProva: true };
+  return { ...judged, evidence };
+}
+
+
+// ---------------------------------------------------------------------------
+// Travas objetivas: recomendação, corretude e afirmações que os fatos desmentem
+// ---------------------------------------------------------------------------
+
+/** Fração mínima de testes escondidos para a recomendação poder ser "avancar". */
+export const FRACAO_MINIMA_DE_TESTES = 0.5;
+
+/**
+ * Recomendação pela média, com trava objetiva: nenhum teste aprovado (havendo testes) é "nao_avancar" e abaixo de 50 %
+ * é no máximo "talvez", não importa a média dos critérios subjetivos.
+ */
+export function recomendacaoDe(overall: number, tests: { passed: number; total: number }): Report["recommendation"] {
+  const pelaMedia: Report["recommendation"] = overall >= 3 ? "avancar" : overall >= 2 ? "talvez" : "nao_avancar";
+  if (tests.total <= 0) return pelaMedia;
+  if (tests.passed <= 0) return "nao_avancar";
+  if (tests.passed / tests.total < FRACAO_MINIMA_DE_TESTES && pelaMedia === "avancar") return "talvez";
+  return pelaMedia;
+}
+
+/** `corretude` (pelos testes escondidos) sempre entra no cálculo, mesmo que a pré-entrevista não a tenha pedido. */
+export function comCorretude(criteria: InterviewConfig["criteria"]): InterviewConfig["criteria"] {
+  if (criteria.some((c) => c.id === OBJECTIVE_CRITERION)) return criteria;
+  return [
+    ...criteria,
+    { id: OBJECTIVE_CRITERION, name: "Corretude e código", description: "Passa nos testes escondidos.", focus: "tecnico", weight: 1 },
+  ];
+}
+
+/** O que o sistema sabe com certeza e o modelo não pode contradizer. */
+export interface FatosDaSessao {
+  /** Rodou o código (evento `run`) ou há testes contados. */
+  rodou: boolean;
+  /** Tempo da primeira fala ou pergunta do entrevistador; null se ele nunca perguntou nada. */
+  primeiraFalaDoEntrevistador: number | null;
+}
+
+export function fatosDaSessao(session: SessionState, hidden: HiddenTestsResult): FatosDaSessao {
+  const tests = testCounts(session, hidden);
+  const rodou = session.events.some((e) => e.type === "run") || tests.total > 0;
+  const falas = session.events.filter(
+    (e) => (e.type === "speech" && e.role === "agent" && !ehFalaDeReserva(e.text)) || e.type === "blip_opened",
+  );
+  return { rodou, primeiraFalaDoEntrevistador: falas.length ? Math.min(...falas.map((e) => e.t)) : null };
+}
+
+const AFIRMA_QUE_NAO_RODOU = /\b(?:n[aã]o|nunca)\s+(?:chegou\s+a\s+)?(?:rodou|executou|rodar|executar|testou)\b|\bsem\s+(?:rodar|executar|testar)\b/i;
+const AFIRMA_QUANDO_PERGUNTADO = /\b(?:quando|ao\s+ser|assim\s+que\s+foi|se)\s+perguntad[oa]s?\b|\bquando\s+(?:o\s+entrevistador\s+)?perguntou\b/i;
+
+/** Texto livre que afirma "não rodou" havendo execução, ou "quando perguntado" sem ninguém ter perguntado antes. */
+export function afirmaOQueOsFatosDesmentem(texto: string, fatos: FatosDaSessao, quando?: number): boolean {
+  if (fatos.rodou && AFIRMA_QUE_NAO_RODOU.test(texto)) return true;
+  if (AFIRMA_QUANDO_PERGUNTADO.test(texto)) {
+    // Sem tempo conhecido (resumo), basta ter havido alguma pergunta no fio.
+    const pergunta = fatos.primeiraFalaDoEntrevistador;
+    if (pergunta === null) return true;
+    if (quando !== undefined && pergunta > quando) return true;
+  }
+  return false;
+}
+
+/**
+ * Tira da nota a evidência que contradiz os fatos (ver `afirmaOQueOsFatosDesmentem`); sem evidência que sobre, a nota
+ * vira nula (sem prova, sem nota). Se sobrou alguma, a nota fica. Pura.
+ */
+export function descartarAfirmacoesSemFato<T extends { score: number | null; evidence: { at: string; text: string }[] }>(
+  judged: T,
+  fatos: FatosDaSessao,
+  labels: Map<string, number>,
+): T & { semProva?: boolean } {
+  if (judged.evidence.length === 0) return judged;
+  const evidence = judged.evidence.filter((e) => !afirmaOQueOsFatosDesmentem(e.text, fatos, labels.get(e.at.trim())));
   if (evidence.length === judged.evidence.length) return judged;
   if (evidence.length === 0) return { ...judged, score: null, evidence, semProva: true };
   return { ...judged, evidence };
@@ -434,6 +516,9 @@ function describeSignals(session: SessionState, hidden: HiddenTestsResult): stri
     hidden.ran
       ? `Testes escondidos: ${hidden.passed}/${hidden.total} passaram${hidden.cases.some((c) => !c.passed) ? ` (falharam: ${hidden.cases.filter((c) => !c.passed).map((c) => `${c.name}${c.detail ? ` — ${dadoEmLinha("saida_dos_testes", c.detail)}` : ""}`).join("; ")})` : ""}. A nota de corretude já sai disso.`
       : `Testes escondidos não rodaram (${hidden.reason}).`,
+    runs.length > 0
+      ? `FATO: o candidato rodou o código ${runs.length} ${runs.length === 1 ? "vez" : "vezes"}. Nunca diga que ele não rodou ou não testou.`
+      : "FATO: o candidato não rodou o código nenhuma vez.",
     `Execuções: ${runs.length}${firstGreen ? `; primeira com todos os testes visíveis passando em ${formatMs(firstGreen.t)}` : "; nunca passou em todos os visíveis"}.`,
     `Dicas usadas: ${session.hintsUsed}.`,
     `Colagens: ${pastes.length}${largePastes.length > 0 ? ` (${largePastes.length} com ${LARGE_PASTE_LINES}+ linhas)` : ""}.`,
