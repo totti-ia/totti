@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { findConfig } from "@/lib/config/store";
-import { sendTriagemConvite } from "@/lib/email";
-import { criarConvite, salvarConvite } from "@/lib/convites/store";
+import { enviarConviteDoLote } from "@/lib/convites/envio";
+import { enfileirar, lerLote, processarLote } from "@/lib/convites/fila";
 import { recebeEmail } from "@/lib/convites/teste";
 import { ipDe, reservarEnvioTestador } from "@/lib/convites/testador";
 import { urlPublica, verificarUrlPublica } from "@/lib/convites/url";
@@ -26,16 +26,16 @@ const Body = z.object({
       }),
     )
     .min(1)
-    .max(200)
+    .max(10_000)
     // Um testador por pedido: o campo é de uma pessoa só, e isso fecha a porta para disparo em massa.
     .refine((l) => l.filter((c) => c.testador).length <= 1, "no máximo um testador por pedido"),
 });
 
-type Status = "enviado" | "simulado" | "erro";
-
 /**
- * Cria um convite por candidato. Recebem email de verdade quem `recebeEmail` (o Lucas) e o testador que
- * deixou o próprio e-mail (dentro do limite de lib/convites/testador.ts); os demais são simulados.
+ * Enfileira os convites do lote e devolve `{ lote, total }` na hora; quem envia é o worker
+ * (`GET /api/convites/lote/<id>`, lib/convites/fila.ts), em blocos e com limite por minuto.
+ * Recebem email de verdade quem `recebeEmail` (o Lucas) e o testador que deixou o próprio e-mail (dentro do limite de
+ * lib/convites/testador.ts); os demais são simulados. O testador continua recebendo na hora, dentro deste pedido.
  */
 export async function POST(req: NextRequest) {
   let json: unknown;
@@ -66,70 +66,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: mensagem }, { status: 503 });
   }
 
-  const resultados: { email: string; status: Status; motivo?: string; link?: string }[] = [];
-  let urlVerificada = false;
-  for (const candidato of body.candidatos) {
-    const email = candidato.email.toLowerCase();
-    const testador = candidato.testador === true;
+  const itens = body.candidatos.map((c) => {
+    const email = c.email.toLowerCase();
+    const testador = c.testador === true;
     const real = recebeEmail(email) || (testador && reservarEnvioTestador(ipDe(req.headers), email));
-    const convite = criarConvite({
-      vagaId: body.vagaId,
-      configId: body.configId,
-      cargo: roleTitle,
-      mode,
-      durationMin,
-      languages,
-      candidato: { nome: candidato.nome, email },
-      ...(testador ? { testador: true } : {}),
-    });
-    const link = `${base}/agendar/${convite.token}`;
+    return { nome: c.nome, email, real, ...(testador ? { testador: true } : {}) };
+  });
 
-    // Guarda de segurança: nunca chamar o provedor de email para endereços de demonstração (nem para o
-    // resto do time, que fica simulado para não gastar envio).
-    if (!real) {
-      await salvarConvite({ ...convite, status: "simulado" });
-      const motivo = testador ? "limite de e-mails de teste atingido; use o link" : "sem envio de e-mail (demonstração)";
-      resultados.push({ email, status: "simulado", motivo, link });
-      continue;
-    }
-
-    if (!urlVerificada) {
-      const verificacao = await verificarUrlPublica(base, new URL(req.url).origin);
-      urlVerificada = true;
-      if (!verificacao.vivo) {
-        const mensagem = `O endereço público configurado não responde: ${verificacao.host}`;
-        console.warn(`[convites] endereço público sem resposta host=${verificacao.host}`);
-        return NextResponse.json({ erro: mensagem }, { status: 502 });
-      }
-    }
-
-    try {
-      await salvarConvite(convite);
-      const envio = await sendTriagemConvite({
-        candidateName: candidato.nome,
-        to: email,
-        roleTitle,
-        mode,
-        durationMin,
-        languages,
-        scheduleUrl: link,
-      });
-      if (envio.status === "simulated") {
-        await salvarConvite({ ...convite, status: "simulado" });
-        resultados.push({ email, status: "simulado", motivo: envio.reason, link });
-      } else {
-        resultados.push({ email, status: "enviado", link });
-      }
-    } catch (err) {
-      // Convite fica salvo como "enviado" (não há estado de erro no tipo); o resultado informa a falha.
-      const motivo = err instanceof Error ? err.message.slice(0, 160) : "falha desconhecida";
-      resultados.push({ email, status: "erro", motivo, link });
+  // Antes de gastar e-mail de verdade, confere que o endereço público responde (o link do convite precisa abrir).
+  if (itens.some((i) => i.real)) {
+    const verificacao = await verificarUrlPublica(base, new URL(req.url).origin);
+    if (!verificacao.vivo) {
+      const mensagem = `O endereço público configurado não responde: ${verificacao.host}`;
+      console.warn(`[convites] endereço público sem resposta host=${verificacao.host}`);
+      return NextResponse.json({ erro: mensagem }, { status: 502 });
     }
   }
 
-  const contagem = (s: Status) => resultados.filter((r) => r.status === s).length;
-  console.log(
-    `[convites] vaga=${body.vagaId} total=${resultados.length} enviados=${contagem("enviado")} simulados=${contagem("simulado")} erros=${contagem("erro")}`,
-  );
-  return NextResponse.json({ resultados });
+  const { lote, total } = await enfileirar({ vagaId: body.vagaId, cargo: roleTitle, configId: body.configId, mode, durationMin, languages, base }, itens);
+
+  // O testador recebe na hora: manda só ele (sem gastar a cota por minuto dos demais) e devolve o link.
+  let testador: { status: "enviado" | "simulado" | "erro"; link?: string; motivo?: string } | undefined;
+  if (itens.some((i) => i.testador)) {
+    await processarLote(lote, enviarConviteDoLote, { soEstes: (i) => i.testador === true });
+    const item = (await lerLote(lote))?.itens.find((i) => i.testador);
+    if (item && item.status !== "pendente") testador = { status: item.status, link: item.link, motivo: item.motivo };
+  }
+  console.log(`[convites] vaga=${body.vagaId} lote=${lote} total=${total} testador=${testador?.status ?? "nao"}`);
+  return NextResponse.json({ lote, total, ...(testador ? { testador } : {}) });
 }
