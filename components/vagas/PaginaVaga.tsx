@@ -21,6 +21,7 @@ import {
   NOME_SENIORIDADE_VAGA,
   etapasDa,
   marcarRecente,
+  tocarVaga,
   numero,
   quandoFoi,
   situacaoDa,
@@ -53,10 +54,13 @@ import Casca from "./Casca";
 import Contratacoes from "./Contratacoes";
 import { Abas, Busca, Paginacao, Seletor, Voltar } from "./controles";
 import ResultadosDaVaga from "./ResultadosDaVaga";
+import { resumoDoEnvio } from "@/lib/convites/resumo";
 
 const POR_PAGINA = 50;
 /** Limite de candidatos por pedido em /api/convites. */
-const LOTE_CONVITES = 200;
+/** De quanto em quanto tempo a tela pergunta ao servidor como vai o lote de convites. */
+const INTERVALO_DO_LOTE_MS = 1500;
+type ProgressoDoLote = { total: number; enviados: number; falharam: number; pendentes: number; concluido: boolean; falhas: string[] };
 
 type Resultado = { email: string; status: "enviado" | "simulado" | "erro"; motivo?: string; link?: string };
 
@@ -183,6 +187,7 @@ function Candidatos({
   const [pagina, setPagina] = useState(0);
   const [selecionados, setSelecionados] = useState<Set<number>>(new Set());
   const [enviando, setEnviando] = useState(false);
+  const [progressoEnvio, setProgressoEnvio] = useState<ProgressoDoLote | null>(null);
   const [retorno, setRetorno] = useState<Retorno | null>(null);
 
   const contagem = useMemo(() => {
@@ -254,49 +259,52 @@ function Candidatos({
     setEnviando(true);
     const novo: Retorno = { enviados: 0, demo: 0, simulados: [], erros: [] };
     try {
-      // Em lotes, um por vez: cada lote que chega já vira convite registrado e sai da seleção.
-      for (let ini = 0; ini < escolhidos.length; ini += LOTE_CONVITES) {
-        const lote = escolhidos.slice(ini, ini + LOTE_CONVITES);
-        const res = await fetch("/api/convites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vagaId: vaga.id,
-            cargo: vaga.cargo,
-            configId: plano.configId,
-            formato: plano.formato,
-            duracaoMin: plano.duracaoMin,
-            candidatos: lote.map((c) => ({ nome: c.nome, email: c.email, ...(c.testador ? { testador: true } : {}) })),
-          }),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { resultados } = (await res.json()) as { resultados: Resultado[] };
+      // Um pedido só: o servidor enfileira o lote (lib/convites/fila.ts) e a tela acompanha o resumo.
+      const res = await fetch("/api/convites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vagaId: vaga.id,
+          cargo: vaga.cargo,
+          configId: plano.configId,
+          formato: plano.formato,
+          duracaoMin: plano.duracaoMin,
+          candidatos: escolhidos.map((c) => ({ nome: c.nome, email: c.email, ...(c.testador ? { testador: true } : {}) })),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const r = (await res.json()) as { lote: string; total: number; testador?: { status: Resultado["status"]; link?: string } };
+      const meu = escolhidos.find((c) => c.testador);
+      if (meu && r.testador?.status === "simulado") novo.simulados.push({ nome: meu.nome, email: meu.email, link: r.testador.link });
 
-        const porEmail = new Map(lote.map((c) => [c.email.toLowerCase(), c]));
-        const registrar: number[] = [];
-        for (const r of resultados) {
-          const c = porEmail.get(r.email);
-          if (!c) continue;
-          if (r.status === "erro") {
-            novo.erros.push({ email: r.email, motivo: r.motivo });
-            continue;
-          }
-          registrar.push(c.i);
-          if (r.status === "enviado") novo.enviados++;
-          else if (ehCandidatoTeste(c)) novo.simulados.push({ nome: c.nome, email: c.email, link: r.link });
-          else novo.demo++;
-        }
-        convidar(vaga.id, registrar);
-        setSelecionados((s) => {
-          const resto = new Set(s);
-          for (const c of lote) resto.delete(c.i);
-          return resto;
-        });
+      let p: ProgressoDoLote = { total: r.total, enviados: 0, falharam: 0, pendentes: r.total, concluido: false, falhas: [] };
+      setProgressoEnvio(p);
+      // Cada consulta também move a fila do lado do servidor.
+      while (!p.concluido) {
+        await new Promise((ok) => setTimeout(ok, INTERVALO_DO_LOTE_MS));
+        const st = await fetch(`/api/convites/lote/${r.lote}`, { cache: "no-store" });
+        if (!st.ok) throw new Error(`HTTP ${st.status}`);
+        p = (await st.json()) as ProgressoDoLote;
+        setProgressoEnvio(p);
       }
+
+      const falhas = new Set(p.falhas.map((e) => e.toLowerCase()));
+      const registrar = escolhidos.filter((c) => !falhas.has(c.email.toLowerCase())).map((c) => c.i);
+      for (const e of p.falhas) novo.erros.push({ email: e });
+      // A fila não separa e-mail de verdade de demonstração: conta tudo como enviado.
+      novo.enviados = p.enviados - novo.simulados.length;
+      convidar(vaga.id, registrar);
+      tocarVaga(vaga.id);
+      setSelecionados((s) => {
+        const resto = new Set(s);
+        for (const i of registrar) resto.delete(i);
+        return resto;
+      });
     } catch {
       // Sem resposta: o que não saiu continua selecionado, para tentar de novo.
-      novo.falha = "Não foi possível enviar. Os convites que não saíram continuam selecionados; tente de novo.";
+      novo.falha = "Não foi possível acompanhar o envio. Os convites que não foram confirmados continuam selecionados; tente de novo.";
     }
+    setProgressoEnvio(null);
     setRetorno(novo);
     setEnviando(false);
   };
@@ -410,7 +418,7 @@ function Candidatos({
                   disabled={enviando}
                   className="rounded-full bg-texto-claro px-3.5 py-1.5 font-medium text-texto hover:opacity-90 disabled:opacity-60"
                 >
-                  {enviando ? "Enviando…" : "Convidar para a entrevista"}
+                  {enviando ? (progressoEnvio ? resumoDoEnvio(progressoEnvio) : "Enviando…") : "Convidar para a entrevista"}
                 </button>
               </span>
             </motion.div>

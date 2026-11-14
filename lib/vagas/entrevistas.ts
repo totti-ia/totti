@@ -91,3 +91,13 @@ export function comReais(f: Funil, reais: EntrevistaReal[] = []): Funil {
     novos: f.novos + concluiram,
   };
 }
+
+/**
+ * Relatório pronto conta como atualização da vaga: a vaga sobe no painel quando uma entrevista dela fica pronta.
+ * Sem hora de conclusão na lista, usa o início da entrevista (fica a minutos do relatório).
+ */
+export function comUltimoRelatorio<V extends { atualizadaEm?: number }>(v: V, reais: EntrevistaReal[] = []): V {
+  const ultima = reais.filter((e) => andamentoDa(e) === "pronto").reduce((m, e) => Math.max(m, e.startedAt), 0);
+  if (ultima <= (v.atualizadaEm ?? 0)) return v;
+  return { ...v, atualizadaEm: ultima };
+}

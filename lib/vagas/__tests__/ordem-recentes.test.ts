@@ -30,3 +30,13 @@ test("vaga de exemplo sem registro usa os dias de aberta", () => {
   const nova = vaga("Nova", { mockada: true, abertaHaDias: 2 });
   assert.deepEqual([velha, nova].sort(compararVagas("recentes", agora)).map((v) => v.cargo), ["Nova", "Velha"]);
 });
+
+test("relatório pronto conta como atualização; em andamento não", async () => {
+  const { comUltimoRelatorio } = await import("@/lib/vagas/entrevistas");
+  const e = (startedAt: number, state: "done" | "running", ended = true) =>
+    ({ sessionId: String(startedAt), configId: "c", roleTitle: "", startedAt, ended, state, formato: "ide", href: "" }) as never;
+  const v = vaga("A", { atualizadaEm: 100 });
+  assert.equal(comUltimoRelatorio(v, [e(500, "done"), e(900, "running", false)]).atualizadaEm, 500);
+  assert.equal(comUltimoRelatorio(v, [e(50, "done")]).atualizadaEm, 100);
+  assert.equal(comUltimoRelatorio(v).atualizadaEm, 100);
+});

@@ -40,7 +40,7 @@ import {
 } from "@/lib/vagas/workspace";
 import type { InterviewConfig } from "@/lib/contracts";
 import { buscaNormalizada, comConvites, useConvitesFeitos } from "@/lib/vagas/candidatos";
-import { comReais, useEntrevistasReais } from "@/lib/vagas/entrevistas";
+import { comReais, comUltimoRelatorio, useEntrevistasReais } from "@/lib/vagas/entrevistas";
 import { curvaSaida, curvaSuave } from "@/lib/design/motion";
 import TituloRevelado from "@/components/totti/TituloRevelado";
 import Casca from "./Casca";
@@ -72,7 +72,7 @@ function Conteudo({ vagas, rascunhos }: { vagas: VagaEmpresa[]; rascunhos: Rascu
     () =>
       vagas.map((v) => {
         const funil = comConvites(comReais(v.funil, v.resumo ? reais?.[v.resumo.configId] : undefined), convites[v.id]);
-        const comFunil = { ...v, funil };
+        const comFunil = { ...comUltimoRelatorio(v, v.resumo ? reais?.[v.resumo.configId] : undefined), funil };
         return { ...comFunil, estagio: estagioDa(comFunil) };
       }),
     [vagas, convites, reais],
