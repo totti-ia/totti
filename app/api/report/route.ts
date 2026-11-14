@@ -28,7 +28,7 @@ export interface ReportListItem {
   recommendation?: RecomendacaoDoResultado;
   /** Live Coding ou System Design: cada um tem o seu relatório completo. */
   formato: FormatoDaEntrevista;
-  /** Para onde "Relatório" leva. */
+  /** Para onde "Relatório" leva: /relatorio/<id>, igual nos dois formatos. */
   href: string;
   /** O resumo completo (justificativas, pontos fortes e fracos) para o painel mostrar sem abrir o relatório. */
   cartao?: CartaoDoResultado;
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       overallScore: s.report?.report?.overallScore,
       recommendation: s.report?.report?.recommendation,
       formato: "live_coding" as const,
-      href: `/report?sessionId=${encodeURIComponent(s.sessionId)}`,
+      href: `/relatorio/${encodeURIComponent(s.sessionId)}`,
       cartao: s.report?.report ? cartaoDoRelatorio(s.report.report) : undefined,
     }));
     // Relatórios de sessões que já saíram da memória (o servidor reiniciou).
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         overallScore: report.overallScore,
         recommendation: report.recommendation,
         formato: "live_coding",
-        href: `/report?sessionId=${encodeURIComponent(report.sessionId)}`,
+        href: `/relatorio/${encodeURIComponent(report.sessionId)}`,
         cartao: cartaoDoRelatorio(report),
       });
     }

@@ -5,7 +5,6 @@
 // As regras que o Totti aprendeu com o time aparecem numa linha curta embaixo do critério que elas mexeram.
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
-import type { RegraNoCriterio } from "@/components/squad/AprendidoComOTime";
 
 export interface NotaCriterio {
   id: string;
@@ -16,9 +15,13 @@ export interface NotaCriterio {
   resumo?: string;
   /** Índices das provas no painel de momentos, em ordem de tempo. */
   provas: number[];
-  /** Regras da squad que pesaram neste critério ("critério aprendido com o time"). */
-  regras?: RegraNoCriterio[];
+  /** O que a nota significa na rubrica (nível), em letra pequena embaixo do resumo. */
+  detalhe?: string;
+  /** Regras da squad que pesaram neste critério ("critério aprendido com o time"); `origem` diz de onde veio. */
+  regras?: { texto: string; efeito: "valoriza" | "penaliza"; origem?: "vaga" | "empresa" }[];
 }
+
+const ROTULO_DA_REGRA = { vaga: "Regra desta vaga", empresa: "Regra de outra vaga da empresa" } as const;
 
 /** O que cada nota quer dizer, na escala do avaliador (1 a 4). */
 const SIGNIFICADO: Record<number, string> = { 4: "Forte", 3: "Bom", 2: "Parcial", 1: "Insuficiente" };
@@ -62,6 +65,7 @@ function Linha({ n, onAbrir }: { n: NotaCriterio; onAbrir?: (momento: number) =>
       <div className="flex min-w-0 flex-col gap-1">
         <span className={`text-[15px] font-medium ${n.nota === null ? "text-texto-suave" : ""}`}>{n.nome}</span>
         {n.resumo && <p className="text-[13.5px] leading-snug text-pretty text-texto-suave">{n.resumo}</p>}
+        {n.detalhe && <p className="text-[12.5px] leading-snug text-pretty text-texto-suave/80">{n.detalhe}</p>}
         {n.regras?.map((r, i) => (
           <p key={i} className="mt-0.5 flex items-start gap-1.5 text-[12.5px] leading-snug text-texto-suave">
             {r.efeito === "valoriza" ? (
@@ -70,7 +74,7 @@ function Linha({ n, onAbrir }: { n: NotaCriterio; onAbrir?: (momento: number) =>
               <ArrowDown size={13} className="mt-px shrink-0" aria-label="Penaliza" />
             )}
             <span>
-              <span className="font-medium text-texto">Critério do time:</span> {r.texto}
+              <span className="font-medium text-texto">{r.origem ? ROTULO_DA_REGRA[r.origem] : "Critério do time"}:</span> {r.texto}
             </span>
           </p>
         ))}

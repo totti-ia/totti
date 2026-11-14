@@ -51,14 +51,7 @@ const ESPACO_FAIXAS = 10;
 /** Altura de cada fileira de ícones acima do gráfico. */
 const ALTURA_FILEIRA = TAMANHO_ICONE + 4;
 
-/** "50 s", "2 min", "1 min 50 s": mais fácil de ler que 01:50 quando é uma duração. */
-export function duracaoCurta(ms: number): string {
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s} s`;
-  const m = Math.floor(s / 60);
-  const resto = s % 60;
-  return resto === 0 ? `${m} min` : `${m} min ${resto} s`;
-}
+export { duracaoCurta } from "@/lib/relatorio/formato";
 
 function marcasDoEixo(duracao: number): number[] {
   const passos = [30, 60, 120, 300, 600, 900, 1800, 3600].map((s) => s * 1000);
