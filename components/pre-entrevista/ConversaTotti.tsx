@@ -18,6 +18,8 @@ import { acrescentarFala } from "@/lib/transcricao/tipos";
 import { termosDoTitulo } from "@/lib/transcricao/vocabulario";
 import { DICA_DITADO_ENTER, useEnterDoDitado } from "@/lib/transcricao/enterDoDitado";
 import { BotaoDitado, EstadoDitado } from "@/components/transcricao/ControleDitado";
+import { JANELA_DO_TRECHO_ATRASADO_MS } from "@/lib/audio/fimDoTurno";
+import { useFimDoTurno } from "@/lib/audio/useFimDoTurno";
 import { useVozAgente } from "@/lib/voz/useVozAgente";
 import { criarDetectorDeInterrupcao, type DetectorDeInterrupcao } from "@/lib/voz/detectorDeInterrupcao";
 import type { CapturaAntecipada } from "@/lib/transcricao/capturaAntecipada";
@@ -28,9 +30,6 @@ const MARCA = "\n\n[Documento anexado: ";
 
 /** Quanto tempo depois do envio os três pontinhos aparecem. */
 const ATRASO_DIGITANDO = 650;
-
-/** No modo voz, quanto esperar depois de um trecho confirmado (o VAD já esperou 1 s de silêncio) para enviar. */
-const ESPERA_ENVIO_NA_PAUSA = 800;
 
 export function montarMensagem(texto: string, documentos: Documento[]) {
   return texto + documentos.map((d) => `${MARCA}${d.nome}]\n${d.texto}`).join("");
@@ -82,12 +81,18 @@ export default function ConversaTotti({
   const textoRef = useRef("");
   const mudarTexto = (valor: string) => { textoRef.current = valor; setTexto(valor); };
   const termos = useMemo(() => termosDoTitulo(cargo), [cargo]);
+  // O turno fechou sem texto (o Scribe ainda não confirmou o trecho): o próximo texto envia, se chegar até este prazo.
+  const trechoAtrasadoAte = useRef(0);
   const ditado = useTranscricao({
     termos,
     bloqueada: pensando || lendo || bloqueada || pausarEntrada,
     aoTexto: (fala) => {
       mudarTexto(acrescentarFala(textoRef.current, fala));
-      if (modoVoz.current) agendarEnvioNaPausa();
+      // Texto transcrito prova fala, mesmo baixa: sem isso quem fala baixo nunca tem o turno fechado.
+      marcarFala();
+      const dentroDoPrazo = Date.now() < trechoAtrasadoAte.current;
+      trechoAtrasadoAte.current = 0;
+      if (dentroDoPrazo) void enviarFechado();
     },
   });
   const lista = useRef<HTMLDivElement>(null);
@@ -157,7 +162,6 @@ export default function ConversaTotti({
   // Ao esconder a conversa, sai do modo voz: o mic não reabre sozinho quando a pessoa voltar.
   useEffect(() => {
     if (ativa) return;
-    clearTimeout(timerPausa.current);
     mudarModoVoz(false);
     setTurnosNoEnvio(null);
   }, [ativa]);
@@ -176,24 +180,31 @@ export default function ConversaTotti({
     setTurnosNoEnvio(modoVoz.current ? a.turnos : null);
   }
 
-  const timerPausa = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pararDitado = ditado.parar;
-  function agendarEnvioNaPausa() {
-    clearTimeout(timerPausa.current);
-    timerPausa.current = setTimeout(async () => {
-      if (!modoVoz.current || !textoRef.current.trim()) return;
-      await pararDitado();
-      if (modoVoz.current) enviar(true);
-    }, ESPERA_ENVIO_NA_PAUSA);
+  async function enviarFechado() {
+    await pararDitado();
+    if (modoVoz.current) enviar(true);
   }
-  // Fala nova (parcial) depois do trecho confirmado: a pessoa continuou, então ainda não é a pausa.
-  useEffect(() => {
-    if (ditado.parcial) clearTimeout(timerPausa.current);
-  }, [ditado.parcial]);
-  useEffect(() => () => clearTimeout(timerPausa.current), []);
+  // Fim do turno pela regra única (lib/audio/fimDoTurno.ts): silêncio de 3,5 s ou fala baixa de 8 s fecham; voz alta
+  // nunca fecha. Enquanto o Totti fala ou pensa, o turno não conta. Com texto, envia já; sem texto, espera o próximo trecho.
+  const ativoFimDoTurno = emModoVoz && ditado.estado === "ouvindo" && !pensando && !voz.ativa;
+  const { marcarFala } = useFimDoTurno({
+    ativo: ativoFimDoTurno,
+    obterEnergia: ditado.energia,
+    // A pessoa voltou a falar alto: o turno fechado sem texto não vale mais; o próximo fechamento é de outro turno.
+    aoMedir: (faixa) => { if (faixa === "alta") trechoAtrasadoAte.current = 0; },
+    aoFechar: () => {
+      // Trecho ainda sendo transcrito: espera o trecho final (aoTexto), sem prazo. Turno sem texto: espera um trecho curto.
+      if (ditado.parcial.trim()) trechoAtrasadoAte.current = Infinity;
+      else if (!textoRef.current.trim()) trechoAtrasadoAte.current = Date.now() + JANELA_DO_TRECHO_ATRASADO_MS;
+      else void enviarFechado();
+    },
+  });
+  // Turno reaberto ou modo voz encerrado: a marca do turno fechado sem texto não vale mais.
+  useEffect(() => { trechoAtrasadoAte.current = 0; }, [ativoFimDoTurno]);
   // Erro no microfone ou na transcrição: sai do modo voz em vez de tentar reabrir em laço.
   useEffect(() => {
-    if (ditado.estado === "erro") { clearTimeout(timerPausa.current); mudarModoVoz(false); setTurnosNoEnvio(null); }
+    if (ditado.estado === "erro") { mudarModoVoz(false); setTurnosNoEnvio(null); }
   }, [ditado.estado]);
 
   // Reabre o mic só depois que a resposta do Totti tocou (ou não tem como tocar): o mic corta a voz e a voz espera
@@ -214,7 +225,6 @@ export default function ConversaTotti({
   // interrupção, com o áudio de antes do disparo, para a primeira palavra da pessoa não se perder.
   function interromper(captura?: CapturaAntecipada) {
     voz.parar();
-    clearTimeout(timerPausa.current);
     setTurnosNoEnvio(null);
     mudarModoVoz(true);
     void iniciarDitado(captura);
@@ -257,7 +267,6 @@ export default function ConversaTotti({
     // Com o Totti falando, o botão do mic é uma interrupção: corta a fala e já ouve.
     iniciar: () => { if (voz.ativa) { interromper(); return Promise.resolve(); } mudarModoVoz(true); return ditado.iniciar(); },
     parar: () => {
-      clearTimeout(timerPausa.current);
       mudarModoVoz(false);
       setTurnosNoEnvio(null);
       return ditado.parar();

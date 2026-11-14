@@ -275,6 +275,22 @@ test("pré-entrevista manda o vocabulário de recrutamento e o do título como k
   sessao.cancelar();
 });
 
+test("Scribe informa a energia RMS de cada bloco enviado (o fim do turno usa)", async () => {
+  const energias: number[] = [];
+  const c = coletar();
+  const falso = scribeFalso();
+  const sessao = await iniciarScribe({
+    token: "teste", signal: new AbortController().signal,
+    eventos: { ...c.eventos, aoEnergia: (energia) => energias.push(energia) },
+  }, falso.dependencias);
+  falso.audio();
+  falso.silencio();
+  assert.equal(energias.length, 2);
+  assert.ok(Math.abs(energias[0] - 8000 / 32768) < 1e-6);
+  assert.equal(energias[1], 0);
+  sessao.cancelar();
+});
+
 test("energiaPcm16 mede a voz do bloco e a duração em 16 kHz", () => {
   const { energia, duracaoMs } = energiaPcm16(VOZ_BASE64);
   assert.ok(Math.abs(energia - 8000 / 32768) < 1e-6);

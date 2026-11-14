@@ -40,6 +40,9 @@ export function useTranscricao({ aoTexto, bloqueada = false, obterStream, libera
   sessaoIdRef.current = sessaoId;
   const vocabulario = useRef(termos);
   vocabulario.current = termos;
+  // Última energia RMS do microfone (o Scribe manda a cada bloco); quem consulta é o fim do turno (lib/audio/fimDoTurno.ts).
+  const energiaAtual = useRef(0);
+  const energia = useCallback(() => (referencia.current ? energiaAtual.current : 0), []);
 
   const cancelar = useCallback(() => {
     const atual = referencia.current;
@@ -65,12 +68,14 @@ export function useTranscricao({ aoTexto, bloqueada = false, obterStream, libera
     atual.liberar = focoAudio.assumir("entrada", cancelar);
     const vigente = () => referencia.current === atual;
     let falhou = false;
+    energiaAtual.current = 0;
     setErro(null);
     setParcial("");
     setEstado("conectando");
     const eventos: EventosTranscricao = {
       aoTexto: (texto) => { if (vigente()) receber.current(texto); },
       aoParcial: (texto) => { if (vigente()) setParcial(texto); },
+      aoEnergia: (valor) => { if (vigente()) energiaAtual.current = valor; },
       aoErro: (e) => {
         if (!vigente()) return;
         falhou = true;
@@ -167,7 +172,7 @@ export function useTranscricao({ aoTexto, bloqueada = false, obterStream, libera
   }, [cancelar]);
 
   const ativa = estado === "conectando" || estado === "ouvindo" || estado === "finalizando";
-  return { estado, ativa, parcial, erro, provedor, iniciar, parar, cancelar };
+  return { estado, ativa, parcial, erro, provedor, iniciar, parar, cancelar, energia };
 }
 
 export type Transcricao = ReturnType<typeof useTranscricao>;

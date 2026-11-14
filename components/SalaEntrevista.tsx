@@ -2,7 +2,6 @@
 
 // Sala da entrevista no quadro: o quadro em tela cheia, a janela de chamada no canto e a legenda embaixo.
 // O enunciado não fica num painel: o agente escreve no próprio quadro.
-import { esperaDoFimDaFala } from "@/lib/audio/fimDaFala";
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -17,7 +16,8 @@ import type { Quadro } from "@/components/Canvas";
 import { useEntrevista } from "@/lib/sessao/useEntrevista";
 import { usarServidor, type Fase } from "@/lib/sessao/cliente";
 import { useMidiaLocal } from "@/lib/presenca/useMidiaLocalQuadro";
-import { useFimPorSilencio } from "@/lib/presenca/useFimPorSilencio";
+import { JANELA_DO_TRECHO_ATRASADO_MS, type FaixaDeEnergia } from "@/lib/audio/fimDoTurno";
+import { useFimDoTurno } from "@/lib/audio/useFimDoTurno";
 import { useTranscricao } from "@/lib/presenca/useTranscricao";
 import { useLiberarAudio } from "@/lib/presenca/useLiberarAudio";
 import { FilaFalas } from "@/lib/audio/filaFalas";
@@ -166,14 +166,6 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
   const [confirmandoFim, setConfirmandoFim] = useState(false);
   const cancelarFim = useCallback(() => setConfirmandoFim(false), []);
 
-  // A resposta a um plin termina sozinha quando o candidato fala e depois fica em silêncio.
-  useFimPorSilencio({
-    ativo: estado.plin === "PERGUNTA_ATIVA" && !usarServidor(),
-    agenteFalando: entrevista.agenteFalando,
-    volume: midia.volume,
-    aoTerminar: entrevista.terminarResposta,
-  });
-
   function aoMudarDesenho(elementos: NonDeletedExcalidrawElement[]) {
     if (process.env.NODE_ENV === "development") {
       console.debug(`[quadro] ${elementos.length} elemento(s)`, elementos);
@@ -209,9 +201,6 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
 
   const [parcialVoz, setParcialVoz] = useState("");
   const { registrarSom, registrarFalaParcial } = entrevista;
-  useEffect(() => {
-    if (midia.microfoneLigado && midia.volume > 0.08) registrarSom();
-  }, [midia.microfoneLigado, midia.volume, registrarSom]);
   const [falaPendente, setFalaPendente] = useState<string | null>(null);
   const enviarVozRef = useRef(enviarFala);
   enviarVozRef.current = enviarFala;
@@ -231,46 +220,67 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
     if (entrevista.despedindo || estado.fase === "ENCERRADA") filaVoz.current?.limpar();
   }, [estado.fase, entrevista.despedindo]);
   useEffect(() => () => filaVoz.current?.limpar(), []);
-  // Turn-taking: os trechos finais do STT se acumulam e só seguem após o silêncio de `esperaDoFimDaFala`
-  // (1,5 s com a frase fechada; até 2,6 s quando ela termina pendurada, "e aí eu colocaria...").
-  // Fala parcial ou voz no microfone nesse intervalo adia o envio (não corta a frase no meio).
-  // Teto: barulho constante da sala não pode segurar a fala para sempre (2,5 s depois do primeiro trecho, só o
-  // silêncio em curso decide).
+  // Turn-taking: o fim do turno do candidato é a regra única de lib/audio/fimDoTurno.ts (silêncio de 3,5 s, ou
+  // 8 s de fala baixa, depois de voz alta; voz alta nunca fecha). Ao fechar, o Totti responde na hora. Os trechos
+  // finais do STT só se acumulam no buffer; se o turno fechar antes de o trecho chegar, o próximo manda na hora.
+  const escutaLigada = midia.microfoneLigado && !entrevista.despedindo && estado.fase !== "AGUARDANDO" && estado.fase !== "ENCERRADA" && !entrevista.agenteFalando;
   const bufferVoz = useRef("");
-  const timerVoz = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inicioBufferVoz = useRef(0);
-  const agendarEnvioVoz = useCallback((porVolume = false) => {
-    if (porVolume && Date.now() - inicioBufferVoz.current > 2500) return;
-    if (timerVoz.current) clearTimeout(timerVoz.current);
-    timerVoz.current = setTimeout(() => {
-      timerVoz.current = null;
-      const texto = bufferVoz.current.trim();
-      bufferVoz.current = "";
-      if (texto) filaVoz.current?.adicionar(texto);
-    }, esperaDoFimDaFala(bufferVoz.current));
+  // Prazo (Date.now) até o qual um trecho final atrasado ainda envia o turno fechado sem texto.
+  const trechoAtrasadoAte = useRef(0);
+  // Espelho da fala parcial: se o turno fecha com um trecho ainda em transcrição, o envio espera o trecho final.
+  const parcialRef = useRef("");
+  // `midia.volume` = min(1, rms * 6) (useMidiaLocalQuadro): dividir por 6 devolve o RMS cru que a regra espera.
+  const volumeRef = useRef(midia.volume);
+  volumeRef.current = midia.volume;
+  const obterEnergia = useCallback(() => volumeRef.current / 6, []);
+  const aoFecharTurno = useCallback(() => {
+    // Trecho ainda em transcrição: não envia agora; o trecho final, em receberVoz, manda buffer + trecho juntos.
+    if (parcialRef.current.trim()) {
+      trechoAtrasadoAte.current = Infinity;
+      return;
+    }
+    const texto = bufferVoz.current.trim();
+    if (!texto) {
+      trechoAtrasadoAte.current = Date.now() + JANELA_DO_TRECHO_ATRASADO_MS;
+      return;
+    }
+    bufferVoz.current = "";
+    filaVoz.current?.adicionar(texto);
   }, []);
+  // Fala baixa também é atividade do candidato (a rede de silêncio do servidor não pode cortar a resposta no meio).
+  // Voz alta de novo é um turno novo: o turno que fechou sem texto deixa de mandar o próximo trecho na hora.
+  const aoMedirTurno = useCallback((faixa: FaixaDeEnergia) => {
+    if (faixa === "alta") trechoAtrasadoAte.current = 0;
+    if (faixa !== "silencio") registrarSom();
+  }, [registrarSom]);
+  const { marcarFala } = useFimDoTurno({ ativo: escutaLigada, obterEnergia, aoFechar: aoFecharTurno, aoMedir: aoMedirTurno });
   const receberVoz = useCallback((texto: string) => {
     if (!texto.trim()) return;
-    if (!bufferVoz.current) inicioBufferVoz.current = Date.now();
+    parcialRef.current = "";
+    marcarFala();
     bufferVoz.current = bufferVoz.current ? `${bufferVoz.current} ${texto.trim()}` : texto.trim();
-    agendarEnvioVoz();
-  }, [agendarEnvioVoz]);
+    const dentroDoPrazo = Date.now() < trechoAtrasadoAte.current;
+    trechoAtrasadoAte.current = 0;
+    if (!dentroDoPrazo) return;
+    const fala = bufferVoz.current.trim();
+    bufferVoz.current = "";
+    filaVoz.current?.adicionar(fala);
+  }, [marcarFala]);
   useEffect(() => {
-    if (timerVoz.current && midia.volume > 0.08) agendarEnvioVoz(true);
-  }, [midia.volume, agendarEnvioVoz]);
-  useEffect(() => () => { if (timerVoz.current) clearTimeout(timerVoz.current); }, []);
+    if (!escutaLigada) trechoAtrasadoAte.current = 0;
+  }, [escutaLigada]);
   useEffect(() => {
     if (!entrevista.despedindo && estado.fase !== "ENCERRADA") return;
-    if (timerVoz.current) clearTimeout(timerVoz.current);
-    timerVoz.current = null;
     bufferVoz.current = "";
+    trechoAtrasadoAte.current = 0;
+    parcialRef.current = "";
   }, [estado.fase, entrevista.despedindo]);
 
   const receberParcial = useCallback((texto: string) => {
+    parcialRef.current = texto;
     setParcialVoz(texto);
     registrarFalaParcial(texto);
-    if (texto && timerVoz.current) agendarEnvioVoz();
-  }, [registrarFalaParcial, agendarEnvioVoz]);
+  }, [registrarFalaParcial]);
 
   // O Totti só toma a vez numa pausa do candidato (lib/conversa/turnos.ts), mas o candidato pode cortá-lo (#97):
   // falando por cima (a escuta pausada mede o microfone), pelo botão da chamada ou com Esc. A despedida não se corta.
@@ -281,7 +291,7 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
   });
   const escuta = useTranscricao({
     stream: midia.stream,
-    ativo: midia.microfoneLigado && !entrevista.despedindo && estado.fase !== "AGUARDANDO" && estado.fase !== "ENCERRADA" && !entrevista.agenteFalando,
+    ativo: escutaLigada,
     sessaoId: sessao?.sessao_id ?? null,
     contexto: "quadro",
     servidor: usarServidor(),

@@ -8,8 +8,8 @@ import { energiaPcm16 } from "./energia";
 
 export { energiaPcm16 } from "./energia";
 
-/** Igual ao vadSilenceThresholdSecs: voz mais recente que isso, quando um trecho é confirmado, já é do próximo. */
-const JANELA_DO_PROXIMO_TRECHO_MS = 1000;
+/** Igual ao vadSilenceThresholdSecs (0,9 s, como nas salas): voz mais recente que isso, quando um trecho é confirmado, já é do próximo. */
+const JANELA_DO_PROXIMO_TRECHO_MS = 900;
 
 export async function iniciarScribe({ token, termos, stream, signal, eventos, captura: antecipada }: {
   token: string;
@@ -33,7 +33,7 @@ export async function iniciarScribe({ token, termos, stream, signal, eventos, ca
         audioFormat: AudioFormat.PCM_16000,
         sampleRate: 16000,
         commitStrategy: CommitStrategy.VAD,
-        vadSilenceThresholdSecs: 1,
+        vadSilenceThresholdSecs: 0.9,
         // Sem isso o Scribe transcreve hesitações ao pé da letra ("ca-- s--", "ééé", "hã"). Testado com o
         // scribe_v2_realtime: "Eu tô querendo ca-- ééé, contratar, hã..." vira "Eu tô querendo contratar...".
         noVerbatim: true,
@@ -88,7 +88,7 @@ export async function iniciarScribe({ token, termos, stream, signal, eventos, ca
     // Sem voz no microfone, ou voz curta demais para o tamanho do texto: frase inventada pelo Scribe.
     if (texto && trechoPlausivel(texto, vozNoTrecho)) eventos.aoTexto(texto);
     else if (texto) console.info("[transcrição] descartada (voz insuficiente para o texto)", { vozMs: Math.round(vozNoTrecho), texto });
-    // O VAD só confirma depois de 1 s de silêncio: voz no último segundo enviado já é do trecho seguinte (o commit
+    // O VAD só confirma depois de 0,9 s de silêncio: voz no último segundo enviado já é do trecho seguinte (o commit
     // pode chegar depois de o próximo áudio sair). Zerar aqui descartaria esse trecho como inventado.
     vozNoTrecho = recentes.reduce((soma, b) => soma + (b.voz ? b.ms : 0), 0);
     if (parando) confirmar?.();
@@ -130,6 +130,7 @@ export async function iniciarScribe({ token, termos, stream, signal, eventos, ca
         conexao.send({ audioBase64 });
         bytesEnviados += atob(audioBase64).length;
         enviouAudio = true;
+        eventos.aoEnergia?.(energia);
       } catch { falhar(new Error("Não consegui enviar o áudio. Tente novamente.")); }
     });
   } catch (erro) {
