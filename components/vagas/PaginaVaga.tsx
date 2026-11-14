@@ -34,7 +34,6 @@ import {
   NOME_SITUACAO,
   buscaNormalizada,
   convidar,
-  ehCandidatoTeste,
   useCandidatos,
   type CandidatoVaga,
 } from "@/lib/vagas/candidatos";
