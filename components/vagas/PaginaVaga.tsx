@@ -621,7 +621,7 @@ function EntrevistasReais({ reais }: { reais: EntrevistaReal[] }) {
               <span className="hidden text-right md:block">
                 {e.ended && (
                   <Link
-                    href={e.href}
+                    href={`/relatorio/${encodeURIComponent(e.sessionId)}`}
                     className="inline-flex items-center gap-1 text-[13px] text-texto underline decoration-texto/25 underline-offset-4 hover:decoration-texto"
                   >
                     Relatório <ArrowRight size={13} />
@@ -639,8 +639,8 @@ function EntrevistasReais({ reais }: { reais: EntrevistaReal[] }) {
 /** Nota com vírgula, como no relatório (3,4). */
 const nota1 = (n: number) => n.toFixed(1).replace(".", ",");
 
-/** Os candidatos desta lista são de demonstração: o relatório pronto abre o relatório de exemplo. */
-const RELATORIO_DEMO = "/report?sessionId=exemplo";
+/** Os candidatos desta lista são de demonstração: o relatório pronto abre o relatório de exemplo (o mesmo componente dos reais). */
+const RELATORIO_DEMO = "/relatorio/exemplo";
 
 /** O link da linha: abrir o relatório. A decisão (avançar ou não) é tomada lá dentro, não aqui. */
 function AbrirRelatorio({ nome }: { nome: string }) {
