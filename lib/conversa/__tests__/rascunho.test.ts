@@ -58,3 +58,11 @@ test("pedeRascunho só com rascunho: true", () => {
   assert.equal(pedeRascunho({ rascunho: "true" }), false);
   assert.equal(pedeRascunho(null), false);
 });
+
+test("rascunho preso além da espera máxima é abandonado e a fala sai ao vivo", async () => {
+  const cache = criarCacheDeRascunho<string>();
+  cache.guardar("s1", "k", new Promise(() => {}));
+  const inicio = Date.now();
+  assert.deepEqual(await comRascunho(cache, "s1", "k", async () => "ao vivo", 30), { valor: "ao vivo", doRascunho: false });
+  assert.ok(Date.now() - inicio < 1000);
+});

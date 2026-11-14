@@ -13,6 +13,9 @@ import { createHash } from "node:crypto";
 
 export const VALIDADE_DO_RASCUNHO_MS = 60_000; // depois disso o rascunho é velho demais para valer
 export const RASCUNHOS_POR_SESSAO = 4; // trechos recentes de uma mesma fala; o mais antigo sai
+// Quanto a confirmação espera um rascunho ainda em preparo. O rascunho começou ~2,6 s antes do fechamento: se nem assim
+// ficou pronto, o provedor travou (medido: rascunho preso até o timeout de 8 s, e a fala saindo em 12 s). Ao vivo é melhor.
+export const ESPERA_MAXIMA_PELO_RASCUNHO_MS = 1500;
 
 type Guardado<T> = { chave: string; valor: Promise<T>; criadoEm: number };
 
@@ -84,21 +87,29 @@ export function cacheGlobalDeRascunho<T>(nome: string): CacheDeRascunho<T> {
 }
 
 /**
- * Usa o rascunho com esta chave, se houver e tiver dado certo; senão, `aoVivo()`. `doRascunho` diz de onde veio,
- * para o log e para a medição do ganho.
+ * Usa o rascunho com esta chave, se houver e tiver dado certo; senão, `aoVivo()`. Rascunho ainda em preparo é esperado
+ * até `esperaMaximaMs`; depois disso é abandonado (nunca corre junto com o ao vivo: na IDE os dois mexeriam na sessão).
+ * `doRascunho` diz de onde veio, para o log e para a medição do ganho.
  */
 export async function comRascunho<T>(
   cache: CacheDeRascunho<T>,
   sessao: string,
   chave: string,
   aoVivo: () => Promise<T>,
+  esperaMaximaMs = ESPERA_MAXIMA_PELO_RASCUNHO_MS,
 ): Promise<{ valor: T; doRascunho: boolean }> {
   const guardado = cache.tomar(sessao, chave);
   if (guardado) {
+    let prazo: ReturnType<typeof setTimeout> | undefined;
+    const tarde = new Promise<{ tarde: true }>((r) => { prazo = setTimeout(() => r({ tarde: true }), esperaMaximaMs); });
     try {
-      return { valor: await guardado, doRascunho: true };
+      const r = await Promise.race([guardado.then((valor) => ({ valor })), tarde]);
+      if ("valor" in r) return { valor: r.valor, doRascunho: true };
+      // Passou do prazo: o rascunho fica para trás e a fala sai ao vivo.
     } catch {
       // O rascunho falhou: a fala sai do jeito de sempre.
+    } finally {
+      clearTimeout(prazo);
     }
   }
   return { valor: await aoVivo(), doRascunho: false };
