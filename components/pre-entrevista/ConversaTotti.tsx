@@ -24,6 +24,8 @@ import { useVozAgente } from "@/lib/voz/useVozAgente";
 import { criarDetectorDeInterrupcao, type DetectorDeInterrupcao } from "@/lib/voz/detectorDeInterrupcao";
 import type { CapturaAntecipada } from "@/lib/transcricao/capturaAntecipada";
 import ControleVoz from "@/components/voz/ControleVoz";
+import { criarPedidoDeRascunho, type PedidoDeRascunho } from "@/lib/conversa/pedidoDeRascunho";
+import { rascunharFala, usarServidor } from "@/lib/pre-entrevista/tela/cliente";
 
 /** Marca que separa a fala dos documentos anexados (ver `montarMensagem`). */
 const MARCA = "\n\n[Documento anexado: ";
@@ -33,6 +35,12 @@ const ATRASO_DIGITANDO = 650;
 
 export function montarMensagem(texto: string, documentos: Documento[]) {
   return texto + documentos.map((d) => `${MARCA}${d.nome}]\n${d.texto}`).join("");
+}
+
+/** A mensagem que o envio manda agora (fala e documentos); vazia, não há o que enviar. Usada pelo envio e pelo rascunho. */
+function mensagemDoEnvio(texto: string, documentos: Documento[]): string {
+  const t = texto.trim() || (documentos.length ? "Segue o documento." : "");
+  return t ? montarMensagem(t, documentos) : "";
 }
 
 /** Separa o que a pessoa escreveu dos documentos que ela anexou. */
@@ -83,6 +91,8 @@ export default function ConversaTotti({
   const termos = useMemo(() => termosDoTitulo(cargo), [cargo]);
   // O turno fechou sem texto (o Scribe ainda não confirmou o trecho): o próximo texto envia, se chegar até este prazo.
   const trechoAtrasadoAte = useRef(0);
+  // Resposta antecipada: a cada trecho confirmado, pede ao servidor o rascunho da resposta (lib/conversa/pedidoDeRascunho.ts).
+  const pedidoDeRascunho = useRef<PedidoDeRascunho | null>(null);
   const ditado = useTranscricao({
     termos,
     bloqueada: pensando || lendo || bloqueada || pausarEntrada,
@@ -93,6 +103,7 @@ export default function ConversaTotti({
       const dentroDoPrazo = Date.now() < trechoAtrasadoAte.current;
       trechoAtrasadoAte.current = 0;
       if (dentroDoPrazo) void enviarFechado();
+      else pedirRascunho();
     },
   });
   const lista = useRef<HTMLDivElement>(null);
@@ -152,11 +163,27 @@ export default function ConversaTotti({
   const atual = useRef({ anexos, pensando, lendo, bloqueada, pausarEntrada, onEnviar, turnos: transcricao.length });
   atual.current = { anexos, pensando, lendo, bloqueada, pausarEntrada, onEnviar, turnos: transcricao.length };
 
+  // Um pedido de rascunho por sessão (só com servidor): o que o envio mandaria agora, sem gravar nada.
+  useEffect(() => {
+    if (!sessaoId || !usarServidor()) return;
+    const pedido = criarPedidoDeRascunho((texto, sinal) => rascunharFala(sessaoId, texto, sinal));
+    pedidoDeRascunho.current = pedido;
+    return () => {
+      pedido.cancelar();
+      pedidoDeRascunho.current = null;
+    };
+  }, [sessaoId]);
+
   // Modo voz: ligar o mic pelo botão entra no modo voz. A fala vai sozinha na pausa e o mic reabre quando o Totti
   // termina de responder. Clicar no mic de novo, parar com Enter ou digitar sai do modo voz (texto fica para revisar).
   const modoVoz = useRef(false);
   const [emModoVoz, setEmModoVoz] = useState(false);
-  const mudarModoVoz = (ligado: boolean) => { modoVoz.current = ligado; setEmModoVoz(ligado); };
+  // Sair do modo voz (mic desligado, texto digitado, conversa escondida) cancela o rascunho em curso.
+  const mudarModoVoz = (ligado: boolean) => {
+    modoVoz.current = ligado;
+    setEmModoVoz(ligado);
+    if (!ligado) pedidoDeRascunho.current?.cancelar();
+  };
   // Quantos turnos havia quando a pessoa enviou pela voz (null: nada esperando resposta para reabrir o mic).
   const [turnosNoEnvio, setTurnosNoEnvio] = useState<number | null>(null);
   // Ao esconder a conversa, sai do modo voz: o mic não reabre sozinho quando a pessoa voltar.
@@ -167,13 +194,24 @@ export default function ConversaTotti({
   }, [ativa]);
   const vozJaTocou = useRef(false);
 
+  /**
+   * Turno da pessoa aberto (modo voz, sem o Totti pensando nem falando): pede o rascunho com a mensagem que o envio
+   * mandaria agora. O envio final usa `mensagemDoEnvio` também, então o corpo sai igual (ver `rascunharFala`).
+   */
+  function pedirRascunho() {
+    const a = atual.current;
+    if (!modoVoz.current || a.pensando || a.lendo || a.bloqueada || a.pausarEntrada || voz.ativa) return;
+    const mensagem = mensagemDoEnvio(textoRef.current, a.anexos);
+    if (mensagem) pedidoDeRascunho.current?.pedir(mensagem);
+  }
+
   /** `comDitado`: o envio automático já parou o ditado, mas o estado do hook ainda não foi re-renderizado. */
   function enviar(comDitado = false) {
     const a = atual.current;
-    const t = textoRef.current.trim() || (a.anexos.length ? "Segue o documento." : "");
-    if (!t || a.pensando || a.lendo || a.bloqueada || a.pausarEntrada || (!comDitado && ditado.ativa)) return;
+    const mensagem = mensagemDoEnvio(textoRef.current, a.anexos);
+    if (!mensagem || a.pensando || a.lendo || a.bloqueada || a.pausarEntrada || (!comDitado && ditado.ativa)) return;
     voz.parar();
-    a.onEnviar(montarMensagem(t, a.anexos));
+    a.onEnviar(mensagem);
     mudarTexto("");
     setAnexos([]);
     vozJaTocou.current = false;

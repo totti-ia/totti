@@ -14,7 +14,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FilaFalas } from "@/lib/audio/filaFalas";
 import { FALAS_DE_REPETICAO } from "@/lib/conversa/falasDeReserva";
 import type { Blip, ChatMessage, ChatResponse, EditorCommand } from "@/lib/contracts";
-import { postChat } from "./api";
+import { postChat, rascunharChat } from "./api";
+import { criarPedidoDeRascunho, type PedidoDeRascunho } from "@/lib/conversa/pedidoDeRascunho";
 import { falaInterrompida } from "@/lib/totti/interrupcao";
 import type { EventInput } from "./useSession";
 import { disseQueTerminou } from "@/lib/agents/conclusao";
@@ -74,6 +75,26 @@ type Pendente = { versao: number; lista: Fala[]; fala: Fala };
 
 const palavras = (texto: string) => texto.split(/\s+/).filter(Boolean).length;
 
+/** Mensagens que o /api/chat recebe: papel e texto de cada fala. */
+const mensagensDe = (lista: Fala[]) => lista.map(({ role, text }) => ({ role, text }));
+
+/** Corpo do POST /api/chat de uma fala. O envio final e o rascunho montam por aqui, para o corpo sair igual nos dois. */
+function corpoDoChat(p: {
+  sessionId: string;
+  live?: { code: string; language: string };
+  blipId?: string;
+  messages: Pick<Fala, "role" | "text">[];
+  reconheceu: boolean;
+}) {
+  return {
+    sessionId: p.sessionId,
+    ...(p.live ? { code: p.live.code, language: p.live.language } : {}),
+    blipId: p.blipId,
+    messages: p.messages,
+    ...(p.reconheceu ? { reconheceu: p.reconheceu } : {}),
+  };
+}
+
 function tirarUltimaDoCandidato(lista: Fala[]): void {
   const i = lista.findLastIndex((f) => f.role === "candidate");
   if (i >= 0) lista.splice(i);
@@ -100,6 +121,9 @@ export function useConversa(deps: ConversaDeps) {
   const reconheceuEmRef = useRef(0);
   /** A próxima fala que vai ao entrevistador veio depois de um "uhum": a resposta não abre com outro. */
   const reconheceuRef = useRef(false);
+  // O sorteio do "uhum" é feito antes do fechamento: o rascunho (ver `rascunhoRef`) precisa saber se ele vai tocar,
+  // porque `reconheceu` vai no corpo e muda a resposta. Sorteado de novo a cada "uhum" dito.
+  const sorteioRef = useRef(Math.random());
   const reconhecimentosRef = useRef(0);
   /** A fala do Totti que está tocando agora, e a lista em que ela está: é a que uma interrupção corta. */
   const tocandoRef = useRef<{ fala: Fala; lista: Fala[] } | null>(null);
@@ -184,13 +208,7 @@ export function useConversa(deps: ConversaDeps) {
     comecarPedido();
     try {
       const live = d.getLiveCode?.();
-      res = await postChat({
-        sessionId: d.sessionId,
-        ...(live ? { code: live.code, language: live.language } : {}),
-        blipId: blip?.id,
-        messages: lista.map(({ role, text }) => ({ role, text })),
-        ...(reconheceu ? { reconheceu } : {}),
-      }, sinal);
+      res = await postChat(corpoDoChat({ sessionId: d.sessionId, live, blipId: blip?.id, messages: mensagensDe(lista), reconheceu }), sinal);
       if (sinal.aborted) throw new DOMException("Substituída por uma fala nova.", "AbortError");
     } catch (erro) {
       const i = lista.indexOf(fala);
@@ -262,8 +280,25 @@ export function useConversa(deps: ConversaDeps) {
   const dizerRef = useRef(dizer);
   dizerRef.current = dizer;
 
+  // Resposta antecipada: o rascunho é o /api/chat que o envio final mandaria para este texto agora (mesmo corpo, sem
+  // mudar nada aqui: nada entra na conversa e o "pensando" não liga). Ver `pedirRascunho`.
+  const rascunhoRef = useRef<PedidoDeRascunho | null>(null);
+  if (!rascunhoRef.current) {
+    rascunhoRef.current = criarPedidoDeRascunho((texto, sinal) => {
+      const d = depsRef.current;
+      if (d.sessionId === null) return Promise.resolve();
+      const live = d.getLiveCode?.();
+      const fala = { role: "candidate" as const, text: texto };
+      return rascunharChat(corpoDoChat({
+        sessionId: d.sessionId, live, blipId: fioRef.current?.blip.id,
+        messages: [...mensagensDe(listaAtual()), fala], reconheceu: reconheceuRef.current || vaiReconhecerRef.current(texto),
+      }), sinal);
+    });
+  }
+
   useEffect(() => () => {
     filaRef.current?.limpar();
+    rascunhoRef.current?.cancelar();
     versaoRef.current++;
     depsRef.current.parar();
   }, []);
@@ -279,13 +314,17 @@ export function useConversa(deps: ConversaDeps) {
    * dela o microfone pega quem pensa em voz alta, resmunga ou fala com outra pessoa, e o Totti respondia "uhum,
    * entendi" a um sussurro. Se a fala livre era mesmo com ele, quem responde é o entrevistador.
    */
+  const vaiReconhecer = (texto: string) => {
+    if (fioRef.current === null || palavras(texto) < MIN_PALAVRAS_RECONHECER) return false;
+    if (Date.now() - reconheceuEmRef.current < ENTRE_RECONHECIMENTOS_MS || depsRef.current.vozTocando()) return false;
+    return sorteioRef.current < CHANCE_DE_RECONHECER;
+  };
+  const vaiReconhecerRef = useRef(vaiReconhecer);
+  vaiReconhecerRef.current = vaiReconhecer;
   const reconhecer = (texto: string) => {
-    const n = palavras(texto);
-    const agora = Date.now();
-    if (fioRef.current === null || n < MIN_PALAVRAS_RECONHECER) return;
-    if (agora - reconheceuEmRef.current < ENTRE_RECONHECIMENTOS_MS || depsRef.current.vozTocando()) return;
-    if (Math.random() >= CHANCE_DE_RECONHECER) return;
-    reconheceuEmRef.current = agora;
+    if (!vaiReconhecer(texto)) return;
+    sorteioRef.current = Math.random();
+    reconheceuEmRef.current = Date.now();
     reconheceuRef.current = true;
     void depsRef.current.falar(RECONHECIMENTOS[reconhecimentosRef.current++ % RECONHECIMENTOS.length]);
   };
@@ -379,13 +418,23 @@ export function useConversa(deps: ConversaDeps) {
     depsRef.current.parar();
   }, []);
 
+  /**
+   * Resposta antecipada: um trecho confirmado da fala do candidato, com a vez dele (nada em voo, o Totti não fala nem
+   * espera a resposta). Pede o rascunho com o texto que o envio final mandaria agora (`texto` já aparado).
+   */
+  const pedirRascunho = useCallback((texto: string) => {
+    if (depsRef.current.sessionId === null || ocupada() || depsRef.current.vozTocando()) return;
+    rascunhoRef.current?.pedir(texto);
+  }, [ocupada]);
+
   /** Encerrou a entrevista: nada mais vai ao entrevistador. */
   const parar = useCallback(() => {
     filaRef.current?.limpar();
+    rascunhoRef.current?.cancelar();
     versaoRef.current++;
     pendenteRef.current = null;
     semRespostaDesdeRef.current = null;
   }, []);
 
-  return { fio, pensando, ouvir, abrirFio, fecharFio, dizer, ocupada, soEsperandoResposta, parar, interromper, ultimaFalaDoAgenteEmRef, fioRef };
+  return { fio, pensando, ouvir, abrirFio, fecharFio, dizer, ocupada, pedirRascunho, soEsperandoResposta, parar, interromper, ultimaFalaDoAgenteEmRef, fioRef };
 }

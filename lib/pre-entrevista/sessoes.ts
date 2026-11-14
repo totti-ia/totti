@@ -179,6 +179,11 @@ export function liberar(id: string): void {
   store.ocupadas.delete(id);
 }
 
+/** Há um turno real em curso nesta sessão? Só lê: quem quer saber não trava nada (ver `ocupar`). */
+export function estaOcupada(id: string): boolean {
+  return store.ocupadas.has(id);
+}
+
 /**
  * Cria a sessão com o rascunho inicial (tudo pendente) e grava os eventos iniciais: sessão, classificação
  * e competências (com o motivo, se a extração das competências falhou).

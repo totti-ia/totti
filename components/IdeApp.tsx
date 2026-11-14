@@ -235,6 +235,10 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   useEffect(() => {
     if (!escutaLigada) trechoAtrasadoAteRef.current = 0;
   }, [escutaLigada]);
+  // Rascunho da resposta (resposta antecipada) só com a sessão rodando: o mesmo critério de falaRef.
+  const sessaoAtivaRef = useRef(false);
+  sessaoAtivaRef.current = !session.ended && !encerrando;
+  const { pedirRascunho } = conversa;
   const aoFalar = useCallback((texto: string) => {
     const limpo = texto.trim();
     if (!limpo) return;
@@ -248,8 +252,11 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
       const pronto = bufferFalaRef.current;
       bufferFalaRef.current = "";
       falaRef.current(pronto);
+    } else if (sessaoAtivaRef.current) {
+      // Turno ainda aberto: o rascunho sai com o texto acumulado, como o envio final o mandaria se fechasse agora.
+      pedirRascunho(bufferFalaRef.current.trim());
     }
-  }, [marcarFala]);
+  }, [marcarFala, pedirRascunho]);
 
   // O Totti só toma a vez numa pausa do candidato (lib/conversa/turnos.ts), mas o candidato pode cortá-lo (#97):
   // falando por cima (a escuta pausada mede o microfone), pelo botão da chamada ou com Esc. A despedida não se corta.
