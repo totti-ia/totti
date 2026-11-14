@@ -32,6 +32,8 @@ export const config = {
     "/api/configs/:path*",
     // Só a criação de convites (o painel); as rotas /api/convites/[token]/... são do candidato.
     "/api/convites",
+    // Lote de convites em fila (progresso, falhas e reenvio): também só o painel.
+    "/api/convites/lote/:path*",
   ],
 };
 
