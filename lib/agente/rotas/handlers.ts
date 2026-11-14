@@ -18,7 +18,7 @@ import { apresentacaoReserva, DESPEDIDA_RESERVA, type Abertura, type ContextoAbe
 import { etapasEmTexto } from "../prompts/contexto";
 import { escalarTempos, planoDaConfig } from "../plano";
 import { avaliacaoDaConfig } from "../kits/questao-da-vaga";
-import { perguntar, type PassoNaSessao } from "../perguntar";
+import { perguntar, type PassoNaSessao, type ResultadoPerguntar } from "../perguntar";
 import { gatilhoDoFechamento, iniciarFechamento, proximoPasso, type EtapaDoFechamento } from "../../totti/fechamento";
 import { candidatasDoQuadro, perguntasJaOuvidas } from "../fechamento";
 import { pecasDoGrafo } from "../sessao/fechamento";
@@ -36,6 +36,7 @@ import {
 import { kvPadrao } from "@/lib/storage/kv";
 import { PRAZO_ANALISE_DO_DESENHO_MS } from "@/lib/contracts";
 import { semFalaSubstituida } from "@/lib/conversa/substituir";
+import { cacheGlobalDeRascunho, chaveDoRascunho, comRascunho } from "@/lib/conversa/rascunho";
 import { concluiuHaPouco, contarComponentes, esperaDoEmpecilho, esperaDoEmpecilhoForcado } from "../../sessao/empecilho";
 import { registrarNoIndice } from "../resultados";
 import { contexto } from "./contexto";
@@ -326,10 +327,56 @@ const EsquemaPerguntar = z.object({
     .array(EsquemaFalaRecente.extend({ texto: z.string().transform((v) => v.slice(0, 4000)) }))
     .transform((v) => v.slice(-30))
     .optional(),
+  /** Rascunho da resposta antecipada: prepara a resposta sem gravar nada (ver `chaveDoPerguntar`). */
+  rascunho: z.boolean().optional(),
 });
+type DadosPerguntar = z.infer<typeof EsquemaPerguntar>;
 
 /** Corpo do /perguntar: a foto do quadro não cabe no limite padrão. */
 const MAX_CORPO_PERGUNTAR = 700_000;
+
+/** Rascunhos do /perguntar (lib/conversa/rascunho.ts). `null` = a análise não respondeu (cai no caminho ao vivo). */
+const cacheDeRascunhos = cacheGlobalDeRascunho<ResultadoPerguntar | null>("perguntar");
+
+/**
+ * O que do estado entra na chave do rascunho: o que o `perguntar` lê e que muda com a conversa. Fica de fora o que só
+ * marca tempo ou atividade (`ultima...Em`, `faseIniciadaEm`, `iniciadaEm`, `pediuTempoEm`, `tempos`): o relógio anda
+ * sem fala nova e a chave nunca bateria. Também ficam de fora `plin`, `perguntaPendente` e `ultimaAnalise`: uma análise
+ * que chega no meio do turno já muda a conversa ou as perguntas, que estão na chave. `feitaEm` sai de cada pergunta
+ * pelo mesmo motivo.
+ */
+function impressaoDoEstado(e: EstadoSessao) {
+  const pergunta = (p: EstadoSessao["perguntas"][number]) => ({
+    numero: p.numero, status: p.status, pergunta: p.pergunta, nota: p.nota, elementos: p.elementos,
+    desfecho: p.desfecho ?? null, resposta: p.resposta ?? null, seguimentos: p.seguimentos ?? [],
+  });
+  return {
+    fase: e.fase,
+    conversa: e.conversa.map((f) => ({ quem: f.quem, texto: f.texto })),
+    perguntaAtiva: e.perguntaAtiva ? pergunta(e.perguntaAtiva) : null,
+    perguntas: e.perguntas.map(pergunta),
+    // A etapa do fechamento e o empecilho (com o id dele) mudam o que o modelo diz; `desenhoConcluido` diz se ele já terminou.
+    fechamento: etapaDoFechamento(e),
+    empecilho: e.empecilho?.id ?? null,
+    desenhoConcluido: !!e.desenhoConcluido,
+    conclusoes: e.conclusoes ?? 0,
+    reacaoAoPensarDita: !!e.reacaoAoPensarDita,
+    escopoRedirecionamentos: e.escopoRedirecionamentos ?? 0,
+  };
+}
+
+/**
+ * A chave de um `perguntar`: o corpo que entra nele, mais o estado já como o `perguntar` o recebe. Calculada igual no
+ * rascunho e na fala normal. Fica de fora de propósito: `imagem_base64` (pesada; o grafo já representa o desenho) e
+ * `desenho_parado_ha_s` (cresce com o relógio).
+ */
+function chaveDoPerguntar(d: DadosPerguntar, estado: EstadoSessao): string {
+  return chaveDoRascunho({
+    fase: d.fase, texto: d.texto, grafo: d.grafo, pergunta_ativa: d.pergunta_ativa, requisitos: d.requisitos,
+    gestos_recentes: d.gestos_recentes, mudancas: d.mudancas, conversa_do_quadro: d.conversa_do_quadro,
+    substitui: d.substitui, pergunta_cortada: d.pergunta_cortada, estado: impressaoDoEstado(estado),
+  });
+}
 
 /** O desenho que veio no pedido: com peças novas depois de ele ter dito que terminou, o fechamento é suspenso. */
 function comDesenho(estado: EstadoSessao, grafo: string | undefined, agora: number): EstadoSessao {
@@ -406,25 +453,40 @@ export async function perguntarHandler(req: Request, { params }: ParamsId): Prom
   let pediuTempo: { reagiu: boolean } | undefined;
   let passoDoFechamento: PassoNaSessao | undefined;
   let gravandoUso: Promise<unknown> | undefined;
+  let usouRascunho: boolean | undefined;
+  let msPerguntar: number | undefined;
   // A fala substitui a anterior (ele continuou antes de ouvir a resposta): a anterior e a resposta não ouvida saem.
   const semSubstituida = (e: EstadoSessao): EstadoSessao =>
     corpo.dados.substitui ? { ...e, conversa: semFalaSubstituida(e.conversa, texto) } : e;
 
+  // Sem LLM não há resposta para antecipar: o rascunho é recusado sem gravar nada.
+  if (corpo.dados.rascunho && !ctx.llm) return json({ rascunho: false });
+
   if (ctx.llm) {
     const estado = semSubstituida(sincronizarFase(sessao.estado, fase, agora));
-    const r = await comPrazo(
-      perguntar(
-        { llm: ctx.llm, kit: alvo.kit, problema: alvo.problema },
-        estado,
-        { fase, texto, sessao_id: id, grafo: corpo.dados.grafo, perguntaAtiva: corpo.dados.pergunta_ativa ?? estado.perguntaAtiva?.pergunta, requisitosAtuais: corpo.dados.requisitos, gestosRecentes: corpo.dados.gestos_recentes,
-          imagemBase64: corpo.dados.imagem_base64, mudancas: corpo.dados.mudancas, conversaDoQuadro: corpo.dados.conversa_do_quadro,
-          desenhoParadoHaS: corpo.dados.desenho_parado_ha_s, substitui: corpo.dados.substitui },
-        agora,
-        AbortSignal.timeout(PRAZO_ANALISE_MS),
-      ).catch(() => null),
-      PRAZO_ANALISE_MS,
-      null,
+    const deps = { llm: ctx.llm, kit: alvo.kit, problema: alvo.problema };
+    const entrada = { fase, texto, sessao_id: id, grafo: corpo.dados.grafo, perguntaAtiva: corpo.dados.pergunta_ativa ?? estado.perguntaAtiva?.pergunta, requisitosAtuais: corpo.dados.requisitos, gestosRecentes: corpo.dados.gestos_recentes,
+      imagemBase64: corpo.dados.imagem_base64, mudancas: corpo.dados.mudancas, conversaDoQuadro: corpo.dados.conversa_do_quadro,
+      desenhoParadoHaS: corpo.dados.desenho_parado_ha_s, substitui: corpo.dados.substitui };
+    const chave = chaveDoPerguntar(corpo.dados, estado);
+    const t0 = Date.now();
+
+    if (corpo.dados.rascunho) {
+      // Prepara a resposta sem gravar nada. Se a tela abandonar o rascunho, o sinal do pedido para o modelo.
+      const p = perguntar(deps, estado, entrada, agora, AbortSignal.any([req.signal, AbortSignal.timeout(PRAZO_ANALISE_MS)]))
+        .then((r) => { if (!r || r.falhou) throw new Error("rascunho falhou"); return r; });
+      cacheDeRascunhos.guardar(id, chave, p);
+      const r = await p.catch(() => null);
+      console.warn("[agente] rascunho_perguntar", { sessao_id: id, ok: !!r, ms: Date.now() - t0 });
+      return json({ rascunho: true, responder: r?.responder ?? false, texto: r?.texto ?? "" });
+    }
+
+    // Usa o rascunho com a mesma chave (se houver); senão, prepara ao vivo como antes.
+    const { valor: r, doRascunho } = await comRascunho(cacheDeRascunhos, id, chave, () =>
+      comPrazo(perguntar(deps, estado, entrada, agora, AbortSignal.timeout(PRAZO_ANALISE_MS)).catch(() => null), PRAZO_ANALISE_MS, null),
     );
+    usouRascunho = doRascunho;
+    msPerguntar = Date.now() - t0;
     // Custo e tamanho do prompt de cada turno ficam na linha do tempo da sessão (issue #63). Grava em paralelo com o
     // resto da rota (espera só antes de responder) e uma falha aqui não derruba a fala.
     if (r?.uso) {
@@ -469,6 +531,7 @@ export async function perguntarHandler(req: Request, { params }: ParamsId): Prom
   const fechamento = etapaDoFechamento(novo);
   console.warn("[agente] rota_perguntar", { sessao_id: id, fase, responder: resposta.responder,
     seguimento: !!resposta.seguimento, encerrar: !!resposta.encerrar, substitui: !!corpo.dados.substitui,
+    rascunho: usouRascunho ?? false, ms_perguntar: msPerguntar ?? null,
     ...(fechamento ? { fechamento } : {}) });
 
   await gravandoUso;
@@ -476,7 +539,10 @@ export async function perguntarHandler(req: Request, { params }: ParamsId): Prom
   // quadro achava que estava, é porque ele foi suspenso).
   // Ele pediu tempo: o quadro guarda a hora (o pedido conta como fala do Totti para o silêncio, lib/sessao/silencio.ts).
   const pediu = pediuTempo ? { pediuTempo: true } : {};
-  return json(fechamento ? { ...resposta, ...pediu, fechamento } : { ...resposta, ...pediu });
+  const res = json(fechamento ? { ...resposta, ...pediu, fechamento } : { ...resposta, ...pediu });
+  // Medição do ganho do rascunho (o corpo não muda): `usado` quando a fala saiu do rascunho.
+  if (usouRascunho !== undefined) res.headers.set("x-totti-rascunho", usouRascunho ? "usado" : "novo");
+  return res;
 }
 
 // ---------------------------------------------------------------------------------------------

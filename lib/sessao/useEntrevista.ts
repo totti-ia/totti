@@ -5,7 +5,8 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { Quadro } from "@/components/Canvas";
 import type { ControleCursor } from "@/components/CursorAgente";
 import type { MensagemConversa } from "@/components/quadro/PainelConversa";
-import { pedirEmpecilho, pedirFechamento, perguntar } from "@/lib/sessao/servidor";
+import { pedirEmpecilho, pedirFechamento, perguntar, rascunharPergunta, type ContextoDaPergunta } from "@/lib/sessao/servidor";
+import { criarPedidoDeRascunho, type PedidoDeRascunho } from "@/lib/conversa/pedidoDeRascunho";
 import { DESPEDIDAS, duracaoEfetivaDaFaseS, limiarDoFechamentoNoQuadro, msAteFimDaFase } from "@/lib/totti/fechamento";
 import { criarDespedida } from "@/lib/voz/despedida";
 import { semFalaSubstituida } from "@/lib/conversa/substituir";
@@ -114,6 +115,41 @@ function elementosSignificativos(elementos: readonly { type: string; isDeleted?:
  */
 function assinaturaDoDesenho(elementos: readonly { id: string; version: number; isDeleted?: boolean; customData?: Record<string, unknown> }[]): string {
   return elementos.filter((e) => !e.isDeleted && e.customData?.autor !== "agente").map((e) => `${e.id}:${e.version}`).join("|");
+}
+
+/** Há quantos segundos o desenho está parado (vai ao /perguntar só depois do primeiro traço). */
+function desenhoParadoEm(ultimoDesenhoEm: number): number | undefined {
+  return ultimoDesenhoEm > 0 ? Math.round((Date.now() - ultimoDesenhoEm) / 1000) : undefined;
+}
+
+/**
+ * Contexto do /perguntar de uma fala. Só monta: não grava nada. O envio final e o rascunho chamam esta mesma função
+ * (o corpo sai igual nos dois); só o envio final marca a foto que levou (`desenhoDaUltimaFoto`).
+ */
+function montarContextoDaFala(p: {
+  grafo?: string;
+  mudancas?: string;
+  imagem_base64?: string;
+  conversa: FalaRecente[];
+  perguntaAtiva?: string;
+  requisitos: string[];
+  gestos: string[];
+  desenhoParadoHaS?: number;
+  substitui: boolean;
+  cortada: boolean;
+}): ContextoDaPergunta {
+  return {
+    grafo: p.grafo,
+    mudancas: p.mudancas,
+    imagem_base64: p.imagem_base64,
+    conversa_do_quadro: p.conversa.slice(-20),
+    pergunta_ativa: p.perguntaAtiva,
+    requisitos: p.requisitos.slice(-30),
+    gestos_recentes: p.gestos,
+    ...(p.desenhoParadoHaS !== undefined ? { desenho_parado_ha_s: p.desenhoParadoHaS } : {}),
+    ...(p.substitui ? { substitui: true } : {}),
+    ...(p.cortada ? { pergunta_cortada: true } : {}),
+  };
 }
 
 /** Aguarda a prova por até 1,8 s (e a miniatura em data URL por até 600 ms); a tarefa original continua para registrar a URL tardia.
@@ -1064,18 +1100,18 @@ export function useEntrevista(
             imagem_base64 = undefined;
           }
         }
-        r = await perguntar(sessao.sessao_id, atual.fase, texto, {
-          grafo, ...(mudancas ? { mudancas } : {}), ...(imagem_base64 ? { imagem_base64 } : {}),
-          conversa_do_quadro: conversa.current.slice(-20),
-          pergunta_ativa: atual.perguntaAtiva?.pergunta ?? undefined,
-          requisitos: requisitosCombinados.current.slice(-30),
-          gestos_recentes: resumirGestosRecentes(memoriaVisual.current),
+        r = await perguntar(sessao.sessao_id, atual.fase, texto, montarContextoDaFala({
+          grafo, mudancas: mudancas || undefined, imagem_base64: imagem_base64 || undefined,
+          conversa: conversa.current,
+          perguntaAtiva: atual.perguntaAtiva?.pergunta ?? undefined,
+          requisitos: requisitosCombinados.current,
+          gestos: resumirGestosRecentes(memoriaVisual.current),
           // Há quanto tempo ele não mexe no desenho: com "terminei" dito de mãos paradas, o servidor conta a
           // conclusão mesmo que o modelo não marque (lib/totti/turno.ts). Antes do primeiro traço não há o que informar.
-          ...(ultimoDesenhoEm.current > 0 ? { desenho_parado_ha_s: Math.round((Date.now() - ultimoDesenhoEm.current) / 1000) } : {}),
-          ...(substitui ? { substitui: true } : {}),
-          ...(perguntaCortada.current ? { pergunta_cortada: true } : {}),
-        }, sinal);
+          desenhoParadoHaS: desenhoParadoEm(ultimoDesenhoEm.current),
+          substitui,
+          cortada: perguntaCortada.current,
+        }), sinal);
         perguntaCortada.current = false;
         if (r.pediuTempo) pedidoDeTempoEm.current = Date.now();
         if (sinal?.aborted) throw new DOMException("Substituída por uma fala nova.", "AbortError");
@@ -1164,6 +1200,29 @@ export function useEntrevista(
     },
     [sessao, quadro, cursor, registrar, dizer, registrarDescartes, terminarResposta, agendarFimDaResposta, enviar, limparVisualDaConversa],
   );
+  /**
+   * Resposta antecipada: o rascunho é o /perguntar que o envio final mandaria para este texto agora (mesma montagem,
+   * `montarContextoDaFala`), sem a foto e sem marcar nada. Atribuído a cada render, como os outros `*Ref`.
+   */
+  const rascunharRef = useRef<(texto: string, sinal: AbortSignal) => Promise<void>>(async () => {});
+  rascunharRef.current = (texto, sinal) => {
+    if (!sessao) return Promise.resolve();
+    const elementos = quadro?.api.getSceneElements();
+    const convertido = elementos ? conversor.current.converter(elementos) : undefined;
+    const desenhoMudou = (elementos ? assinaturaDoDesenho(elementos) : null) !== desenhoDaUltimaFoto.current;
+    return rascunharPergunta(sessao.sessao_id, estadoAtual.current.fase, texto, montarContextoDaFala({
+      grafo: convertido?.texto.slice(0, 24000),
+      mudancas: convertido && desenhoMudou ? descreverMudancas(ultimoInstantaneo.current, convertido.instantaneo) || undefined : undefined,
+      conversa: [...conversa.current, { quem: "candidato", texto }],
+      perguntaAtiva: estadoAtual.current.perguntaAtiva?.pergunta ?? undefined,
+      requisitos: requisitosCombinados.current,
+      gestos: resumirGestosRecentes(memoriaVisual.current),
+      desenhoParadoHaS: desenhoParadoEm(ultimoDesenhoEm.current),
+      substitui: false,
+      cortada: perguntaCortada.current,
+    }), sinal);
+  };
+
   /** A resposta do Totti à última fala ainda não começou a tocar (sendo sintetizada ou esperando a vez). */
   const respostaNaoOuvida = useCallback(
     () => preparandoVozRef.current && !agenteFalandoRef.current && versaoDaFala.current === versaoRespostaConversa.current,
@@ -1174,6 +1233,29 @@ export function useEntrevista(
     registrarDescartes(filaDoAgente.current.remover((i) => i.origem === "resposta", "substituida"));
     if (respostaNaoOuvida()) silenciar();
   }, [respostaNaoOuvida, silenciar, registrarDescartes]);
+  // Um pedido de rascunho por sessão (só com servidor). Sair da sessão cancela o que estiver em curso.
+  const pedidoDeRascunho = useRef<PedidoDeRascunho | null>(null);
+  useEffect(() => {
+    if (!sessao || !usarServidor()) return;
+    const pedido = criarPedidoDeRascunho((texto, sinal) => rascunharRef.current(texto, sinal));
+    pedidoDeRascunho.current = pedido;
+    return () => {
+      pedido.cancelar();
+      if (pedidoDeRascunho.current === pedido) pedidoDeRascunho.current = null;
+    };
+  }, [sessao]);
+  /**
+   * O candidato falou um trecho confirmado e a vez é dele (o Totti não fala, não prepara a voz nem espera resposta):
+   * pede o rascunho com o texto que o envio final mandaria agora. `bruto`: a fala acumulada, como vai para `enviarTexto`.
+   */
+  const pedirRascunho = useCallback((bruto: string) => {
+    const texto = limparTextoDigitado(bruto);
+    const atual = estadoAtual.current;
+    if (!texto || !sessao || encerrandoRef.current || atual.fase === "AGUARDANDO" || atual.fase === "ENCERRADA") return;
+    if (licencaPedidaEm.current !== null || agenteFalandoRef.current || preparandoVozRef.current || pedidosEmAndamento.current > 0) return;
+    pedidoDeRascunho.current?.pedir(texto);
+  }, [sessao]);
+
   const registrarFalaParcial = useCallback((texto: string) => {
     falaParcial.current = !!texto.trim();
     if (texto.trim()) {
@@ -1276,6 +1358,7 @@ export function useEntrevista(
     terminarResposta,
     mensagens,
     enviarTexto,
+    pedirRascunho,
     respostaNaoOuvida,
     descartarRespostaNaoOuvida,
     pedirParaRepetir,

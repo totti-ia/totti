@@ -119,10 +119,26 @@ export async function analisar(pedido: PedidoAnalise, sinal: AbortSignal): Promi
   }
 }
 
-export async function perguntar(sessaoId: string, fase: string, texto: string, contexto: { grafo?: string; pergunta_ativa?: string; requisitos?: string[]; gestos_recentes?: string[]; mudancas?: string; imagem_base64?: string; conversa_do_quadro?: unknown[]; substitui?: boolean; desenho_parado_ha_s?: number; pergunta_cortada?: boolean } = {}, sinal?: AbortSignal): Promise<RespostaPerguntar> {
+export type ContextoDaPergunta = { grafo?: string; pergunta_ativa?: string; requisitos?: string[]; gestos_recentes?: string[]; mudancas?: string; imagem_base64?: string; conversa_do_quadro?: unknown[]; substitui?: boolean; desenho_parado_ha_s?: number; pergunta_cortada?: boolean };
+
+/** Corpo do /perguntar. O rascunho (resposta antecipada) manda o mesmo corpo com `rascunho: true` no fim. */
+function corpoDaPergunta(sessaoId: string, fase: string, texto: string, contexto: ContextoDaPergunta, rascunho: boolean) {
+  const corpo = { sessao_id: sessaoId, fase, texto, ...contexto };
+  return rascunho ? { ...corpo, rascunho: true } : corpo;
+}
+
+export async function perguntar(sessaoId: string, fase: string, texto: string, contexto: ContextoDaPergunta = {}, sinal?: AbortSignal): Promise<RespostaPerguntar> {
   const rota = rotaDaSessao(sessaoId, "perguntar");
-  const dados = await lerJson(rota, jsonPost({ sessao_id: sessaoId, fase, texto, ...contexto }, sinal));
+  const dados = await lerJson(rota, jsonPost(corpoDaPergunta(sessaoId, fase, texto, contexto, false), sinal));
   return validar(rota, dados, EsquemaPergunta);
+}
+
+/**
+ * Rascunho da resposta (resposta antecipada): o servidor prepara a resposta sem gravar a fala. A resposta não é
+ * validada nem usada aqui; o envio final, com o mesmo corpo, a reaproveita se ela ainda valer.
+ */
+export async function rascunharPergunta(sessaoId: string, fase: string, texto: string, contexto: ContextoDaPergunta, sinal: AbortSignal): Promise<void> {
+  await requisitar(rotaDaSessao(sessaoId, "perguntar"), jsonPost(corpoDaPergunta(sessaoId, fase, texto, contexto, true), sinal));
 }
 
 /** O relógio pede o fechamento sem inventar uma fala do candidato nem chamar o modelo. */

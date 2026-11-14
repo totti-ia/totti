@@ -189,7 +189,7 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
   // o modal normal continua à espera do clique.
   const iniciouSozinho = useRef(false);
 
-  const { enviarTexto } = entrevista;
+  const { enviarTexto, pedirRascunho } = entrevista;
   const { combinar } = demo;
   const enviarFala = useCallback(
     async (texto: string, opcoes?: { sinal?: AbortSignal; substitui?: boolean }) => {
@@ -261,11 +261,16 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
     bufferVoz.current = bufferVoz.current ? `${bufferVoz.current} ${texto.trim()}` : texto.trim();
     const dentroDoPrazo = Date.now() < trechoAtrasadoAte.current;
     trechoAtrasadoAte.current = 0;
-    if (!dentroDoPrazo) return;
+    if (!dentroDoPrazo) {
+      // Turno ainda aberto: o rascunho sai com o texto acumulado, como o envio final o mandaria se fechasse agora.
+      // Com falas na fila, o envio final as junta: aí não pede.
+      if (!filaVoz.current?.emAndamento) pedirRascunho(bufferVoz.current.trim());
+      return;
+    }
     const fala = bufferVoz.current.trim();
     bufferVoz.current = "";
     filaVoz.current?.adicionar(fala);
-  }, [marcarFala]);
+  }, [marcarFala, pedirRascunho]);
   useEffect(() => {
     if (!escutaLigada) trechoAtrasadoAte.current = 0;
   }, [escutaLigada]);
