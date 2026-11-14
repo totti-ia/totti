@@ -24,7 +24,8 @@ import { limiarDoFechamentoNaIde } from "@/lib/totti/fechamento";
 import { criarEncerrarComDespedida } from "./ide/encerrarComDespedida";
 import { deveAguardarParaFalar, podeTomarTurno } from "@/lib/conversa/turnos";
 import { pausaDasMaosParaFalarMs } from "@/lib/interrupcao/politica";
-import { esperaDoFimDaFala } from "@/lib/audio/fimDaFala";
+import { JANELA_DO_TRECHO_ATRASADO_MS } from "@/lib/audio/fimDoTurno";
+import { useFimDoTurno } from "@/lib/audio/useFimDoTurno";
 import { useVozAgente } from "@/lib/voz/useVozAgente";
 import Legenda from "./Legenda";
 import { postEncerramento, postForcarEmpecilho } from "./ide/api";
@@ -38,8 +39,6 @@ const MARGEM_PROBLEMA = 392;
 const MARGEM_RECOLHIDO = 12;
 /** Espaço em cima do editor com o painel recolhido: pílula e botões numa fileira só. */
 const TOPO_RECOLHIDO = 104;
-/** Teto da espera acima: ruído constante no microfone não segura a fala para sempre. */
-const FALA_ESPERA_MAX_MS = 12_000;
 /** Depois de uma fala do Totti, ele espera isso antes de puxar outro assunto (o candidato precisa de vez). */
 const PAUSA_ENTRE_FALAS_MS = 8000;
 /**
@@ -111,6 +110,9 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   const problemaRodado = mudanca ? { ...problem, visibleTests: [...problem.visibleTests, ...mudanca.tests.map(({ name, args, expected }) => ({ name, args, expected }))] } : problem;
   // O microfone mexe a onda da pílula e alimenta a transcrição da fala (useTranscricao, abaixo).
   const midia = useMidiaLocal();
+  // O fim do turno lê o volume mais recente sem recriar o intervalo a cada render.
+  const volumeRef = useRef(0);
+  volumeRef.current = midia.volume;
   const voz = useVozAgente({ bloqueada: session.ended && !encerrando, sessao: session.sessionId ? { sessao_id: session.sessionId, contexto: "coding" } : null });
   const [parcial, setParcial] = useState("");
   const vozEstadoRef = useRef(voz.estado);
@@ -200,34 +202,61 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
     if (limpo.split(/\s+/).length >= PALAVRAS_FALA_LONGA) ultimaFalaLongaEmRef.current = Date.now();
     conversa.ouvir(limpo);
   };
-  // Turn-taking: os trechos finais da transcrição se acumulam e só seguem para o Totti depois de um silêncio que
-  // depende de como a frase terminou (lib/audio/fimDaFala.ts, o mesmo do quadro): fechada ou pergunta, 1,5 s;
-  // pendurada num "e", "tipo", vírgula, 2,6 s. Mais o ~1 s do Scribe. Uma parcial nova ou voz no microfone nesse intervalo adia o envio (a frase não é cortada).
+  // Fim do turno: os trechos finais se acumulam no buffer e o turno fecha pela energia do microfone
+  // (regra única em lib/audio/fimDoTurno.ts, a mesma das outras telas de voz). Ao fechar, o buffer segue
+  // para o Totti na hora. Se o Scribe ainda não confirmou o trecho, o próximo trecho final é enviado na hora.
   const bufferFalaRef = useRef("");
-  const bufferDesdeRef = useRef(0);
-  const bufferTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /** Prazo (Date.now) até o qual um trecho final atrasado envia o turno fechado sem texto pronto. */
+  const trechoAtrasadoAteRef = useRef(0);
+  // Escuta ligada: microfone ligado, sessão em andamento e o Totti não falando (o mesmo critério da transcrição).
+  const escutaLigada = midia.microfoneLigado && !session.ended && !encerrando && voz.estado !== "falando";
+  const { marcarFala } = useFimDoTurno({
+    ativo: escutaLigada,
+    obterEnergia: () => volumeRef.current / 6, // midia.volume é min(1, rms * 6): volta para a energia RMS crua
+    aoFechar: () => {
+      const pronto = bufferFalaRef.current;
+      // Trecho ainda em transcrição: não envia pela metade; o trecho final chega e segue junto com o buffer.
+      if (falaParcialRef.current) {
+        trechoAtrasadoAteRef.current = Infinity;
+        return;
+      }
+      if (!pronto.trim()) {
+        trechoAtrasadoAteRef.current = Date.now() + JANELA_DO_TRECHO_ATRASADO_MS;
+        return;
+      }
+      bufferFalaRef.current = "";
+      falaRef.current(pronto);
+    },
+    // Voz alta é candidato voltando a falar: turno novo, o texto acumula até o próximo fechamento.
+    aoMedir: (faixa) => {
+      if (faixa === "alta") trechoAtrasadoAteRef.current = 0;
+    },
+  });
+  useEffect(() => {
+    if (!escutaLigada) trechoAtrasadoAteRef.current = 0;
+  }, [escutaLigada]);
+  // Rascunho da resposta (resposta antecipada) só com a sessão rodando: o mesmo critério de falaRef.
+  const sessaoAtivaRef = useRef(false);
+  sessaoAtivaRef.current = !session.ended && !encerrando;
+  const { pedirRascunho } = conversa;
   const aoFalar = useCallback((texto: string) => {
     const limpo = texto.trim();
     if (!limpo) return;
     // O trecho final também é fala: até ele seguir para o Totti, a vez continua com o candidato.
     ultimaFalaEmRef.current = Date.now();
-    if (!bufferFalaRef.current) bufferDesdeRef.current = Date.now();
+    marcarFala(); // texto transcrito prova fala, mesmo baixa: o turno pode fechar depois dela
     bufferFalaRef.current = [bufferFalaRef.current, limpo].filter(Boolean).join(" ");
-    clearTimeout(bufferTimerRef.current);
-    const checar = () => {
-      const agora = Date.now();
-      const falando = falaParcialRef.current || agora - ultimaFalaEmRef.current < esperaDoFimDaFala(bufferFalaRef.current);
-      if (falando && agora - bufferDesdeRef.current < FALA_ESPERA_MAX_MS) {
-        bufferTimerRef.current = setTimeout(checar, 150);
-        return;
-      }
+    const dentroDoPrazo = Date.now() < trechoAtrasadoAteRef.current;
+    trechoAtrasadoAteRef.current = 0;
+    if (dentroDoPrazo) {
       const pronto = bufferFalaRef.current;
       bufferFalaRef.current = "";
-      if (pronto) falaRef.current(pronto);
-    };
-    bufferTimerRef.current = setTimeout(checar, esperaDoFimDaFala(bufferFalaRef.current));
-  }, []);
-  useEffect(() => () => clearTimeout(bufferTimerRef.current), []);
+      falaRef.current(pronto);
+    } else if (sessaoAtivaRef.current) {
+      // Turno ainda aberto: o rascunho sai com o texto acumulado, como o envio final o mandaria se fechasse agora.
+      pedirRascunho(bufferFalaRef.current.trim());
+    }
+  }, [marcarFala, pedirRascunho]);
 
   // O Totti só toma a vez numa pausa do candidato (lib/conversa/turnos.ts), mas o candidato pode cortá-lo (#97):
   // falando por cima (a escuta pausada mede o microfone), pelo botão da chamada ou com Esc. A despedida não se corta.
@@ -247,7 +276,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   const escuta = useTranscricao({
     stream: midia.stream,
     // A escuta só para enquanto a voz do agente toca (preparando, ela ainda ouve: o candidato pode continuar falando).
-    ativo: midia.microfoneLigado && !session.ended && !encerrando && voz.estado !== "falando",
+    ativo: escutaLigada,
     sessaoId: session.sessionId,
     aoParcial: receberParcial,
     aoFinal: aoFalar,

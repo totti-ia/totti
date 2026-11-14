@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { FilaDoAgente, IDADE_MAXIMA_NA_FILA_MS, motivoDeDescarte, type ContextoDeTocar, type PedidoDeFala } from "./filaDoAgente";
+import { FilaDoAgente, IDADE_MAXIMA_NA_FILA_MS, ReacaoRetida, motivoDeDescarte, type ContextoDeTocar, type PedidoDeFala } from "./filaDoAgente";
 
 const ctx = (extra: Partial<ContextoDeTocar> = {}): ContextoDeTocar =>
   ({ agora: 1000, fase: "ALTO_NIVEL", ultimaAtividadeDoCandidatoEm: 0, numeroPerguntaAtiva: null, ...extra });
@@ -107,4 +107,37 @@ test("o item entregue sai da fila: a fala em curso não é tocada de novo", () =
   fila.admitir(pedido("a"), true, 0);
   assert.equal(fila.proximo(ctx()).item?.carga, "a");
   assert.equal(fila.tamanho, 0);
+});
+
+const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+test("reação retida: a fala seguinte a tira para sair junta; sem ela, vence depois do prazo", async () => {
+  const vencidas: string[] = [];
+  const retencao = new ReacaoRetida<string>((texto) => { vencidas.push(texto); }, 30);
+  assert.equal(retencao.reter("Hm", "carga"), true);
+  assert.equal(retencao.reter("Uhum.", "outra"), false, "só uma reação retida por vez");
+  assert.deepEqual(retencao.consumir(), { texto: "Hm", carga: "carga" });
+  assert.equal(retencao.consumir(), null);
+  await dormir(60);
+  assert.deepEqual(vencidas, [], "consumida, a reação não vence");
+
+  retencao.reter("Uhum.", "y");
+  await dormir(60);
+  assert.deepEqual(vencidas, ["Uhum."]);
+});
+
+test("fala que não é reação não é retida e não vence", async () => {
+  const retencao = new ReacaoRetida<string>(() => assert.fail("não devia vencer"), 30);
+  assert.equal(retencao.reter("Como você escalaria?", "x"), false);
+  assert.equal(retencao.consumir(), null);
+  await dormir(60);
+});
+
+test("limpar tira a reação retida sem tocá-la", async () => {
+  const vencidas: string[] = [];
+  const retencao = new ReacaoRetida<string>((texto) => { vencidas.push(texto); }, 30);
+  retencao.reter("Certo.", "x");
+  assert.deepEqual(retencao.limpar(), { texto: "Certo.", carga: "x" });
+  await dormir(60);
+  assert.deepEqual(vencidas, []);
 });

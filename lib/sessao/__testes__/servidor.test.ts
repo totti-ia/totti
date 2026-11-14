@@ -99,7 +99,7 @@ test("perguntar envia o desenho e a pergunta ativa no mesmo pedido", async (t) =
   assert.deepEqual(corpo(chamadas[0]), { sessao_id: "sessao-1", fase: "ALTO_NIVEL", texto: "A API consulta o banco.", ...contexto });
 });
 
-test("sintetizarFala converte base64 em Blob MP3 sem alterar os bytes nem o alinhamento", async (t) => {
+test("sintetizarFala converte base64 em bytes MP3 sem alterar os bytes nem o alinhamento", async (t) => {
   const bytes = [0xff, 0xfb, 0x90, 0, 0x49, 0x44, 0x33];
   const controlador = new AbortController();
   const chamadas = substituirFetch(t, () => json({ audio_base64: btoa(String.fromCharCode(...bytes)), alinhamento }));
@@ -108,9 +108,7 @@ test("sintetizarFala converte base64 em Blob MP3 sem alterar os bytes nem o alin
   assert.equal(chamadas[0].opcoes.method, "POST");
   assert.equal(chamadas[0].opcoes.signal, controlador.signal);
   assert.deepEqual(corpo(chamadas[0]), { texto: "Oi" });
-  assert.ok(resultado.audio instanceof Blob);
-  assert.equal(resultado.audio.type, "audio/mpeg");
-  assert.deepEqual([...new Uint8Array(await resultado.audio.arrayBuffer())], bytes);
+  assert.deepEqual([...resultado.bytes], bytes);
   assert.deepEqual(resultado.alinhamento, alinhamento);
 });
 

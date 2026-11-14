@@ -76,3 +76,41 @@ test("rejeita horários incompletos em vez de produzir legenda sem sincronia", a
   globalThis.fetch = async () => Response.json({ audio_base64: "AAAA", alignment: { ...alinhamento, character_end_times_seconds: [0.1] } });
   assert.equal((await POST(pedido({ texto: "oi" }))).status, 502);
 });
+
+test("repassa texto anterior e seguinte à ElevenLabs e omite os que não vierem", async () => {
+  process.env.ELEVENLABS_API_KEY = "k";
+  const corpos: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_alvo: unknown, init?: RequestInit) => {
+    corpos.push(JSON.parse(String(init?.body)));
+    return Response.json({ audio_base64: "AAAA", alignment: alinhamento });
+  }) as typeof fetch;
+  await POST(pedido({ texto: "oi", texto_anterior: "Antes.", texto_seguinte: "  Depois.  " }));
+  await POST(pedido({ texto: "oi" }));
+  assert.equal(corpos[0].previous_text, "Antes.");
+  assert.equal(corpos[0].next_text, "Depois.");
+  assert.equal("previous_text" in corpos[1], false);
+  assert.equal("next_text" in corpos[1], false);
+});
+
+test("texto vizinho acima de 1000 caracteres ou de tipo errado é 400", async () => {
+  process.env.ELEVENLABS_API_KEY = "k";
+  globalThis.fetch = (async () => Response.json({ audio_base64: "AAAA", alignment: alinhamento })) as typeof fetch;
+  assert.equal((await POST(pedido({ texto: "oi", texto_anterior: "a".repeat(1001) }))).status, 400);
+  assert.equal((await POST(pedido({ texto: "oi", texto_seguinte: 7 }))).status, 400);
+});
+
+test("velocidade válida vira speed; sem ela, 1,1; fora de 0,7 a 1,2 é 400", async () => {
+  process.env.ELEVENLABS_API_KEY = "k";
+  const velocidades: unknown[] = [];
+  globalThis.fetch = (async (_alvo: unknown, init?: RequestInit) => {
+    velocidades.push((JSON.parse(String(init?.body)) as { voice_settings: { speed: unknown } }).voice_settings.speed);
+    return Response.json({ audio_base64: "AAAA", alignment: alinhamento });
+  }) as typeof fetch;
+  await POST(pedido({ texto: "oi", velocidade: 1 }));
+  await POST(pedido({ texto: "oi" }));
+  assert.deepEqual(velocidades, [1, 1.1]);
+  for (const invalida of [0.69, 1.21, "1", null]) {
+    assert.equal((await POST(pedido({ texto: "oi", velocidade: invalida }))).status, 400);
+  }
+  assert.deepEqual(velocidades, [1, 1.1]);
+});

@@ -82,10 +82,30 @@ export async function enviarFala(sessaoId: string, texto: string): Promise<Estad
   const r = await fetch(`${API}/${sessaoId}/mensagem`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: texto, copia: copiaDe(sessaoId) }),
+    body: JSON.stringify(corpoDaFala(sessaoId, texto, false)),
   });
   if (!r.ok) throw new Error(await erroDe(r));
   return guardar((await r.json()) as EstadoSessao);
+}
+
+/** Corpo do POST de uma fala. O rascunho (resposta antecipada) manda o mesmo corpo com `rascunho: true` no fim. */
+function corpoDaFala(sessaoId: string, texto: string, rascunho: boolean) {
+  const corpo = { text: texto, copia: copiaDe(sessaoId) };
+  return rascunho ? { ...corpo, rascunho: true } : corpo;
+}
+
+/**
+ * Rascunho da resposta (resposta antecipada): o servidor prepara a resposta a este texto sem gravar a fala. Não muda
+ * a sessão daqui: a resposta é ignorada, e o envio final, com o mesmo corpo, a reaproveita se ela ainda valer.
+ */
+export async function rascunharFala(sessaoId: string, texto: string, sinal: AbortSignal): Promise<void> {
+  const r = await fetch(`${API}/${sessaoId}/mensagem`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corpoDaFala(sessaoId, texto, true)),
+    signal: sinal,
+  });
+  if (!r.ok) throw new Error(await erroDe(r));
 }
 
 /** Estado mais recente (a extração do rascunho roda em segundo plano no servidor). */

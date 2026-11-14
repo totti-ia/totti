@@ -1,5 +1,7 @@
+import { ReacaoRetida } from "../audio/filaDoAgente";
 import type { FocoAudio } from "../audio/foco";
-import type { ProvedorVoz, ReproduzirFala } from "./cliente";
+import { tocarGravacao, type ProvedorVoz, type ReproduzirFala, type ReproduzirGravacao } from "./cliente";
+import { ESPERA_DA_REACAO_MS, juntarReacao, slugDaReacao, urlDaReacao } from "./reacao";
 
 export type EstadoVoz = "inativa" | "preparando" | "falando" | "erro";
 export type LegendaAgente = { quem: "agente"; texto: string; ate: number };
@@ -57,17 +59,29 @@ function dormir(ms: number, sinal: AbortSignal): Promise<void> {
  */
 export function criarFilaDeFalas(dependencias: {
   reproduzir: ReproduzirFala;
+  /** Toca a gravação de uma reação sem fala seguinte (padrão: lib/voz/cliente.ts). */
+  reproduzirGravacao?: ReproduzirGravacao;
   foco: Pick<FocoAudio, "aguardarMicrofone" | "assumir">;
   tela: TelaVoz;
   pausaMs?: number;
+  esperaDaReacaoMs?: number;
   agora?: () => number;
 }) {
-  const { reproduzir, foco, tela, pausaMs = PAUSA_ENTRE_FALAS_MS, agora = Date.now } = dependencias;
+  const { reproduzir, reproduzirGravacao = tocarGravacao, foco, tela, pausaMs = PAUSA_ENTRE_FALAS_MS, esperaDaReacaoMs = ESPERA_DA_REACAO_MS, agora = Date.now } = dependencias;
   /** A fala pedida por último (tocando ou na fila). */
   let ultima: Entrada | null = null;
   /** A fala com a vez: a única que mexe na legenda e no estado. */
   let vez: Entrada | null = null;
   const vivas = new Set<AbortController>();
+  /**
+   * Uma reação pura ("Hm.") espera a fala seguinte. Quem chega antes do prazo sai junto com ela numa só síntese
+   * (`falar` consome a reação); se o prazo passa, a reação toca a gravação (ver lib/voz/reacao.ts). Cada entrada
+   * guarda a promessa de quem a pediu: resolve false quando a reação some (junta, parar).
+   */
+  const reacoes = new ReacaoRetida<{ opcoes?: { antesDeTocar?: () => Promise<boolean> }; resolver: (tocou: boolean) => void }>(
+    (texto, carga) => { void enfileirar(texto, carga.opcoes).then(carga.resolver); },
+    esperaDaReacaoMs,
+  );
   /** Quando o áudio do agente parou pela última vez (fim natural ou corte). */
   let fimDaUltimaFala = Number.NEGATIVE_INFINITY;
   /**
@@ -87,6 +101,7 @@ export function criarFilaDeFalas(dependencias: {
     vivas.clear();
     ultima = null;
     vez = null;
+    reacoes.limpar()?.carga.resolver(false);
     controles.forEach((c) => c.abort());
     liberarFoco();
     tela.estado("inativa");
@@ -96,9 +111,24 @@ export function criarFilaDeFalas(dependencias: {
 
   /**
    * `antesDeTocar`: com o áudio pronto e a vez do agente, espera a pessoa fazer uma pausa; false desiste da fala.
-   * Devolve true se a fala tocou até o fim (false: cancelada, substituída ou com erro).
+   * Devolve true se a fala tocou até o fim (false: cancelada, substituída, junta a uma reação ou com erro).
    */
   async function falar(texto: string, opcoes?: { antesDeTocar?: () => Promise<boolean> }): Promise<boolean> {
+    const retida = reacoes.consumir();
+    if (retida) {
+      retida.carga.resolver(false);
+      return enfileirar(juntarReacao(retida.texto, texto), opcoes);
+    }
+    if (!slugDaReacao(texto)) return enfileirar(texto, opcoes);
+    return new Promise<boolean>((resolver) => {
+      // Sem reação retida (acabou de ser consumida), reter dá certo; se não der, a reação segue direto.
+      if (!reacoes.reter(texto, { opcoes, resolver })) void enfileirar(texto, opcoes).then(resolver);
+    });
+  }
+
+  /** A fala entra na fila: uma reação (texto só de reação) toca a gravação; as outras, a síntese. */
+  async function enfileirar(texto: string, opcoes?: { antesDeTocar?: () => Promise<boolean> }): Promise<boolean> {
+    const slug = slugDaReacao(texto);
     const anterior = ultima;
     if (anterior && !anterior.emReproducao) anterior.controle.abort();
     const controle = new AbortController();
@@ -115,38 +145,43 @@ export function criarFilaDeFalas(dependencias: {
     if (vez === null) { tela.erro(null); tela.estado("preparando"); }
     let tocou = false;
     let falhou = false;
+    const eventos = {
+      aoIniciar: (fonte: ProvedorVoz) => {
+        if (!daVez()) return;
+        tocou = true;
+        entrada.emReproducao = true;
+        tela.estado("falando");
+        tela.provedor(fonte);
+        tela.aviso(null);
+      },
+      aoAguardarGesto: () => { if (daVez()) tela.aviso("Toque na tela para ouvir o Totti."); },
+      aoProgresso: (ate: number) => { if (daVez()) tela.fala({ quem: "agente", texto, ate }); },
+    };
+    const antesDaVez = async () => {
+      // A fala anterior termina e o agente respira antes desta.
+      if (anterior) await esperar(anterior.terminou, controle.signal);
+      const falta = fimDaUltimaFala + pausaMs - agora();
+      if (falta > 0) await dormir(falta, controle.signal);
+      vez = entrada;
+      tela.erro(null);
+      tela.estado("preparando");
+      tela.fala({ quem: "agente", texto, ate: 0 });
+      // Substituída ou cortada enquanto espera a pausa do candidato: desiste na hora, sem segurar a próxima.
+      if (opcoes?.antesDeTocar && !(await esperar(opcoes.antesDeTocar(), controle.signal))) return false;
+      controle.signal.throwIfAborted();
+      return true;
+    };
     try {
       await foco.aguardarMicrofone(controle.signal);
       controle.signal.throwIfAborted();
       soltarFoco ??= foco.assumir("saida", parar);
-      await reproduzir(texto, controle.signal, {
-        aoIniciar: (fonte) => {
-          if (!daVez()) return;
-          tocou = true;
-          entrada.emReproducao = true;
-          tela.estado("falando");
-          tela.provedor(fonte);
-          tela.aviso(null);
-        },
-        aoAguardarGesto: () => { if (daVez()) tela.aviso("Toque na tela para ouvir o Totti."); },
-        aoProgresso: (ate) => { if (daVez()) tela.fala({ quem: "agente", texto, ate }); },
-      }, async () => {
-        // A fala anterior termina e o agente respira antes desta.
-        if (anterior) await esperar(anterior.terminou, controle.signal);
-        const falta = fimDaUltimaFala + pausaMs - agora();
-        if (falta > 0) await dormir(falta, controle.signal);
-        vez = entrada;
-        tela.erro(null);
-        tela.estado("preparando");
-        tela.fala({ quem: "agente", texto, ate: 0 });
-        // Substituída ou cortada enquanto espera a pausa do candidato: desiste na hora, sem segurar a próxima.
-        if (opcoes?.antesDeTocar && !(await esperar(opcoes.antesDeTocar(), controle.signal))) return false;
-        controle.signal.throwIfAborted();
-        return true;
-      });
+      // Reação sem fala seguinte toca a gravação; as demais falas, a síntese.
+      if (slug) await reproduzirGravacao(urlDaReacao(slug), texto, controle.signal, eventos, antesDaVez);
+      else await reproduzir(texto, controle.signal, eventos, antesDaVez);
       return tocou && !controle.signal.aborted;
     } catch (e) {
-      if (!controle.signal.aborted) {
+      // Reação sem gravação que carregue: descartada em silêncio, sem erro na tela e sem síntese.
+      if (!controle.signal.aborted && !slug) {
         falhou = true;
         tela.erro(e instanceof Error ? e.message : "A voz está indisponível. A resposta continua no texto.");
         // Com outra fala tocando, ela segue: o erro desta não derruba o estado daquela.

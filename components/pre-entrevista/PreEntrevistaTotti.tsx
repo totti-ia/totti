@@ -28,9 +28,6 @@ import Passos from "./Passos";
 
 type Etapa = "vaga" | "lendo" | "conversa" | "plano" | "pronta";
 
-/** A resposta do Totti nunca chega antes disso: dá tempo de ele "ler" e de os pontinhos aparecerem. */
-const RESPOSTA_MINIMA_MS = 1500;
-const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Depois da última fala do Totti, quanto a conversa espera para fechar. */
 const ESPERA_FECHAR_MS = 1400;
 /** O cartão "montando o plano" fica pelo menos isso na tela. */
@@ -147,7 +144,7 @@ export default function PreEntrevistaTotti({
     // A fala aparece na hora; a resposta do Totti chega depois.
     setEstado({ ...estado, transcricao: [...estado.transcricao, { role: "recrutadora", text: texto }] });
     try {
-      const [novo] = await Promise.all([enviarFala(estado.id, texto), esperar(RESPOSTA_MINIMA_MS)]);
+      const novo = await enviarFala(estado.id, texto);
       setEstado(comPendente(novo));
     } catch (e) {
       setEstado(estado);

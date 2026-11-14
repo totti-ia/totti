@@ -5,6 +5,8 @@ export type EventosTranscricao = {
   aoTexto: (texto: string) => void;
   aoErro: (erro: Error) => void;
   aoEncerrar: () => void;
+  /** Energia RMS crua (0 a 1) de cada bloco enviado ao provedor. Só o Scribe chama; o navegador não tem isso. */
+  aoEnergia?: (energia: number) => void;
 };
 
 export type SessaoTranscricao = {

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { FocoAudio } from "../audio/foco";
-import type { ReproduzirFala } from "./cliente";
+import type { ReproduzirFala, ReproduzirGravacao } from "./cliente";
 import { criarFilaDeFalas, type EstadoVoz } from "./filaDeFalas";
+import { ESPERA_DA_REACAO_MS } from "./reacao";
 
 // Tempos curtos para o teste: o que importa é a ordem e a pausa, não os valores reais.
 const PAUSA = 60;
@@ -14,15 +15,20 @@ const FOLGA = 3;
 const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Monta uma fila com um "ElevenLabs" falso que registra quando cada áudio começa e termina de tocar. */
-function montar(opcoes: { falhar?: string[]; duracao?: Record<string, number>; aguardarGesto?: string[] } = {}) {
+function montar(opcoes: { falhar?: string[]; duracao?: Record<string, number>; aguardarGesto?: string[]; gravacaoFalha?: string[] } = {}) {
   const t0 = Date.now();
   const agora = () => Date.now() - t0;
   const audios: { texto: string; inicio: number; fim?: number; cortado?: boolean }[] = [];
   const estados: { em: number; estado: EstadoVoz }[] = [];
+  /** O que foi sintetizado (um pedido à ElevenLabs) e as gravações de reação que tocaram. */
+  const sinteses: string[] = [];
+  const gravacoes: { url: string; texto: string; inicio: number; fim?: number }[] = [];
+  const erros: string[] = [];
   let tocandoAgora = 0;
   let maximoSimultaneo = 0;
 
   const reproduzir: ReproduzirFala = async (texto, sinal, eventos, antesDeTocar) => {
+    sinteses.push(texto);
     await dormir(SINTESE);
     sinal.throwIfAborted();
     if (opcoes.falhar?.includes(texto)) throw new Error(`voz indisponível para ${texto}`);
@@ -52,14 +58,35 @@ function montar(opcoes: { falhar?: string[]; duracao?: Record<string, number>; a
     }
   };
 
+  // A gravação falsa segue o mesmo caminho da fala: carrega (dormir), pergunta a vez e toca pelo tempo de uma fala.
+  const reproduzirGravacao: ReproduzirGravacao = async (url, texto, sinal, eventos, antesDeTocar) => {
+    await dormir(SINTESE);
+    if (opcoes.gravacaoFalha?.includes(url)) throw new Error(`gravação ausente: ${url}`);
+    sinal.throwIfAborted();
+    if (antesDeTocar && !(await antesDeTocar())) return;
+    sinal.throwIfAborted();
+    const gravacao: (typeof gravacoes)[number] = { url, texto, inicio: agora() };
+    gravacoes.push(gravacao);
+    eventos.aoIniciar("elevenlabs");
+    try {
+      await new Promise<void>((ok, falha) => {
+        const id = setTimeout(ok, DURACAO);
+        sinal.addEventListener("abort", () => { clearTimeout(id); falha(sinal.reason); }, { once: true });
+      });
+    } finally {
+      gravacao.fim = agora();
+    }
+  };
+
   const foco = new FocoAudio();
   const fila = criarFilaDeFalas({
     reproduzir,
+    reproduzirGravacao,
     foco,
     pausaMs: PAUSA,
     tela: {
       estado: (estado) => estados.push({ em: agora(), estado }),
-      erro: () => {},
+      erro: (erro) => { if (erro) erros.push(erro); },
       aviso: () => {},
       provedor: () => {},
       fala: () => {},
@@ -70,7 +97,7 @@ function montar(opcoes: { falhar?: string[]; duracao?: Record<string, number>; a
     assert.ok(a, `o áudio "${texto}" deveria ter tocado`);
     return a;
   };
-  return { fila, foco, audios, estados, audio, agora, maximoSimultaneo: () => maximoSimultaneo };
+  return { fila, foco, audios, estados, audio, agora, maximoSimultaneo: () => maximoSimultaneo, sinteses, gravacoes, erros };
 }
 
 test("fala nova com outra tocando espera ela terminar e a pausa, sem sobrepor", async () => {
@@ -236,4 +263,63 @@ test("fala presa esperando um toque na tela é substituída pela mais nova", asy
   assert.deepEqual(await Promise.all([a, b]), [false, true]);
   assert.deepEqual(audios.map((x) => x.texto), ["B"]);
   assert.ok(audio("B").inicio >= 0);
+});
+
+test("reação e a fala seguinte, em 500 ms, saem juntas numa síntese só (sem gravação)", async () => {
+  const { fila, sinteses, gravacoes } = montar();
+  const reacao = fila.falar("Hm");
+  await dormir(500);
+  const seguinte = fila.falar("E como você escalaria isso?");
+  assert.deepEqual(await Promise.all([reacao, seguinte]), [false, true]);
+  assert.deepEqual(sinteses, ["Hm. E como você escalaria isso?"]);
+  assert.deepEqual(gravacoes, []);
+});
+
+test("reação sozinha: depois de 1,2 s toca a gravação da reação, nunca a síntese", async () => {
+  const { fila, sinteses, gravacoes } = montar();
+  assert.equal(await fila.falar("Hm."), true);
+  assert.deepEqual(sinteses, []);
+  assert.equal(gravacoes.length, 1);
+  assert.equal(gravacoes[0].url, "/audio/reacoes/hm.mp3");
+  assert.ok(gravacoes[0].inicio >= ESPERA_DA_REACAO_MS - FOLGA, "a gravação só entra depois do prazo da reação");
+});
+
+test("reação com a gravação que não carrega: descartada em silêncio, sem síntese e sem erro", async () => {
+  const { fila, sinteses, gravacoes, erros, estados } = montar({ gravacaoFalha: ["/audio/reacoes/uhum.mp3"] });
+  assert.equal(await fila.falar("Uhum."), false);
+  assert.deepEqual(sinteses, []);
+  assert.deepEqual(gravacoes, []);
+  assert.deepEqual(erros, []);
+  assert.equal(estados.at(-1)?.estado, "inativa");
+});
+
+test("fala que não é reação não espera: sai na hora, sem gravação", async () => {
+  const { fila, sinteses, gravacoes } = montar();
+  const t0 = Date.now();
+  assert.equal(await fila.falar("Como você escalaria isso?"), true);
+  assert.ok(Date.now() - t0 < ESPERA_DA_REACAO_MS, "sem espera de reação");
+  assert.deepEqual(sinteses, ["Como você escalaria isso?"]);
+  assert.deepEqual(gravacoes, []);
+});
+
+test("parar enquanto a reação espera a seguinte: a reação some e nada toca depois", async () => {
+  const { fila, sinteses, gravacoes } = montar();
+  const reacao = fila.falar("Certo.");
+  await dormir(300);
+  fila.parar();
+  assert.equal(await reacao, false);
+  await dormir(ESPERA_DA_REACAO_MS + SINTESE);
+  assert.deepEqual(sinteses, []);
+  assert.deepEqual(gravacoes, []);
+});
+
+test("reação numa fila ocupada toca a gravação só depois da fala que está tocando, com a pausa", async () => {
+  const { fila, audio, gravacoes } = montar();
+  const a = fila.falar("A");
+  await dormir(SINTESE + 30); // A já está tocando
+  const reacao = fila.falar("Tá");
+  assert.equal(await reacao, true);
+  await a;
+  assert.equal(gravacoes.length, 1);
+  assert.ok(gravacoes[0].inicio >= audio("A").fim! + PAUSA - FOLGA, "a gravação espera A terminar e a pausa");
 });

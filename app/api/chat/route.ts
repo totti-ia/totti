@@ -1,10 +1,10 @@
 import { after, NextResponse } from "next/server";
 import { runAnalyst } from "@/lib/agents/analyst";
-import { runInterviewerTurn } from "@/lib/agents/interviewer";
+import { prepararRascunho, turnoComRascunho, type PedidoDoTurno } from "@/lib/agents/rascunho";
 import { findBlipQuestion } from "@/lib/agents/policy";
 import { ChatRequest } from "@/lib/contracts";
+import { pedeRascunho } from "@/lib/conversa/rascunho";
 import { guardarSessao, sessaoViva } from "@/lib/session/persistencia";
-import { appendEvent, latestCode, sessionNow } from "@/lib/session/store";
 import { ultimoEvento } from "@/lib/session/eventos";
 
 /** Teto do código aceito na conversa (o mesmo espírito do limite de snapshot). */
@@ -36,19 +36,27 @@ export async function POST(request: Request) {
   const conhecida = blipId === undefined || !!findBlipQuestion(session, blipId);
   if (!conhecida) console.warn("[chat] pergunta desconhecida, seguindo como fala livre:", blipId);
 
-  // Grava o código de agora antes do turno: o Totti nunca comenta uma versão velha.
-  if (liveCode !== undefined && !session.ended && liveCode !== latestCode(session)) {
-    appendEvent(session, {
-      type: "snapshot",
-      sessionId: session.sessionId,
-      t: sessionNow(session),
-      code: liveCode,
-      version: (session.codeHistory.at(-1)?.version ?? 0) + 1,
-      language: liveLanguage ?? session.language,
-    });
+  const pedido: PedidoDoTurno = {
+    sessionId,
+    blipId,
+    messages,
+    reconheceu: extra.reconheceu === true,
+    liveCode,
+    liveLanguage,
+    turno: { blipId: conhecida ? blipId : undefined, messages, reconheceu: extra.reconheceu === true },
+  };
+
+  // Rascunho (a tela manda a cada trecho confirmado pela transcrição): roda o turno numa cópia e guarda o resultado.
+  // Não grava nada: a sessão real segue como está até a confirmação.
+  if (pedeRascunho(body)) {
+    const rascunho = await prepararRascunho(session, pedido);
+    return NextResponse.json(rascunho);
   }
 
-  const response = await runInterviewerTurn(session, { blipId: conhecida ? blipId : undefined, messages, reconheceu: extra.reconheceu === true });
+  // Ao vivo ou pelo rascunho com a mesma chave. Antes do snapshot, como o rascunho (a chave é a da sessão de agora).
+  const { resposta, doRascunho, ms } = await turnoComRascunho(session, pedido);
+  console.info(`[chat] rascunho ${doRascunho ? "usado" : "novo"} em ${ms} ms (sessão ${sessionId.slice(0, 8)})`);
+  const response = resposta;
   // Gravar no Supabase (ler a cópia remota, juntar e gravar) são duas idas e voltas: ficam para depois da resposta,
   // que é o que o candidato está esperando ouvir.
   // Concluiu uma etapa: o analista olha o código agora (momento-chave), e a próxima pergunta já vem sobre o que segue.
@@ -59,5 +67,5 @@ export async function POST(request: Request) {
     await runAnalyst(session, gatilho).catch((err) => console.error("[chat] analista falhou:", err));
     await guardarSessao(session);
   });
-  return NextResponse.json(response);
+  return NextResponse.json(response, { headers: { "x-totti-rascunho": doRascunho ? "usado" : "novo" } });
 }

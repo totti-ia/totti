@@ -60,6 +60,20 @@ export async function postChat(req: ChatRequest & { code?: string; language?: st
   return ChatResponse.parse(await res.json());
 }
 
+/**
+ * POST /api/chat com `rascunho: true` (resposta antecipada): o mesmo corpo do envio final, sem validar nem usar a
+ * resposta. Só o servidor guarda o que preparou (ver lib/conversa/rascunho.ts).
+ */
+export async function rascunharChat(corpo: object, signal: AbortSignal): Promise<void> {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...corpo, rascunho: true }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`POST /api/chat (rascunho) respondeu ${res.status}`);
+}
+
 /** POST /api/encerramento: o balão da última conversa, ou nada se o agente não tem mais o que perguntar. */
 export async function postEncerramento(sessionId: string, gatilho: "concluiu" | "tempo" | "pediu_encerrar" = "concluiu"): Promise<EventsResponse> {
   const res = await fetch("/api/encerramento", {

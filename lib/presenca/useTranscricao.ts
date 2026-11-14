@@ -5,7 +5,7 @@ import { ErroTokenTranscricao, tokenTranscricao, type CredencialTranscricao } fr
 import {
   atualizarTranscricao, criarDetectorDeFala, criarFilaDeAmostras, criarPortaoDeVoz, esperaParaReconectar, estadoInicialTranscricao,
   energiaRms, mensagemDeAudio, misturarMono, reamostrar, silencioParaCompletar, trechoPlausivel, urlDoScribe, VOZ_MINIMA_MS,
-  AMOSTRAS_MINIMAS_TRECHO,
+  AMOSTRAS_MINIMAS_TRECHO, AMOSTRAS_MANTER_VIVO, COMMIT_DE_SEGURANCA_MS, COMMIT_TRECHO_CURTO_MS, MANTER_VIVO_MS, MAXIMO_PENDENTE,
   type EstadoReamostragem, type TrechoTranscrito,
 } from "./transcricao";
 import { AMOSTRAS_ANTES_DO_DISPARO, criarRegraDeInterrupcao, type OpcoesRegra } from "../voz/detectorDeInterrupcao";
@@ -26,14 +26,6 @@ export type InterrupcaoPelaVoz = {
 
 /** Tempo de pausa (sem poder ouvir) com o socket aberto antes de fechá-lo. */
 const PAUSA_MAXIMA_MS = 30_000;
-/**
- * O Scribe fecha a conexão depois de ~15 s sem áudio. Reabrir pede token novo (limite de 20 por sessão a cada
- * 10 min), então, sem nada a enviar, vai um bloco curto de silêncio a cada MANTER_VIVO_MS: ~2% do tempo ocioso.
- */
-const MANTER_VIVO_MS = 5_000;
-const AMOSTRAS_MANTER_VIVO = 1600;
-/** Áudio guardado enquanto o socket conecta (20 s a 16 kHz); acima disso descarta o mais antigo. */
-const MAXIMO_PENDENTE = 320_000;
 /** Acima disso no buffer do socket, a rede não está escoando: reconecta. */
 const SOCKET_SATURADO = 262_144;
 /**
@@ -41,18 +33,6 @@ const SOCKET_SATURADO = 262_144;
  * bufferedAmount só baixa entre tarefas, então mandar tudo de uma vez passaria de SOCKET_SATURADO sozinho.
  */
 const LIMITE_RAJADA = 65_536;
-/**
- * Rede de segurança do portão: se o VAD do Scribe não confirmou o trecho até este tempo depois de o portão
- * fechar (ruído na folga, por exemplo), confirma à mão. Esperar evita um commit logo depois do commit do VAD,
- * que a documentação diz degradar o modelo.
- */
-const COMMIT_DE_SEGURANCA_MS = 1_000;
-/**
- * Trecho curto ("sim", "o que tu acha"): o VAD do Scribe não confirma trecho com menos de ~2 s de áudio, então ele
- * é completado com silêncio e confirmado à mão mais cedo, para chegar ao Totti em até ~1,5 s depois da fala.
- */
-const COMMIT_TRECHO_CURTO_MS = 300;
-
 export type EstadoEscuta = { motor: "elevenlabs" | "navegador" | "nenhum"; escutando: boolean; erro: string | null };
 /** Uso do Scribe por sessão de escuta: o que é cobrado (áudio enviado) contra o tempo de sessão. */
 export type UsoTranscricao = { audioEnviadoS: number; sessaoS: number; conexoes: number; reconexoes: number };

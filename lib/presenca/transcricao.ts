@@ -170,6 +170,26 @@ export function silencioParaCompletar(amostrasNoTrecho: number, minimo = AMOSTRA
   return new Float32Array(Math.max(0, minimo - Math.max(0, amostrasNoTrecho)));
 }
 
+/** Áudio guardado enquanto o socket conecta (20 s a 16 kHz); acima disso descarta o mais antigo. */
+export const MAXIMO_PENDENTE = 320_000;
+/**
+ * O Scribe fecha a conexão depois de ~15 s sem áudio. Reabrir pede token novo (limite de 20 por sessão a cada
+ * 10 min), então, sem nada a enviar, vai um bloco curto de silêncio a cada MANTER_VIVO_MS: ~2% do tempo ocioso.
+ */
+export const MANTER_VIVO_MS = 5_000;
+export const AMOSTRAS_MANTER_VIVO = 1600;
+/**
+ * Rede de segurança do portão: se o VAD do Scribe não confirmou o trecho até este tempo depois de o portão
+ * fechar (ruído na folga, por exemplo), confirma à mão. Esperar evita um commit logo depois do commit do VAD,
+ * que a documentação diz degradar o modelo.
+ */
+export const COMMIT_DE_SEGURANCA_MS = 1_000;
+/**
+ * Trecho curto ("sim", "o que tu acha"): o VAD do Scribe não confirma trecho com menos de ~2 s de áudio, então ele
+ * é completado com silêncio e confirmado à mão mais cedo, para chegar ao Totti em até ~1,5 s depois da fala.
+ */
+export const COMMIT_TRECHO_CURTO_MS = 300;
+
 export function mensagemDeAudio(amostras: Float32Array, commit = false): string {
   const bytes = pcm16LE(amostras);
   let binario = "";
