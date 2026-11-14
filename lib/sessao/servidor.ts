@@ -4,6 +4,7 @@ import { EsquemaVisualOpcional } from "../presenca/acoesVisuais";
 import { validarResposta, type PedidoAnalise, type RespostaAnalise, type Sessao } from "./cliente";
 import type { Alinhamento } from "../presenca/alinhamento";
 import { obterSessaoDaVoz } from "../voz/cliente";
+import type { ContextoDaFala } from "../voz/contrato";
 
 export type { FalaRecente, Fase, PedidoAnalise, RespostaAnalise, Sessao } from "./cliente";
 export type { Alinhamento } from "../presenca/alinhamento";
@@ -142,10 +143,11 @@ export async function pedirEmpecilho(sessaoId: string, dados: { fase: string; gr
   return validar(rota, await lerJson(rota, jsonPost({ sessao_id: sessaoId, ...dados })), EsquemaEmpecilho);
 }
 
-export async function sintetizarFala(texto: string, sinal?: AbortSignal): Promise<{ audio: Blob; alinhamento: Alinhamento }> {
+/** `contexto` leva o texto anterior e o ritmo da fala (ver lib/voz/cliente.ts); sem ele, a fala vai só com o texto. */
+export async function sintetizarFala(texto: string, sinal?: AbortSignal, contexto: ContextoDaFala = {}): Promise<{ bytes: Uint8Array; alinhamento: Alinhamento }> {
   const rota = "/api/falar";
   const meta = obterSessaoDaVoz();
-  const dados = validar(rota, await lerJson(rota, jsonPost({ texto, ...(meta ?? {}) }, sinal)), EsquemaFala);
+  const dados = validar(rota, await lerJson(rota, jsonPost({ texto, ...contexto, ...(meta ?? {}) }, sinal)), EsquemaFala);
   let binario: string;
   try {
     binario = atob(dados.audio_base64);
@@ -154,7 +156,7 @@ export async function sintetizarFala(texto: string, sinal?: AbortSignal): Promis
   }
   const bytes = new Uint8Array(binario.length);
   for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
-  return { audio: new Blob([bytes], { type: "audio/mpeg" }), alinhamento: dados.alinhamento };
+  return { bytes, alinhamento: dados.alinhamento };
 }
 
 export async function enviarEventos(sessaoId: string, lote: { horario: string; tipo: string; dados: unknown }[]): Promise<void> {

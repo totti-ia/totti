@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import { criarVoz, dividirFala, MENSAGEM_VOZ_INDISPONIVEL } from "./cliente";
+import { trechoDeContexto } from "./contrato";
 import { comFolga, esquecerSaidaDeSom, QUADROS_ANTES, QUADROS_ANTES_DEPOIS_DE_PARADA } from "./folga";
 import { tocarComAlinhamento } from "../presenca/vozSincronizada";
 import { RespostaVoz } from "./contrato";
@@ -19,7 +20,7 @@ test("usa o áudio da Sofia e propaga o progresso do player", async () => {
   const falar = criarVoz({
     fetch: async (url, opcoes) => {
       assert.equal(url, "/api/falar");
-      assert.deepEqual(JSON.parse(String(opcoes?.body)), { texto: "oi" });
+      assert.deepEqual(JSON.parse(String(opcoes?.body)), { texto: "oi", velocidade: 1.1 });
       return Response.json(dadosVoz);
     },
     tocar: async (_audio, alinhamento, opcoes) => {
@@ -327,4 +328,78 @@ test("fala logo depois de outra usa a folga normal; depois de uma parada longa, 
   agora += 60_000;
   await falar("oi", new AbortController().signal, eventos());
   assert.deepEqual(inicios, [comQuadros(QUADROS_ANTES_DEPOIS_DE_PARADA), comQuadros(QUADROS_ANTES), comQuadros(QUADROS_ANTES_DEPOIS_DE_PARADA)]);
+});
+
+function gravandoCorpos() {
+  const corpos: Record<string, unknown>[] = [];
+  const fetch = async (_url: unknown, opcoes?: RequestInit) => {
+    corpos.push(JSON.parse(String(opcoes?.body)));
+    return Response.json(dadosVoz);
+  };
+  return { corpos, fetch };
+}
+
+test("a segunda fala manda a primeira como texto anterior; a primeira vai sem contexto", async () => {
+  const { corpos, fetch } = gravandoCorpos();
+  const falar = criarVoz({ fetch, tocar: async () => {} });
+  const primeira = "Primeira fala do agente, longa o bastante para não ficar guardada no cache.";
+  const segunda = "Segunda fala do agente, também longa o bastante para não ficar guardada.";
+  await falar(primeira, new AbortController().signal, eventos());
+  await falar(segunda, new AbortController().signal, eventos());
+  assert.equal(corpos[0].texto_anterior, undefined);
+  assert.equal(corpos[1].texto_anterior, primeira);
+});
+
+test("partes de uma fala dividida: cada uma recebe a vizinha anterior e a seguinte, com o mesmo ritmo", async () => {
+  const texto = "Frase de teste com algumas palavras. ".repeat(60).trim();
+  const partes = dividirFala(texto);
+  assert.ok(partes.length >= 2);
+  const { corpos, fetch } = gravandoCorpos();
+  const falar = criarVoz({ fetch, tocar: async () => {} });
+  await falar(texto, new AbortController().signal, eventos());
+  assert.equal(corpos.length, partes.length);
+  corpos.forEach((corpo, i) => {
+    assert.equal(corpo.texto, partes[i].texto);
+    assert.equal(corpo.texto_anterior, i === 0 ? undefined : partes[i - 1].texto.slice(-1000).trim());
+    assert.equal(corpo.texto_seguinte, i === partes.length - 1 ? undefined : partes[i + 1].texto.slice(0, 1000).trim());
+    assert.equal(corpo.velocidade, 1);
+  });
+});
+
+test("fala curta guardada no cache não manda texto vizinho e não é sintetizada de novo", async () => {
+  const { corpos, fetch } = gravandoCorpos();
+  const falar = criarVoz({ fetch, tocar: async () => {} });
+  await falar("Esta primeira fala é longa o bastante para não ficar guardada no cache.", new AbortController().signal, eventos());
+  await falar("Uhum.", new AbortController().signal, eventos());
+  await falar("Uhum.", new AbortController().signal, eventos());
+  assert.equal(corpos.length, 2);
+  assert.equal(corpos[1].texto, "Uhum.");
+  assert.equal(corpos[1].texto_anterior, undefined);
+  assert.equal(corpos[1].texto_seguinte, undefined);
+  assert.equal(corpos[1].velocidade, 1.1);
+});
+
+test("velocidade: fala acima de 200 caracteres sai em 1,0; réplica curta, em 1,1", async () => {
+  const { corpos, fetch } = gravandoCorpos();
+  const falar = criarVoz({ fetch, tocar: async () => {} });
+  const longa = "Apresentação do desafio. ".repeat(10).trim();
+  assert.equal(longa.length, 249);
+  await falar(longa, new AbortController().signal, eventos());
+  await falar("Pode continuar, por favor, com a sua ideia de arquitetura agora mesmo.", new AbortController().signal, eventos());
+  assert.equal(corpos[0].velocidade, 1);
+  assert.equal(corpos[1].velocidade, 1.1);
+});
+
+test("contexto vizinho tem no máximo 1000 caracteres e não separa um par UTF-16", () => {
+  assert.equal(trechoDeContexto(undefined, true), undefined);
+  assert.equal(trechoDeContexto("a".repeat(1500), true)?.length, 1000);
+  assert.equal(trechoDeContexto("a".repeat(1500), false)?.length, 1000);
+  // Fim: o recorte cai sobre a metade de baixo de um par; ela sai.
+  const fim = trechoDeContexto("🙂".repeat(600) + "a", true)!;
+  assert.equal(fim.length, 999);
+  assert.ok(!/^[\uDC00-\uDFFF]/u.test(fim));
+  // Começo: o recorte cai sobre a metade de cima de um par; ela sai.
+  const inicio = trechoDeContexto("a" + "🙂".repeat(600), false)!;
+  assert.equal(inicio.length, 999);
+  assert.ok(!/[\uD800-\uDBFF]$/u.test(inicio));
 });

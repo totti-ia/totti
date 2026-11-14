@@ -3,6 +3,9 @@ import { ETAPAS_DO_FECHAMENTO, type EtapaDoFechamento } from "../totti/fechament
 import { EsquemaVisualOpcional, type AcaoVisual } from "../presenca/acoesVisuais";
 import type { MarcaDeFala } from "../presenca/vozSincronizada";
 import { escolherVozPt } from "../voz/escolherVoz";
+import { trechoDeContexto } from "../voz/contrato";
+import { velocidadeDaFala } from "../voz/velocidade";
+import { comFolga, marcarSaidaDeSom, quadrosAntesDaFala } from "../voz/folga";
 
 // Único ponto de acesso do quadro ao servidor.
 // O servidor é o padrão; só "0" liga a sessão de demonstração.
@@ -291,6 +294,8 @@ function legendaSemVoz(texto: string, aoProgresso: (caracteres: number) => void,
 const TENTATIVAS_DE_VOZ = 2;
 
 let controleDaVoz: AbortController | null = null;
+/** Última fala do Totti sintetizada: vira o texto anterior da próxima, para a prosódia seguir (como no quadro). */
+let ultimaFalaDoTotti: string | undefined;
 /** Vira false quando o servidor diz que não tem voz (501): até a próxima sessão, nem tenta. */
 let vozDoServidorDisponivel = true;
 
@@ -327,12 +332,18 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
       let tocou = false;
       for (let tentativa = 1; vozDoServidorDisponivel && tentativa <= TENTATIVAS_DE_VOZ; tentativa++) {
         try {
-          const voz = await servidor.sintetizarFala(texto, controle.signal);
+          const voz = await servidor.sintetizarFala(texto, controle.signal, {
+            texto_anterior: trechoDeContexto(ultimaFalaDoTotti, true), velocidade: velocidadeDaFala(texto),
+          });
+          ultimaFalaDoTotti = texto;
           if (!await iniciar()) return;
+          // Silêncio nas duas pontas, com a mesma folga do quadro (lib/voz/folga.ts), decidida na hora de tocar.
+          const { bytes, alinhamento } = comFolga(voz.bytes, voz.alinhamento, quadrosAntesDaFala());
           const { tocarComAlinhamento } = await import("../presenca/vozSincronizada");
-          await tocarComAlinhamento(voz.audio, voz.alinhamento, {
+          await tocarComAlinhamento(new Blob([bytes as BlobPart], { type: "audio/mpeg" }), alinhamento, {
             aoProgresso: (n) => { tocou = true; progresso(n); }, marcas: marcasUnicas, sinal: controle.signal,
           });
+          marcarSaidaDeSom();
           progresso(texto.length);
           return;
         } catch (erro) {
@@ -340,6 +351,7 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
           if (erro instanceof servidor.ErroHttp && erro.status === 501) vozDoServidorDisponivel = false;
           // Se o áudio já começou, repetir faria o candidato ouvir a frase duas vezes: as marcas e a legenda fecham.
           if (tocou) {
+            marcarSaidaDeSom();
             console.warn("[voz] o áudio parou no meio da fala:", erro);
             marcasUnicas.forEach((m) => m.aoChegar());
             progresso(texto.length);

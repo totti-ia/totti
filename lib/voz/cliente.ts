@@ -1,7 +1,8 @@
 import type { Alinhamento } from "../presenca/alinhamento";
 import { tocarComAlinhamento } from "../presenca/vozSincronizada";
-import { RespostaVoz } from "./contrato";
+import { RespostaVoz, trechoDeContexto, type ContextoDaFala } from "./contrato";
 import { comFolga, marcarSaidaDeSom, quadrosAntesDaFala } from "./folga";
+import { velocidadeDaFala } from "./velocidade";
 type DadosVoz = import("zod").infer<typeof RespostaVoz>;
 export type ProvedorVoz = "elevenlabs";
 type MetaSessaoVoz = { sessao_id: string; contexto: "quadro" | "coding" | "pre" };
@@ -56,24 +57,29 @@ export function criarVoz(dependencias: {
   const metadadosAtuais = () => dependencias.metadados?.() ?? sessaoDaVoz;
   const tocar = dependencias.tocar ?? tocarComAlinhamento;
   let servidorDisponivel = true;
+  // Texto da última fala efetivamente sintetizada: vira o texto anterior da próxima (a prosódia segue de uma à outra).
+  let ultimaSintetizada: string | undefined;
   // Falas curtas e repetidas ("Uhum.", "Certo.") ficam guardadas: tocam na hora, sem esperar o ElevenLabs.
   const guardadas = new Map<string, Promise<DadosVoz>>();
-  const sintetizar = async (texto: string, sinal: AbortSignal): Promise<DadosVoz> => {
+  const sintetizar = async (texto: string, sinal: AbortSignal, contexto: ContextoDaFala): Promise<DadosVoz> => {
     const metadados = metadadosAtuais();
     const resposta = await buscar("/api/falar", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto, ...(metadados ?? {}) }), signal: AbortSignal.any([sinal, AbortSignal.timeout(25000)]), cache: "no-store",
+      body: JSON.stringify({ texto, ...contexto, ...(metadados ?? {}) }), signal: AbortSignal.any([sinal, AbortSignal.timeout(25000)]), cache: "no-store",
     });
     sinal.throwIfAborted();
     if (resposta.status === 501) servidorDisponivel = false;
     if (!resposta.ok) throw new Error(`Voz do servidor indisponível (HTTP ${resposta.status})`);
-    return RespostaVoz.parse(await resposta.json());
+    const dados = RespostaVoz.parse(await resposta.json());
+    ultimaSintetizada = texto;
+    return dados;
   };
-  const audioDe = (texto: string, sinal: AbortSignal): Promise<DadosVoz> => {
-    if (texto.length > MAX_CHARS_GUARDADA) return sintetizar(texto, sinal);
+  const audioDe = (texto: string, sinal: AbortSignal, contexto: ContextoDaFala): Promise<DadosVoz> => {
+    if (texto.length > MAX_CHARS_GUARDADA) return sintetizar(texto, sinal, contexto);
     let guardada = guardadas.get(texto);
     if (!guardada) {
-      guardada = sintetizar(texto, new AbortController().signal);
+      // Sem texto vizinho: a fala curta é sintetizada uma vez e reaproveitada; com contexto, o cache nunca acertaria.
+      guardada = sintetizar(texto, new AbortController().signal, { velocidade: contexto.velocidade });
       guardadas.set(texto, guardada);
       guardada.catch(() => guardadas.delete(texto));
     }
@@ -86,18 +92,26 @@ export function criarVoz(dependencias: {
       sinal.throwIfAborted();
       return liberada;
     };
-    for (const parte of dividirFala(texto)) {
+    // O ritmo é o da fala inteira: todas as partes de uma resposta longa soam iguais.
+    const velocidade = velocidadeDaFala(texto);
+    const partes = dividirFala(texto);
+    for (const [indice, parte] of partes.entries()) {
       sinal.throwIfAborted();
       if (!servidorDisponivel) throw new Error(MENSAGEM_VOZ_INDISPONIVEL);
       const progresso = (n: number) => {
         if (!sinal.aborted) eventos.aoProgresso(Math.min(parte.fim, parte.inicio + n));
+      };
+      const contexto: ContextoDaFala = {
+        velocidade,
+        texto_anterior: indice > 0 ? trechoDeContexto(partes[indice - 1].texto, true) : trechoDeContexto(ultimaSintetizada, true),
+        texto_seguinte: trechoDeContexto(partes[indice + 1]?.texto, false),
       };
       let iniciou = false;
       for (let tentativa = 1; ; tentativa++) {
         let audioObtido = false;
         const sintetizadaNestaFala = parte.texto.length > MAX_CHARS_GUARDADA || !guardadas.has(parte.texto);
         try {
-          const dados = await audioDe(parte.texto, sinal);
+          const dados = await audioDe(parte.texto, sinal, contexto);
           audioObtido = true;
           sinal.throwIfAborted();
           if (!(await aguardarVez())) {
@@ -145,7 +159,7 @@ export function criarVoz(dependencias: {
   };
   /** Sintetiza já (em segundo plano) falas curtas que vão tocar depois, para saírem sem espera. */
   const preparar = (textos: string[]) => {
-    for (const texto of textos) if (servidorDisponivel) void audioDe(texto, new AbortController().signal).catch(() => {});
+    for (const texto of textos) if (servidorDisponivel) void audioDe(texto, new AbortController().signal, { velocidade: velocidadeDaFala(texto) }).catch(() => {});
   };
   const avisarDescartada = (dados: { contexto: "quadro" | "coding" | "pre"; caracteres: number; fala_id?: string; motivo: "substituida" | "cancelada" }) => {
     const metadados = metadadosAtuais();

@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
-import { agendaDasMarcas, progressoDaFala, tocarComAlinhamento } from "../vozSincronizada";
+import {
+  agendaDasMarcas, agendarRampaDeEntrada, esquecerRampaDeEntrada, liberarAudio, progressoDaFala, RAMPA_DE_ENTRADA_MS, tocarComAlinhamento,
+} from "../vozSincronizada";
+import { comFolga, esquecerSaidaDeSom, QUADROS_ANTES, QUADROS_ANTES_DEPOIS_DE_PARADA, segundosDeQuadros } from "../../voz/folga";
 import type { Alinhamento } from "../alinhamento";
 import { analisar, calar, criarSessao, enviarEventos, falar, falarComMarcas, usarServidor } from "../../sessao/cliente";
 import { pedidoComImagem } from "../../sessao/useEntrevista";
 import type { PedidoAnalise } from "../../sessao/cliente";
 
 const andar = () => new Promise<void>((resolver) => setImmediate(resolver));
+/** Espera o elemento de áudio existir (quantos: 1 por padrão): o caminho com import dinâmico (sessão) passa por I/O. */
+async function esperarAudio(a: { instancias: unknown[] }, quantos = 1) {
+  for (let i = 0; i < 200 && a.instancias.length < quantos; i++) await new Promise((resolver) => setTimeout(resolver, 2));
+}
 const alinhamento: Alinhamento = {
   characters: Array.from("Oi banco"),
   character_start_times_seconds: [0, 0.1, 0.2, 0.5, 0.6, 0.7, 0.8, 0.9],
@@ -237,15 +244,47 @@ test("voz real toca o MP3 e dispara o desenho no trecho alinhado", async (t) => 
   const progressos: number[] = [];
   let desenho = 0;
   t.mock.method(globalThis, "fetch", async () => Response.json({ audio_base64: "T2k=", alinhamento }));
+  // Com a folga do quadro, a fala começa depois do silêncio: as marcas andam o mesmo tempo.
+  esquecerSaidaDeSom();
+  const folga = segundosDeQuadros(QUADROS_ANTES_DEPOIS_DE_PARADA);
   const tocando = falarComMarcas("Oi banco", [{ trecho: "banco", aoChegar: () => desenho++ }], (n) => progressos.push(n));
-  await andar();
+  await esperarAudio(a);
   assert.equal(a.instancias.length, 1);
   assert.equal(desenho, 0);
-  a.avancar(0.55);
+  a.avancar(folga + 0.55);
   assert.equal(desenho, 1);
   a.instancias[0].onended?.();
   await tocando;
   assert.equal(progressos.at(-1), 8);
+});
+
+test("caminho B manda o texto anterior e o ritmo, e toca com a folga do quadro (e marca a saída)", async (t) => {
+  ambiente(t, { NEXT_PUBLIC_USAR_SERVIDOR: "1" });
+  const a = audioFalso(t);
+  esquecerSaidaDeSom();
+  const capturados: Blob[] = [];
+  t.mock.method(URL, "createObjectURL", (blob: Blob) => { capturados.push(blob); return "blob:b"; });
+  const corpos: Record<string, unknown>[] = [];
+  t.mock.method(globalThis, "fetch", async (_: string, opcoes: RequestInit) => {
+    corpos.push(JSON.parse(String(opcoes.body)));
+    return Response.json({ audio_base64: "T2k=", alinhamento });
+  });
+  const primeira = "Primeira fala do Totti, longa o bastante para não ficar guardada no cache.";
+  const segunda = "Segunda fala do Totti, longa o bastante para não ficar guardada no cache.";
+  const primeiraTocando = falarComMarcas(primeira, []);
+  await esperarAudio(a);
+  a.instancias.at(-1)!.onended?.();
+  await primeiraTocando;
+  const segundaTocando = falarComMarcas(segunda, []);
+  await esperarAudio(a, 2);
+  a.instancias.at(-1)!.onended?.();
+  await segundaTocando;
+  assert.equal(corpos[0].velocidade, 1.1);
+  assert.equal(corpos[1].texto_anterior, primeira);
+  // "Oi" (T2k=) com a folga da primeira fala (saída nunca tocou) e, na segunda, a folga normal (saída acabou de sair).
+  const oi = Uint8Array.from([0x4f, 0x69]);
+  assert.equal(capturados[0].size, comFolga(oi, alinhamento, QUADROS_ANTES_DEPOIS_DE_PARADA).bytes.length);
+  assert.equal(capturados[1].size, comFolga(oi, alinhamento, QUADROS_ANTES).bytes.length);
 });
 
 test("áudio fica preparado enquanto aguarda a pessoa terminar o turno", async (t) => {
@@ -497,4 +536,102 @@ test("saída acordada: um tom inaudível enquanto alguma tela que fala está mon
   assert.equal(contextos[0].fechado, false, "ainda há uma tela montada");
   soltarB();
   assert.equal(contextos[0].fechado, true);
+});
+
+test("rampa: a fala entra com ganho 0 e sobe em 80 ms a partir do começo do som (parte pura)", () => {
+  const eventos: unknown[][] = [];
+  const ganho = { gain: {
+    cancelScheduledValues: (t: number) => eventos.push(["cancelar", t]),
+    setValueAtTime: (v: number, t: number) => eventos.push(["valor", v, t]),
+    linearRampToValueAtTime: (v: number, t: number) => eventos.push(["rampa", v, t]),
+  } } as unknown as { gain: AudioParam };
+  agendarRampaDeEntrada(ganho, 3);
+  assert.equal(RAMPA_DE_ENTRADA_MS, 80);
+  assert.deepEqual(eventos, [["cancelar", 3], ["valor", 0, 3], ["rampa", 1, 3 + RAMPA_DE_ENTRADA_MS / 1000]]);
+});
+
+function contextoFalso(t: TestContext) {
+  const estado = { state: "running" as string };
+  const origens: unknown[] = [];
+  const ganhos: unknown[][][] = [];
+  const retomadas = { ok: true };
+  class ContextoFalso {
+    currentTime = 5;
+    destination = {};
+    get state() { return estado.state; }
+    createMediaElementSource(elemento: unknown) { origens.push(elemento); return { connect: (n: unknown) => n }; }
+    createGain() {
+      const eventos: unknown[][] = [];
+      ganhos.push(eventos);
+      const gain = {
+        cancelScheduledValues: (t: number) => eventos.push(["cancelar", t]),
+        setValueAtTime: (v: number, t: number) => eventos.push(["valor", v, t]),
+        linearRampToValueAtTime: (v: number, t: number) => eventos.push(["rampa", v, t]),
+      };
+      return { gain, connect: (n: unknown) => n, context: this };
+    }
+    resume() { return retomadas.ok ? Promise.resolve() : Promise.reject(new Error("bloqueado")); }
+    close() { return Promise.resolve(); }
+  }
+  definirGlobal(t, "window", { AudioContext: ContextoFalso });
+  return { estado, origens, ganhos, retomadas };
+}
+
+test("rampa: o elemento só entra pelo grafo com o contexto rodando; a rampa começa no som (playing)", async (t) => {
+  esquecerRampaDeEntrada();
+  const contexto = contextoFalso(t);
+  const a = audioFalso(t);
+  const tocando = tocarComAlinhamento(new Blob(), alinhamento, {});
+  await andar();
+  const midia = a.instancias.at(-1)!;
+  (midia as unknown as { onplaying: () => void }).onplaying();
+  assert.deepEqual(contexto.origens, [midia]);
+  assert.deepEqual(contexto.ganhos[0], [
+    ["cancelar", 5], ["valor", 0, 5],
+    ["cancelar", 5], ["valor", 0, 5], ["rampa", 1, 5 + RAMPA_DE_ENTRADA_MS / 1000],
+  ]);
+  midia.onended?.();
+  await tocando;
+});
+
+test("rampa: contexto parado não liga o elemento ao grafo e a fala toca do mesmo jeito", async (t) => {
+  esquecerRampaDeEntrada();
+  const contexto = contextoFalso(t);
+  contexto.estado.state = "suspended";
+  contexto.retomadas.ok = false;
+  const a = audioFalso(t);
+  const tocando = tocarComAlinhamento(new Blob(), alinhamento, {});
+  await andar();
+  assert.equal(contexto.origens.length, 0);
+  assert.equal(a.instancias.length, 1);
+  assert.equal(a.instancias[0].src, "blob:teste-1");
+  a.instancias[0].onended?.();
+  await tocando;
+});
+
+test("rampa: cada elemento é ligado uma vez; se o contexto para, o elemento liberado não toca mudo", async (t) => {
+  esquecerRampaDeEntrada();
+  const contexto = contextoFalso(t);
+  const a = audioFalso(t);
+  liberarAudio();
+  await andar();
+  const liberado = a.instancias[0];
+  const primeira = tocarComAlinhamento(new Blob(), alinhamento, {});
+  await andar();
+  (liberado as unknown as { onplaying: () => void }).onplaying();
+  liberado.onended?.();
+  await primeira;
+  const segunda = tocarComAlinhamento(new Blob(), alinhamento, {});
+  await andar();
+  (liberado as unknown as { onplaying: () => void }).onplaying();
+  liberado.onended?.();
+  await segunda;
+  assert.deepEqual(contexto.origens, [liberado], "uma ligação só, reaproveitada na segunda fala");
+  contexto.estado.state = "suspended";
+  const terceira = tocarComAlinhamento(new Blob(), alinhamento, {});
+  await andar();
+  const nova = a.instancias.at(-1)!;
+  assert.notEqual(nova, liberado, "com o contexto parado, a fala sai por um elemento novo");
+  nova.onended?.();
+  await terceira;
 });
