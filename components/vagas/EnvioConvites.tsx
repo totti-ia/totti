@@ -17,7 +17,7 @@ import { curvaSuave } from "@/lib/design/motion";
 import { resumoCurto, resumoDoEnvio } from "@/lib/convites/resumo";
 
 /** O servidor devolve isto a cada consulta (lib/convites/fila.ts). */
-type Progresso = { lote: string; total: number; enviados: number; falharam: number; pendentes: number; concluido: boolean; falhas: string[] };
+type Progresso = { lote: string; total: number; enviados: number; simulados: number; falharam: number; pendentes: number; concluido: boolean; falhas: string[] };
 type Testador = { status: "enviado" | "simulado" | "erro"; link?: string };
 
 /** De quanto em quanto tempo o painel pergunta ao servidor como vai o lote. */
@@ -110,7 +110,7 @@ export default function EnvioConvites({ vaga, onAbrir }: Props) {
         lote.current = r.lote;
         const meu = lista.find((c) => c.testador);
         if (r.testador && meu) setTestador({ ...r.testador, nome: meu.nome, email: meu.email });
-        setProgresso({ lote: r.lote, total: r.total, enviados: 0, falharam: 0, pendentes: r.total, concluido: false, falhas: [] });
+        setProgresso({ lote: r.lote, total: r.total, enviados: 0, simulados: 0, falharam: 0, pendentes: r.total, concluido: false, falhas: [] });
         await acompanhar(r.lote, lista);
       } catch {
         setFalhouTudo(true);

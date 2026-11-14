@@ -59,7 +59,7 @@ const POR_PAGINA = 50;
 /** Limite de candidatos por pedido em /api/convites. */
 /** De quanto em quanto tempo a tela pergunta ao servidor como vai o lote de convites. */
 const INTERVALO_DO_LOTE_MS = 1500;
-type ProgressoDoLote = { total: number; enviados: number; falharam: number; pendentes: number; concluido: boolean; falhas: string[] };
+type ProgressoDoLote = { total: number; enviados: number; simulados: number; falharam: number; pendentes: number; concluido: boolean; falhas: string[] };
 
 type Resultado = { email: string; status: "enviado" | "simulado" | "erro"; motivo?: string; link?: string };
 
@@ -276,7 +276,7 @@ function Candidatos({
       const meu = escolhidos.find((c) => c.testador);
       if (meu && r.testador?.status === "simulado") novo.simulados.push({ nome: meu.nome, email: meu.email, link: r.testador.link });
 
-      let p: ProgressoDoLote = { total: r.total, enviados: 0, falharam: 0, pendentes: r.total, concluido: false, falhas: [] };
+      let p: ProgressoDoLote = { total: r.total, enviados: 0, simulados: 0, falharam: 0, pendentes: r.total, concluido: false, falhas: [] };
       setProgressoEnvio(p);
       // Cada consulta também move a fila do lado do servidor.
       while (!p.concluido) {
@@ -290,8 +290,9 @@ function Candidatos({
       const falhas = new Set(p.falhas.map((e) => e.toLowerCase()));
       const registrar = escolhidos.filter((c) => !falhas.has(c.email.toLowerCase())).map((c) => c.i);
       for (const e of p.falhas) novo.erros.push({ email: e });
-      // A fila não separa e-mail de verdade de demonstração: conta tudo como enviado.
-      novo.enviados = p.enviados - novo.simulados.length;
+      // E-mail de verdade x convite só registrado (demonstração); o testador simulado já aparece com o link.
+      novo.enviados = p.enviados - p.simulados;
+      novo.demo = Math.max(0, p.simulados - novo.simulados.length);
       convidar(vaga.id, registrar);
       tocarVaga(vaga.id);
       setSelecionados((s) => {

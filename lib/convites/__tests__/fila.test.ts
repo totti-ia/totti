@@ -39,7 +39,7 @@ describe("fila de convites", () => {
     assert.equal(r.total, 5);
     const l = await lerLote(r.lote);
     assert.equal(l?.itens.every((i) => i.status === "pendente"), true);
-    assert.deepEqual(progressoDe(l!), { lote: r.lote, total: 5, enviados: 0, falharam: 0, pendentes: 5, concluido: false, falhas: [] });
+    assert.deepEqual(progressoDe(l!), { lote: r.lote, total: 5, enviados: 0, simulados: 0, falharam: 0, pendentes: 5, concluido: false, falhas: [] });
   });
 
   it("processa um bloco por vez e termina o lote", async () => {

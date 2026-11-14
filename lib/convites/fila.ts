@@ -59,6 +59,8 @@ export type Progresso = {
   total: number;
   /** Convites que já saíram (e-mail ou demonstração). */
   enviados: number;
+  /** Desses, quantos foram só registrados (demonstração, sem e-mail de verdade). */
+  simulados: number;
   falharam: number;
   pendentes: number;
   concluido: boolean;
@@ -108,6 +110,7 @@ export function progressoDe(l: Lote): Progresso {
     lote: l.id,
     total: l.itens.length,
     enviados,
+    simulados: l.itens.filter((i) => i.status === "simulado").length,
     falharam: falhas.length,
     pendentes,
     concluido: pendentes === 0,
