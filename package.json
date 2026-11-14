@@ -12,6 +12,7 @@
     "test:voz": "tsx --test lib/audio/*.test.ts lib/voz/*.test.ts app/api/falar/__tests__/*.test.ts",
     "voz:validar": "tsx --env-file-if-exists=.env.local scripts/validar-voz.ts",
     "voz:reacoes": "tsx --env-file=.env.local scripts/gerar-reacoes.ts",
+    "voz:amostras": "tsx --env-file=.env.local scripts/amostras-voz.ts",
     "transcricao:medir": "tsx --env-file-if-exists=.env.local scripts/medir-transcricao.ts",
     "rascunho:medir": "tsx --env-file-if-exists=.env.local scripts/medir-rascunho.ts",
     "test:e2e:voz": "playwright test --config e2e/playwright.voz.config.ts",
