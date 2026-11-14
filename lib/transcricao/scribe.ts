@@ -282,7 +282,6 @@ export async function iniciarScribe({ token, termos, stream, signal, eventos, ca
     const minha = ++geracao;
     pronto = false;
     return new Promise<void>((resolver, rejeitar) => {
-      let timer: ReturnType<typeof setTimeout> | undefined;
       const falha = (erro: Error) => {
         clearTimeout(timer);
         if (abertura === falha) abertura = null;
@@ -290,7 +289,7 @@ export async function iniciarScribe({ token, termos, stream, signal, eventos, ca
         rejeitar(erro);
       };
       abertura = falha;
-      timer = setTimeout(() => falha(erroDeConexao("A transcrição demorou para conectar. Tente novamente.", false)), TEMPO_PARA_CONECTAR_MS);
+      const timer = setTimeout(() => falha(erroDeConexao("A transcrição demorou para conectar. Tente novamente.", false)), TEMPO_PARA_CONECTAR_MS);
       try {
         const c = dependencias.conectar({
           token: tokenAtual,
