@@ -4,6 +4,8 @@
 import type { EventoArmazenado, SessaoArmazenada } from "./armazenamento/repositorio";
 import { kitComRubricaDaVaga, type Kit, type Problema } from "./kits/tipos";
 import { NIVEIS_ADAPTACAO, type Recomendacao, type Scorecard } from "./scorecard";
+import { gravacaoDoQuadro } from "@/lib/relatorio/gravacao-do-quadro";
+import type { GravacaoDoQuadro } from "@/lib/relatorio/tipos";
 
 export type ProvaVista =
   | { tipo: "fala"; momento: string | null; texto: string }
@@ -73,6 +75,7 @@ export type RelatorioVisto = {
   ajustes: string[];
   demonstracao: boolean;
   adaptacao: AdaptacaoVista | null;
+  gravacao?: GravacaoDoQuadro | null;
   /** Regras de reprovação do plano da vaga. Ausente quando o plano não tem. */
   eliminatorios?: EliminatorioVisto[];
 };
@@ -183,6 +186,7 @@ export function montarRelatorio(p: {
   const primeiraFase = ordenados.find((e) => e.tipo === "fase");
   const inicio = primeiraFase ? Date.parse(primeiraFase.horario) : sessao.criadaEm;
   const fim = ordenados.length ? Date.parse(ordenados[ordenados.length - 1].horario) : NaN;
+  const gravacao = primeiraFase ? gravacaoDoQuadro(ordenados, p.imagens, inicio, sessao.id) : null;
 
   const nomes = nomesDosElementos(ordenados);
   const urlDaImagem = (n: number) => `/api/sessoes/${encodeURIComponent(sessao.id)}/imagens/${n}`;
@@ -264,6 +268,7 @@ export function montarRelatorio(p: {
       desenhosDepois: scorecard.adaptacao.desenhos_depois,
       falasDepois: scorecard.adaptacao.falas_depois,
     } : null,
+    gravacao,
     ...(scorecard.eliminatorios?.length ? {
       eliminatorios: scorecard.eliminatorios.map((e): EliminatorioVisto => ({
         regra: e.regra,
