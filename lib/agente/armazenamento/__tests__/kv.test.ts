@@ -56,8 +56,20 @@ describe("repositório de sessões em cima do kv", () => {
     assert.equal((await r.obterImagem(s.id, 2))!.horario, "h5");
     assert.equal(await r.obterImagem(s.id, 3), null);
     assert.deepEqual(await r.listarImagens(s.id), [{ numero: 1, horario: "h1" }, { numero: 2, horario: "h5" }]);
-    for (let i = 3; i <= 20; i++) await r.salvarImagem(s.id, img(i));
+    for (let i = 3; i <= 60; i++) await r.salvarImagem(s.id, img(i));
     await assert.rejects(r.salvarImagem(s.id, img(99)), ErroLimite);
+    const final = { bytes: new Uint8Array([8]), horario: "final" };
+    await r.salvarImagem(s.id, final, { final: true });
+    await r.salvarImagem(s.id, { ...final, horario: "final-2" }, { final: true });
+    assert.equal((await r.listarImagens(s.id)).at(-1)?.horario, "final-2");
+    await Promise.all([
+      r.salvarImagem(s.id, { ...final, horario: "corrida-a" }, { final: true }),
+      r.salvarImagem(s.id, { ...final, horario: "corrida-b" }, { final: true }),
+    ]);
+    const imagens = await r.listarImagens(s.id);
+    assert.equal(imagens.filter((i) => i.horario.startsWith("corrida-")).length, 1);
+    assert.equal((await r.obterImagem(s.id, imagens.at(-1)!.numero))?.horario, imagens.at(-1)!.horario);
+    assert.equal((await r.obterImagem(s.id, imagens.at(-1)!.numero))?.final, true);
     await assert.rejects(r.salvarImagem("nada", img(1)), ErroLimite);
   });
 
