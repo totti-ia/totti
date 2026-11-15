@@ -455,6 +455,14 @@ export type Report = z.infer<typeof Report>;
  * junto com o relatório.
  */
 export const Gravacao = z.object({
+  /** Montado sem LLM ao preparar a gravação. Ausente nas gravações antigas. */
+  integridade: z.object({
+    sinais: z.array(z.object({
+      id: z.string(), tipo: z.enum(["colagem_de_fora", "saida_de_foco", "escrita_linear", "bloco_apos_saida", "canario", "injecao"]),
+      t: z.number(), fim: z.number().optional(), texto: z.string(), detalhe: z.string().optional(),
+    })),
+    destaques: z.array(z.object({ texto: z.string(), t: z.number(), sinais: z.array(z.string()) })),
+  }).nullable().optional(),
   sessionId: z.string(),
   durationMs: z.number(),
   /** Uma entrada por versão diferente do código, em ordem de tempo. */

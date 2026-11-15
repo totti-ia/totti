@@ -64,6 +64,7 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
   const saidas = saidasUnicas(ordenados.flatMap((e) => e.type === "foco" ? e.saidas : []));
   registrarSaidas(c, saidas);
   const textos: Texto[] = [];
+  const colagens = ordenados.filter((e) => e.type === "paste");
   let codigo = starter;
   let anteriorDiferente = starter;
   let ultimaFoto = 0;
@@ -81,8 +82,10 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
     textos.push({ t: e.t, onde: "no código", texto: e.code });
     const escrita = e.escrita;
     dadosPresentes ||= escrita !== undefined;
-    const linhasNovas = Math.max(0, e.code.split("\n").length - codigo.split("\n").length);
-    if (escrita && !escrita.voltouParaCima && escrita.digitados > 0 && escrita.apagados <= escrita.digitados * 0.05) {
+    const contarLinhas = (texto: string) => texto ? texto.split("\n").length : 0;
+    const linhasNovas = Math.max(0, contarLinhas(e.code) - contarLinhas(codigo));
+    const houveColagem = colagens.some((p) => p.t > ultimaFoto && p.t <= e.t);
+    if (escrita && !houveColagem && !escrita.voltouParaCima && escrita.digitados > 0 && escrita.apagados <= escrita.digitados * 0.05) {
       // Intervalo que atravessa uma saída não prova que a escrita ocorreu depois da volta.
       const atravessou = saidas.some((s) => s.t < e.t && s.t + s.duracaoMs > ultimaFoto);
       if (atravessou || (janela && e.t - janela.inicio > LIMITES.janelaEscritaMs)) janela = undefined;
@@ -95,7 +98,8 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
         if (janela.digitados >= LIMITES.digitados && janela.maior >= LIMITES.trechoSemPausa) {
           c.adicionar("escrita_linear", janela.inicio, `entraram ${janela.digitados} caracteres digitados de cima a baixo, com ${janela.apagados} apagados e sem voltar a linhas anteriores ${minuto(janela.inicio)}`, { fim: e.t });
           const foco = saidas.findLast((s) => s.t + s.duracaoMs <= janela!.inicio && janela!.inicio - s.t - s.duracaoMs <= LIMITES.depoisDaSaidaMs);
-          if (foco) c.adicionar("bloco_apos_saida", janela.inicio, `entraram ${janela.linhas} linhas (${janela.digitados} caracteres digitados) em ${segundos(e.t - janela.inicio)} ${minuto(janela.inicio)}`, { fim: e.t });
+          const volume = janela.linhas > 0 ? `${janela.linhas} linhas (${janela.digitados} caracteres digitados)` : `${janela.digitados} caracteres digitados`;
+          if (foco) c.adicionar("bloco_apos_saida", janela.inicio, `entraram ${volume} em ${segundos(e.t - janela.inicio)} ${minuto(janela.inicio)}`, { fim: e.t });
           janela = undefined;
         }
       }
@@ -123,7 +127,8 @@ export function integridadeDoQuadro(sessaoId: string, eventos: readonly EventoEn
   const c = coletor();
   const ordenados = [...eventos].sort((a, b) => Date.parse(a.horario) - Date.parse(b.horario));
   // Mesma régua de montarRelatorio: primeira mudança de fase, com criação como reserva.
-  const inicio = Date.parse(ordenados.find((e) => e.tipo === "fase")?.horario ?? "") || criadaEm;
+  const primeiraFase = Date.parse(ordenados.find((e) => e.tipo === "fase")?.horario ?? "");
+  const inicio = Number.isFinite(primeiraFase) ? primeiraFase : criadaEm;
   const saidas: Saida[] = [];
   const textos: Texto[] = [];
   let dadosPresentes = false;

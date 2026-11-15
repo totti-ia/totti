@@ -1,6 +1,7 @@
 // Adaptador do relatório do quadro (`RelatorioVisto`, System Design) para o tipo comum.
 import type { AdaptacaoVista, CriterioVisto, ProvaVista, RelatorioVisto } from "@/lib/agente/relatorio";
 import { semTermosInternos } from "@/lib/totti/relatorio";
+import type { BlocoDeIntegridade } from "@/lib/integridade/tipos";
 import { momentoParaMs, plural } from "./formato";
 import type {
   AcontecimentoComum,
@@ -80,7 +81,7 @@ function eliminatoriosDoQuadro(r: RelatorioVisto): EliminatorioComum[] {
   }));
 }
 
-export function relatorioDoQuadro(r: RelatorioVisto): RelatorioComum {
+export function relatorioDoQuadro(r: RelatorioVisto, integridade: BlocoDeIntegridade | null = null): RelatorioComum {
   const adaptacao = r.adaptacao ? adaptacaoDoQuadro(r.adaptacao) : null;
   const acontecimentos: AcontecimentoComum[] =
     adaptacao && adaptacao.anunciadaEm !== null
@@ -95,6 +96,7 @@ export function relatorioDoQuadro(r: RelatorioVisto): RelatorioComum {
   ];
   return {
     formato: "system_design",
+    integridade,
     id: r.sessaoId,
     titulo: r.problema,
     contexto: `relatório da entrevista de ${r.area}`,
