@@ -18,6 +18,7 @@ if (process.env.DEBUG_FILA) {
 
 const CODIGO =
   "def two_sum(nums, target):\n" +
+  "    count = len(nums)\n" +
   "    for i in range(len(nums)):\n" +
   "        for j in range(len(nums)):\n" +
   "            if nums[i] + nums[j] == target:\n" +
@@ -47,7 +48,7 @@ function sessao(id: string, semCodigo = false): SessionState {
   return s;
 }
 
-type Caso = { nome: string; fala: string; responde: boolean; blip?: boolean; encerra?: boolean; semCodigo?: boolean; checar?: (r: string) => string | null };
+type Caso = { nome: string; fala: string; responde: boolean; blip?: boolean; encerra?: boolean; semCodigo?: boolean; checar?: (r: string) => string | null; comentar?: string };
 
 const CASOS: Caso[] = [
   { nome: "pensando em voz alta", fala: "então aqui eu percorro o array e pra cada número eu olho os outros", responde: false },
@@ -62,16 +63,26 @@ const CASOS: Caso[] = [
   { nome: "lendo o enunciado", fala: "hmm deixa eu ler de novo o enunciado aqui", responde: false, semCodigo: true },
   { nome: "pede para encerrar", fala: "acho que é isso, pode encerrar a entrevista", responde: false, encerra: true },
   { nome: "terminou a etapa", fala: "pronto, terminei a primeira versão e os testes passaram", responde: true, encerra: false },
+  { nome: "pediu para olhar", fala: "Terminei a primeira versão, dá uma olhada no código.", responde: true, encerra: false, comentar: "count" },
   { nome: "resposta no balão", fala: "começa do zero porque eu quero olhar todos os pares", responde: true, blip: true },
 ];
 
 async function main() {
+  if (process.argv.includes("--offline")) {
+    process.env.FEATHERLESS_API_KEY = "offline";
+    process.env.SO_CASOS = String(CASOS.findIndex((caso) => caso.nome === "pediu para olhar"));
+    globalThis.fetch = (async () => {
+      const conteudo = { reason: "pergunta sobre decisão sem avaliar", safe: true, respond: true, concluded: true, reply: "O count registra o tamanho da lista. Como você pensou essa decisão?", highlight: { startLine: 2, endLine: 2 }, end: false, gaveHint: false, evidence: null, challenge: null, probeOutcome: null };
+      return Response.json({ choices: [{ message: { content: JSON.stringify(conteudo) }, finish_reason: "stop" }], usage: {} });
+    }) as typeof fetch;
+  }
   const falhas: string[] = [];
   const tempos: number[] = [];
   const so = process.env.SO_CASOS?.split(",").map(Number);
   for (const [i, caso] of CASOS.entries()) {
     if (so && !so.includes(i)) continue;
     const s = sessao(`validar-ide-${Date.now()}-${i}`, caso.semCodigo);
+    if (process.argv.includes("--offline")) s.codeHistory.push({ t: 0, version: 1, language: "python", code: CODIGO });
     const mensagens: ChatMessage[] = [];
     if (caso.blip) {
       appendEvent(s, { type: "blip_opened", sessionId: s.sessionId, t: 0, blipId: "q-1" });
@@ -83,13 +94,18 @@ async function main() {
     const r = await runInterviewerTurn(s, { blipId: caso.blip ? "q-1" : undefined, messages: mensagens });
     const ms = Date.now() - inicio;
     tempos.push(ms);
-    console.log(JSON.stringify({ caso: caso.nome, ms, silent: r.listening ?? false, end: r.end, despedida: !!r.despedida, reply: r.reply }));
+    console.log(JSON.stringify({ caso: caso.nome, ms, silent: r.listening ?? false, end: r.end, despedida: !!r.despedida, reply: r.reply, commands: r.commands }));
     if (caso.encerra !== undefined && !!r.despedida !== caso.encerra) falhas.push(`${caso.nome}: ${caso.encerra ? "devia encerrar" : "não devia encerrar"}`);
     const respondeu = !r.listening && r.reply.trim() !== "";
     if (respondeu !== caso.responde) falhas.push(`${caso.nome}: ${caso.responde ? "devia responder" : "devia ficar quieto"}`);
     else if (respondeu) {
       const problema = caso.checar?.(r.reply);
       if (problema) falhas.push(`${caso.nome}: ${problema}`);
+      if (caso.comentar) {
+        if (!r.reply.includes(caso.comentar)) falhas.push(`${caso.nome}: comentário não citou ${caso.comentar}`);
+        if (!r.reply.trim().endsWith("?")) falhas.push(`${caso.nome}: comentário não terminou em pergunta`);
+        if (!r.commands.some((c) => c.type === "highlight_range")) falhas.push(`${caso.nome}: trecho comentado sem highlight`);
+      }
       if (!r.end && !deixaABola(r.reply)) falhas.push(`${caso.nome}: não devolve a vez`);
     }
   }
