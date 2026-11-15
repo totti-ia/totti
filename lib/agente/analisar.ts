@@ -69,7 +69,7 @@ export const CONVITES_SILENCIO_INICIAL = [
 ] as const;
 
 export function respostaSilencio(): RespostaAnalise {
-  return { status: "ok", pergunta: null, nota: null, elementos: [], degrau: null, observacoes: [], parteFechada: false, escopo: false };
+  return { status: "ok", pergunta: null, nota: null, elementos: [], degrau: null, observacoes: [], gancho: null, parteFechada: false, escopo: false };
 }
 
 /** Peça já perguntada este tanto de vezes ou mais: o assunto dela está explorado (#129, bloco J). */
@@ -167,7 +167,9 @@ export function refiltrarComEstadoAtual(
 ): RespostaAnalise {
   const paradoHaS = pedido.parado_ha_s === undefined ? undefined : pedido.parado_ha_s + Math.max(0, agora - inicio) / 1000;
   const pecas = pecasDoGrafo(pedido.grafo);
-  const porConteudo = resposta.status !== "ok" && motivoDoConteudo(atual, resposta, agora, { paradoHaS, pecas })
+  const fala = atual.ultimaFalaDoAgenteEm ?? atual.pediuTempoEm ?? null;
+  const agiuDepoisDaFala = fala !== null && pedido.parado_ha_s !== undefined && inicio - pedido.parado_ha_s * 1000 > fala;
+  const porConteudo = resposta.status !== "ok" && motivoDoConteudo(atual, resposta, agora, { paradoHaS, pecas, agiuDepoisDaFala })
     ? { ...resposta, status: "ok" as const }
     : resposta;
   // A regra do escopo (#129, decisão I) vale contra o estado atual: o primeiro redirecionamento pode ter saído na análise.
@@ -218,6 +220,8 @@ export async function analisar(
   try {
     const r = await chamar(prompt.sistema, PRAZO_ANALISE_DO_DESENHO_MS);
     bruta = EsquemaRespostaAnalise.parse(r.dados);
+    const gancho = bruta.gancho ?? (bruta.parteFechada ? "parte_fechada" : null);
+    bruta = { ...bruta, gancho, parteFechada: gancho === "parte_fechada" };
     ms = r.ms;
     uso = r.uso;
     if (uso) uso = { ...uso, modelo: r.modelo, provedor: r.provedor, reservaDisparada: r.reservaDisparada };
@@ -250,7 +254,10 @@ export async function analisar(
         const aviso = repetiuNoTeto ? `${AVISO_DA_PERGUNTA_OBRIGATORIA} ${AVISO_DO_ASSUNTO_REPETIDO}` : AVISO_DA_PERGUNTA_OBRIGATORIA;
         const r2 = await chamar({ ...prompt.sistema, dinamico: `${prompt.sistema.dinamico}\n\n${aviso}` }, restanteMs);
         const validada = EsquemaRespostaAnalise.safeParse(r2.dados);
-        if (validada.success) segunda = validada.data;
+        if (validada.success) {
+          const gancho = validada.data.gancho ?? (validada.data.parteFechada ? "parte_fechada" : null);
+          segunda = { ...validada.data, gancho, parteFechada: gancho === "parte_fechada" };
+        }
       } catch {
         // Sem segunda resposta vale o "ok" da primeira: o registro abaixo diz que a pergunta ficou de fora.
       }
@@ -346,9 +353,11 @@ export async function analisar(
   // Ritmo por conteúdo (#129, bloco B): a pergunta sobre o desenho só sai com uma parte fechada (ou no teto).
   // Sem isso vira "ok" e as observações ficam. Os portões do ritmo comum ainda valem em `filtrarResposta`.
   if (resposta.status !== "ok") {
-    const motivo = motivoDoConteudo(estado, resposta, agora, { paradoHaS: pedido.parado_ha_s, pecas });
+    const fala = estado.ultimaFalaDoAgenteEm ?? estado.pediuTempoEm ?? null;
+    const agiuDepoisDaFala = fala !== null && pedido.parado_ha_s !== undefined && agora - pedido.parado_ha_s * 1000 > fala;
+    const motivo = motivoDoConteudo(estado, resposta, agora, { paradoHaS: pedido.parado_ha_s, pecas, agiuDepoisDaFala });
     if (motivo) {
-      ajustes.push(motivo === "PISO_ENTRE_PERGUNTAS" ? "piso_entre_perguntas" : "sem_parte_fechada");
+      ajustes.push(motivo === "PISO_ENTRE_PERGUNTAS" ? "piso_entre_perguntas" : motivo === "PAUSA_REAL" ? "pausa_real" : "sem_gancho");
       resposta = { ...resposta, status: "ok" };
     }
   }
@@ -383,8 +392,18 @@ export async function analisar(
     ajustes,
     ms,
   });
+  // `gancho` segue enumerável para o estado e o refiltro da rota; o contrato do quadro o omite na serialização.
+  const respostaPublica = { ...filtrada };
+  Object.defineProperty(respostaPublica, "toJSON", {
+    enumerable: false,
+    value: () => {
+      const { gancho: ganchoInterno, ...contratoDoQuadro } = respostaPublica;
+      void ganchoInterno;
+      return contratoDoQuadro;
+    },
+  });
   return {
-    resposta: filtrada,
+    resposta: respostaPublica,
     estado: abreBrecha ? { ...t.estado, brechaEmpecilhoEm: agora } : t.estado,
     efeitos: t.efeitos,
     diagnostico: { origem: "llm", ajustes, ms, uso },
