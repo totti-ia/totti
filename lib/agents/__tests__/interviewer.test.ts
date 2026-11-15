@@ -3,10 +3,11 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 import { falaNaoRepetida, runInterviewerTurn } from "../interviewer";
-import { buildInterviewerSystem } from "../prompts/interviewer";
+import { buildInterviewerSystem, buildInterviewerUser } from "../prompts/interviewer";
 import { SISTEMA_DO_FILTRO } from "../spoilerFilter";
 import { DEFAULT_CONFIG } from "@/lib/config/default";
-import { getOrCreateSession } from "@/lib/session/store";
+import type { ChatMessage } from "@/lib/contracts";
+import { appendEvent, getOrCreateSession } from "@/lib/session/store";
 import { getProblem } from "@/problems";
 
 const fetchOriginal = globalThis.fetch;
@@ -52,16 +53,74 @@ test("pensando em voz alta: o entrevistador só ouve, sem fala e sem grifo", asy
   assert.equal(chamadasAoEntrevistador, 1);
 });
 
-test("etapa concluída: responde, avisa a IDE e marca o momento-chave para a próxima análise", async () => {
+test("sem código do candidato, pergunta pelo plano sem inventar um trecho", async () => {
   const session = getOrCreateSession(`etapa-${Date.now()}`);
   saidas.push({ ...base, respond: true, concluded: true, end: true, reply: "Beleza, primeira versão de pé.", highlight: { startLine: 1, endLine: 1 } });
   const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "terminei a primeira versão" }] });
-  assert.equal(r.reply, "Beleza, primeira versão de pé.");
+  assert.equal(r.reply, "Ainda não há trecho de código para comentar. Por onde você pensa em começar?");
   assert.equal(r.concluded, true);
-  assert.equal(r.end, true);
-  // A fala não cita nada da linha 1 (que nem tem código dele): o grifo sem propósito sai.
+  assert.equal(r.end, false);
+  // Não há trecho do candidato para grifar.
   assert.equal(r.commands.some((c) => c.type === "highlight_range"), false);
   assert.notEqual(session.etapaConcluidaEm, undefined);
+});
+
+test("código inicial sem trecho do candidato não é comentado nem grifado", async () => {
+  const session = getOrCreateSession(`starter-sem-trecho-${Date.now()}`);
+  const problem = getProblem(session.config.problemId);
+  const inicial = problem.public.starters[session.language] ?? "";
+  appendEvent(session, { type: "session_started", sessionId: session.sessionId, t: 0, configId: session.config.id, problemId: session.config.problemId, language: session.language });
+  appendEvent(session, { type: "snapshot", sessionId: session.sessionId, t: 0, code: inicial, version: 1, language: session.language });
+  const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "Terminei, dá uma olhada." }] });
+  assert.equal(r.reply, "Ainda não há trecho de código para comentar. Por onde você pensa em começar?");
+  assert.equal(r.commands.some((c) => c.type === "highlight_range"), false);
+});
+
+test("pediu para olhar: comentário e pergunta saem juntos com o trecho grifado", async () => {
+  const session = getOrCreateSession(`olhar-ide-${Date.now()}`);
+  appendEvent(session, { type: "session_started", sessionId: session.sessionId, t: 0, configId: session.config.id, problemId: session.config.problemId, language: "python" });
+  appendEvent(session, { type: "snapshot", sessionId: session.sessionId, t: 0, code: "def solve(nums):\n    return len(nums)", version: 1, language: "python" });
+  saidas.push({ ...base, respond: true, concluded: true, end: false, reply: "A função solve recebe a lista toda. Como você decidiu percorrer os elementos dessa forma?", highlight: { startLine: 1, endLine: 1 } });
+  const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "Terminei a primeira versão, olha aí." }] });
+  assert.match(r.reply, /solve/);
+  assert.ok(r.reply.trim().endsWith("?"), r.reply);
+  assert.ok(r.commands.some((c) => c.type === "highlight_range"));
+});
+
+test("pergunta que só cita o identificador não passa como comentário do código", async () => {
+  const session = getOrCreateSession(`comentario-vago-ide-${Date.now()}`);
+  appendEvent(session, { type: "session_started", sessionId: session.sessionId, t: 0, configId: session.config.id, problemId: session.config.problemId, language: "python" });
+  appendEvent(session, { type: "snapshot", sessionId: session.sessionId, t: 0, code: "def solve(nums):\n    return len(nums)", version: 1, language: "python" });
+  saidas.push({ ...base, respond: true, concluded: true, end: false, reply: "Como você pensou na função solve?", highlight: { startLine: 1, endLine: 1 } });
+  const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "Terminei a primeira versão, olha aí." }] });
+  assert.match(r.reply, /^Olhei a linha 1: def solve\(nums\):\./);
+  assert.equal((r.reply.match(/\?/g) ?? []).length, 1);
+  assert.ok(r.commands.some((c) => c.type === "highlight_range"));
+});
+
+test("promessa vazia repetida na IDE cai na reserva com pergunta e grifo", async () => {
+  const session = getOrCreateSession(`promessa-ide-${Date.now()}`);
+  appendEvent(session, { type: "session_started", sessionId: session.sessionId, t: 0, configId: session.config.id, problemId: session.config.problemId, language: "python" });
+  appendEvent(session, { type: "snapshot", sessionId: session.sessionId, t: 0, code: "def solve(nums):\n    return len(nums)", version: 1, language: "python" });
+  saidas.push(
+    { ...base, respond: true, concluded: true, end: true, reply: "Tá, vou olhar." },
+    { ...base, respond: true, concluded: true, end: true, reply: "Certo, deixa eu analisar." },
+  );
+  const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "Terminei a primeira versão, olha aí." }] });
+  assert.equal(chamadasAoEntrevistador, 2);
+  assert.match(r.reply, /solve/);
+  assert.ok(r.reply.trim().endsWith("?"), r.reply);
+  assert.ok(r.commands.some((c) => c.type === "highlight_range"));
+});
+
+test("falha do modelo ao pedirem para olhar a IDE usa a reserva com grifo", async () => {
+  const session = getOrCreateSession(`falha-olhar-ide-${Date.now()}`);
+  appendEvent(session, { type: "session_started", sessionId: session.sessionId, t: 0, configId: session.config.id, problemId: session.config.problemId, language: "python" });
+  appendEvent(session, { type: "snapshot", sessionId: session.sessionId, t: 0, code: "def solve(nums):\n    marker = len(nums)", version: 1, language: "python" });
+  const r = await runInterviewerTurn(session, { messages: [{ role: "candidate", text: "Terminei a primeira versão, olha aí." }] });
+  assert.match(r.reply, /solve/);
+  assert.ok(r.reply.trim().endsWith("?"), r.reply);
+  assert.ok(r.commands.some((c) => c.type === "highlight_range"));
 });
 
 test("resposta comum não marca etapa concluída", async () => {
@@ -125,6 +184,22 @@ test("prompt da IDE traz intenção, feedback sem validar, recusa variada e grif
   assert.match(sistema, /sem pedir licença/);
   assert.match(sistema, /Sempre que a fala comentar, parafrasear ou perguntar sobre um trecho do código/);
   assert.doesNotMatch(sistema, /Isso eu não posso te dar, a graça é ver como você pensa/);
+});
+
+test("prompt dinâmico da IDE lembra promessa pendente e freia depois de duas perguntas seguidas", () => {
+  const baseInput = {
+    mode: "candidate" as const, fase: "implementando" as const, elapsedLabel: "02:00", remainingLabel: "08:00", language: "python",
+    numberedCode: "1 | def solve(): pass", uncovered: [], hintsPolicy: "livres" as const, messages: [] as ChatMessage[],
+  };
+  const pendente = buildInterviewerUser({ ...baseInput, previousConversations: "Você: Tá, vou olhar o código." });
+  assert.match(pendente, /O que você disse que ia fazer e ainda não fez: "Tá, vou olhar o código\."/);
+  const ritmo = buildInterviewerUser({
+    ...baseInput, previousConversations: "", messages: [
+      { role: "agent", text: "Por que escolheu esse loop?" }, { role: "candidate", text: "Para percorrer os valores." },
+      { role: "agent", text: "O que pesou nessa decisão?" }, { role: "candidate", text: "O custo de memória." },
+    ],
+  });
+  assert.match(ritmo, /as duas últimas falas terminaram em pergunta/);
 });
 
 // Entrevista real de 2026-11-09 (sessão 3ec438c1): depois da resposta ao último ponto do encerramento o Totti ficou
