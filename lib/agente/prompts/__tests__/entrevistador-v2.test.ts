@@ -15,17 +15,17 @@ describe("blocoDoRitmo", () => {
     assert.match(texto, /Perguntas suas até agora: 1/);
     assert.doesNotMatch(texto, /NÃO pergunte/);
   });
-  it("manda não perguntar quando duas das últimas quatro falas terminaram em pergunta", () => {
-    const conversa = [agente("E se cair?"), candidato("Vai pro banco."), agente("Tá."), candidato("E a fila."), agente("Como conta os cliques?")];
+  it("manda segurar pergunta quando as duas últimas falas do Totti terminaram em pergunta", () => {
+    const conversa = [agente("E se cair?"), candidato("Vai pro banco."), agente("Como conta os cliques?")];
     const texto = blocoDoRitmo(conversa);
     assert.match(texto, /Perguntas suas até agora: 2/);
-    assert.match(texto, /2 das suas últimas 3 falas terminaram em pergunta\. Nesta, NÃO pergunte/);
+    assert.match(texto, /as duas últimas falas terminaram em pergunta\. Nesta, NÃO pergunte/);
   });
   it("lista as perguntas já feitas, mesmo quando muitas reações curtas vieram depois", () => {
     const conversa = [agente("Como fica o código personalizado?"), ...Array.from({ length: 8 }, () => agente("Hm.")), agente("Tá.")];
     assert.match(blocoDoRitmo(conversa), /Perguntas que você já fez na conversa.*"Como fica o código personalizado\?"/);
   });
-  it("só olha as últimas quatro falas do agente para o aviso", () => {
+  it("só freia quando as duas últimas falas do agente foram perguntas", () => {
     const conversa = [agente("A?"), agente("B?"), agente("Tá."), agente("Segue."), agente("Certo."), agente("Pode continuar.")];
     assert.doesNotMatch(blocoDoRitmo(conversa), /NÃO pergunte/);
   });
@@ -40,6 +40,14 @@ describe("notação do desenho no prompt da conversa (#81)", () => {
       assert.ok(texto.includes(trecho), `faltou: ${trecho}`);
     }
     assert.ok(texto.indexOf("COMO LER O DESENHO ATUAL") < texto.indexOf("Desenho atual (dados"));
+  });
+  it("lembra a última promessa de olhar sem conteúdo posterior", () => {
+    const base = estadoInicial();
+    const estado = { ...base, conversa: [{ ...agente("Tá, vou olhar o desenho."), em: Date.now() }, { ...candidato("Terminei, dá uma olhada."), em: Date.now() + 1 }] };
+    const texto = blocosDoSistemaDinamicoPerguntarV2(estado, kit, "APROFUNDAMENTO", [], "- [r1] Cache", undefined, [], Date.now())
+      .map((b) => b.texto).join("");
+    assert.match(texto, /O que você disse que ia fazer e ainda não fez: "Tá, vou olhar o desenho\."/);
+    assert.match(texto, /Se houver promessa, cumpra-a nesta fala antes de qualquer outra coisa/);
   });
 });
 
