@@ -172,6 +172,13 @@ export type EmpecilhoPublico = z.infer<typeof EmpecilhoPublico>;
 
 const base = { sessionId: z.string(), t: z.number().nonnegative() };
 
+export const SaidaDeFoco = z.object({
+  t: z.number().nonnegative(),
+  duracaoMs: z.number().nonnegative(),
+  motivo: z.enum(["aba", "janela"]),
+});
+export type SaidaDeFoco = z.infer<typeof SaidaDeFoco>;
+
 export const SessionEvent = z.discriminatedUnion("type", [
   /** Gravado pelo servidor para contabilizar o uso de LLM. */
   z.object({ ...base, type: z.literal("llm_uso"), papel: z.enum(["fala", "filtro", "analise", "relatorio"]), modelo: z.string(), provedor: z.string(), reserva_disparada: z.boolean(), ms: z.number(), tokens_entrada: z.number(), tokens_saida: z.number(), tokens_cache: z.number().optional(), custo_usd: z.number() }),
@@ -185,17 +192,13 @@ export const SessionEvent = z.discriminatedUnion("type", [
     apagados: z.number().int().nonnegative(),
     maiorTrechoSemPausa: z.number().int().nonnegative(),
     voltouParaCima: z.boolean(),
-  }).optional() }),
+  }).optional(), foco: z.array(SaidaDeFoco).max(200).optional() }),
   /** Sem digitar há `idleMs` (a IDE manda a partir de 8 s). */
   z.object({ ...base, type: z.literal("pause"), idleMs: z.number() }),
   z.object({ ...base, type: z.literal("run"), result: RunResult }),
   z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int(), origem: z.enum(["editor", "fora"]).optional() }),
-  /** Só registro, enviado em lote junto dos eventos que já saem. */
-  z.object({ ...base, type: z.literal("foco"), saidas: z.array(z.object({
-    t: z.number().nonnegative(),
-    duracaoMs: z.number().nonnegative(),
-    motivo: z.enum(["aba", "janela"]),
-  })).max(200) }),
+  /** Só registro: envia no fim as saídas que sobraram sem snapshot. */
+  z.object({ ...base, type: z.literal("foco"), saidas: z.array(SaidaDeFoco).max(200) }),
   z.object({ ...base, type: z.literal("speech"), role: z.enum(["candidate", "agent"]), text: z.string(), blipId: z.string().optional() }),
   /** O candidato cortou a fala do Totti (#97): falando por cima ou pelo botão/Esc. `heardChars`: até onde ele ouviu. */
   z.object({ ...base, type: z.literal("speech_interrupted"), by: z.enum(["voz", "manual"]), heardChars: z.number().int().nonnegative() }),

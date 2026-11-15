@@ -5,6 +5,7 @@ Implementação na branch local `123-integridade-logica`, a partir de `1559ce0` 
 ## Contrato e integração com a captura
 
 - `paste.origem`, `snapshot.escrita`, evento IDE `foco` e tipos do relatório seguem o contrato combinado. O primeiro commit, `dcc3159`, contém apenas esses contratos.
+- Ajuste posterior combinado: na IDE, `snapshot.foco` opcional leva até 200 saídas (`SaidaDeFoco`), no POST do snapshot que já sai. O evento `foco` fica para o único envio final das sobras. O relatório reúne as duas fontes sem duplicar, e a presença do campo não altera o gatilho de análise do snapshot. O quadro continua com seu lote genérico anterior.
 - `lib/integridade/canario.ts` pode ser importado diretamente no navegador. O nome usa hash FNV-1a determinístico e prefixo raro `aux_qv`; a frase é bilíngue. A detecção exige o identificador inteiro e só gera sinal para código ou desenho, não para fala.
 - `foco` da IDE retorna imediatamente depois de registrar/persistir. Não consulta fila, analista, filtro ou fala. Reenvios não duplicam o evento. No quadro, `eventosDaMaquina("foco", ...)` devolve uma lista vazia.
 - Colagem `editor` não entra na fila nem dispara análise. Origem `fora` explícita vence coincidência com linhas antigas. Sem origem, fila e relatório compartilham a inferência anterior (pelo menos cinco linhas com conteúdo e menos de 70% já existentes).
@@ -31,6 +32,7 @@ Executada em 14/11/2026, nesta worktree:
 - `npm run lint`: passou, zero erros e 13 avisos preexistentes; nenhum aviso nos arquivos novos.
 - Runner efetivo do repositório: `npx tsx --test --test-reporter=tap` sobre os 174 arquivos `*.test.ts` de `lib`, `app`, `scripts` e `components`, exceto `supabase.integration.test.ts`: **2.372 testes passaram, zero falhas**.
 - Testes novos em `lib/integridade/__tests__/`: contrato antigo, contadores, origem da colagem e inferência legada, foco nas duas rotas, reenvio, duração/minuto, convergência, independência, entrevista honesta, canário nas duas salas, isolamento dos prompts, injeção, gravação e preservação de nota/recomendação.
+- Após o ajuste de `snapshot.foco`: TypeScript e lint passaram novamente; 50 testes focados de integridade, colagem e adaptadores passaram. Cobrem o limite de 200 saídas, união das fontes sem duplicação, persistência e gatilho do snapshot antes, no limite e depois do prazo, com e sem código do candidato.
 - `npx --no-install vitest run`: falhou nos 176 arquivos então descobertos. O projeto usa `node:test`/`tsx`; Vitest não reconhece suas suítes e não tem configuração para os aliases `@/`. Não houve migração de framework ou alteração de dependências para contornar isso.
 
 ## Medições com modelo real ainda pendentes

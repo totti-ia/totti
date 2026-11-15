@@ -5,6 +5,8 @@ import { describe, it } from "node:test";
 import { Gravacao, SessionEvent, type SessionEvent as Evento } from "@/lib/contracts";
 import { enqueueCola } from "@/lib/agents/policy";
 import { disparaAnalise } from "@/lib/agents/gatilhos";
+import { RITMO } from "@/lib/interrupcao/politica";
+import { getProblem } from "@/problems";
 import { getOrCreateSession, appendEvent } from "@/lib/session/store";
 import { gravacaoDaSessao } from "@/lib/session/gravacao";
 import { relatorioDaIde } from "@/lib/relatorio/da-ide";
@@ -15,7 +17,7 @@ import { nomeDoCanario, fraseDoCanario, canarioApareceu } from "../canario";
 import { integridadeDaIde, integridadeDoQuadro } from "../montar";
 
 const sessionId = "integridade-teste";
-const foto = (t: number, code: string, escrita?: Extract<Evento, { type: "snapshot" }>["escrita"]): Evento => ({ type: "snapshot", sessionId, t, code, escrita, version: t, language: "python" });
+const foto = (t: number, code: string, escrita?: Extract<Evento, { type: "snapshot" }>["escrita"]): Extract<Evento, { type: "snapshot" }> => ({ type: "snapshot", sessionId, t, code, escrita, version: t, language: "python" });
 const cola = (origem?: "editor" | "fora", t = 180_000): Extract<Evento, { type: "paste" }> => ({ type: "paste", sessionId, t, chars: 250, lines: 10, startLine: 1, origem });
 const foco = (t = 120_000, duracaoMs = 30_000): Evento => ({ type: "foco", sessionId, t: t + duracaoMs, saidas: [{ t, duracaoMs, motivo: "janela" }] });
 const CODIGO = Array.from({ length: 12 }, (_, i) => `    valor_${i} = numeros[${i}] + 42`).join("\n");
@@ -28,6 +30,59 @@ describe("contratos retrocompatíveis", () => {
     assert.deepEqual(SessionEvent.parse(foto(1, "pass", escrita)), foto(1, "pass", escrita));
     assert.equal(SessionEvent.safeParse(foto(1, "pass", { ...escrita, digitados: -1 })).success, false);
     assert.equal(SessionEvent.safeParse({ ...foco(), saidas: Array(201).fill({ t: 0, duracaoMs: 1, motivo: "aba" }) }).success, false);
+  });
+});
+
+describe("foco dentro do snapshot da IDE", () => {
+  const saida = { t: 120_000, duracaoMs: 30_000, motivo: "janela" as const };
+  it("preserva o lote no schema e aplica os mesmos limites nas duas fontes", () => {
+    const snapshot = { ...foto(150_000, "pass"), foco: [saida] };
+    assert.deepEqual(SessionEvent.parse(snapshot), snapshot);
+    assert.equal(SessionEvent.safeParse({ ...snapshot, foco: Array(200).fill(saida) }).success, true);
+    assert.equal(SessionEvent.safeParse({ ...snapshot, foco: Array(201).fill(saida) }).success, false);
+    for (const invalida of [{ ...saida, t: -1 }, { ...saida, duracaoMs: -1 }, { ...saida, motivo: "outro" }]) {
+      assert.equal(SessionEvent.safeParse({ ...snapshot, foco: [invalida] }).success, false);
+      assert.equal(SessionEvent.safeParse({ ...foco(), saidas: [invalida] }).success, false);
+    }
+  });
+  it("reúne snapshots e sobras finais sem duplicar intervalos nem destaques", () => {
+    const snapshots = [foto(0, ""), { ...foto(150_000, ""), foco: [saida] }, foto(170_000, CODIGO, escrita)];
+    const pelosSnapshots = integridadeDaIde(sessionId, snapshots)!;
+    const pelasDuasFontes = integridadeDaIde(sessionId, [...snapshots, foco(), { ...foco(200_000, 10_000), t: 220_000 }])!;
+    assert.equal(pelosSnapshots.sinais.filter((s) => s.tipo === "saida_de_foco").length, 1);
+    assert.equal(pelosSnapshots.destaques.length, 1);
+    assert.equal(pelasDuasFontes.sinais.filter((s) => s.tipo === "saida_de_foco").length, 2);
+    assert.equal(pelasDuasFontes.destaques.length, 1);
+    assert.equal(pelasDuasFontes.sinais.find((s) => s.tipo === "saida_de_foco")?.t, saida.t);
+  });
+  it("lote vazio ou de duração zero indica coleta nova, sem produzir sinal", () => {
+    for (const saidas of [[], [{ ...saida, duracaoMs: 0 }]]) {
+      assert.deepEqual(integridadeDaIde(sessionId, [{ ...foto(150_000, "pass"), foco: saidas }]), { sinais: [], destaques: [] });
+    }
+  });
+  it("não aumenta nem suprime gatilhos de análise antes, no limite ou depois do prazo", () => {
+    for (const temCodigo of [false, true]) {
+      const s = getOrCreateSession(`integridade-gatilho-snapshot-${temCodigo}`);
+      const starter = getProblem(s.config.problemId).public.starters[s.language] ?? "";
+      const code = temCodigo ? `${starter}\nvalor_novo = 42` : starter;
+      appendEvent(s, { ...foto(0, code), language: s.language });
+      s.analyst.lastRunAt = 10_000;
+      for (const diferenca of [-1, 0, 1]) {
+        const snapshot = foto(10_000 + RITMO.analiseMaximaSemPausaMs + diferenca, code);
+        const esperado = temCodigo && diferenca >= 0;
+        assert.equal(disparaAnalise(snapshot, s), esperado);
+        assert.equal(disparaAnalise({ ...snapshot, foco: [saida] }, s), esperado);
+        assert.equal(disparaAnalise({ ...snapshot, foco: [] }, s), esperado);
+      }
+    }
+  });
+  it("saídas do snapshot chegam ao bloco persistido na gravação", () => {
+    const s = getOrCreateSession("integridade-gravacao-snapshot-foco");
+    appendEvent(s, { ...foto(150_000, "pass"), sessionId: s.sessionId, foco: [saida] });
+    const bloco = Gravacao.parse(gravacaoDaSessao(s)).integridade!;
+    assert.equal(bloco.sinais.length, 1);
+    assert.equal(bloco.sinais[0].tipo, "saida_de_foco");
+    assert.match(bloco.sinais[0].texto, /30 s no minuto 2/);
   });
 });
 

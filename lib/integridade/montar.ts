@@ -1,4 +1,4 @@
-import type { SessionEvent } from "@/lib/contracts";
+import type { SaidaDeFoco, SessionEvent } from "@/lib/contracts";
 import type { EventoEntrada } from "@/lib/agente/armazenamento/repositorio";
 import { colagemDeFora } from "@/lib/agents/colagem";
 import { tentativasEmTextos } from "@/lib/seguranca/injecao";
@@ -8,7 +8,7 @@ import type { BlocoDeIntegridade, SinalDeIntegridade, TipoDeSinal } from "./tipo
 const minuto = (t: number) => `no minuto ${Math.floor(t / 60_000)}`;
 const segundos = (ms: number) => `${Math.round(ms / 100) / 10} s`;
 type Texto = { t: number; onde: string; texto: string };
-type Saida = { t: number; duracaoMs: number; motivo: "aba" | "janela" };
+type Saida = SaidaDeFoco;
 
 /** Limiares conservadores, só para o relatório; não decidem conduta, nota ou recomendação. */
 export const LIMITES = { digitados: 200, trechoSemPausa: 120, janelaEscritaMs: 60_000, depoisDaSaidaMs: 30_000 } as const;
@@ -61,7 +61,7 @@ function concluir(sinais: SinalDeIntegridade[], dadosPresentes: boolean): BlocoD
 export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEvent[], starter = ""): BlocoDeIntegridade | null {
   const c = coletor();
   const ordenados = [...eventos].sort((a, b) => a.t - b.t);
-  const saidas = saidasUnicas(ordenados.flatMap((e) => e.type === "foco" ? e.saidas : []));
+  const saidas = saidasUnicas(ordenados.flatMap((e) => e.type === "foco" ? e.saidas : e.type === "snapshot" ? e.foco ?? [] : []));
   registrarSaidas(c, saidas);
   const textos: Texto[] = [];
   const colagens = ordenados.filter((e) => e.type === "paste");
@@ -81,7 +81,7 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
     if (e.type !== "snapshot") continue;
     textos.push({ t: e.t, onde: "no código", texto: e.code });
     const escrita = e.escrita;
-    dadosPresentes ||= escrita !== undefined;
+    dadosPresentes ||= escrita !== undefined || e.foco !== undefined;
     const contarLinhas = (texto: string) => texto ? texto.split("\n").length : 0;
     const linhasNovas = Math.max(0, contarLinhas(e.code) - contarLinhas(codigo));
     const houveColagem = colagens.some((p) => p.t > ultimaFoto && p.t <= e.t);
