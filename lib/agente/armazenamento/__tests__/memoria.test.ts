@@ -37,14 +37,23 @@ describe("repositório em memória", () => {
     assert.deepEqual((await r.listarEventos(s.id)).map((e) => (e.dados as { n: number }).n), [2, 3, 4]);
   });
   it("limita imagens por sessão", async () => {
-    const r = criarRepositorioEmMemoria({ maxImagensPorSessao: 2 });
+    const r = criarRepositorioEmMemoria({ maxImagensPorSessao: 60 });
     const s = await nova(r);
     const img = { bytes: new Uint8Array([1]), horario: "h" };
-    assert.equal(await r.salvarImagem(s.id, img), 1);
-    assert.equal(await r.salvarImagem(s.id, img), 2);
+    for (let i = 0; i < 60; i++) await r.salvarImagem(s.id, img);
     await assert.rejects(r.salvarImagem(s.id, img), ErroLimite);
-    assert.deepEqual((await r.obterImagem(s.id, 2))!.bytes, img.bytes);
-    assert.equal(await r.obterImagem(s.id, 3), null);
+    await r.salvarImagem(s.id, { ...img, horario: "final" }, { final: true });
+    await r.salvarImagem(s.id, { ...img, horario: "final-2" }, { final: true });
+    await Promise.all([
+      r.salvarImagem(s.id, { ...img, horario: "corrida-a" }, { final: true }),
+      r.salvarImagem(s.id, { ...img, horario: "corrida-b" }, { final: true }),
+    ]);
+    const lista = await r.listarImagens(s.id);
+    assert.equal(lista.length, 61);
+    assert.equal(lista.filter((i) => i.horario.startsWith("corrida-")).length, 1);
+    assert.match(lista.at(-1)?.horario ?? "", /^corrida-/);
+    assert.equal((await r.obterImagem(s.id, lista.at(-1)!.numero))!.horario, lista.at(-1)!.horario);
+    assert.equal((await r.obterImagem(s.id, lista.at(-1)!.numero))!.final, true);
   });
   it("o singleton sobrevive (globalThis)", () => {
     assert.equal(repositorioPadrao(), repositorioPadrao());

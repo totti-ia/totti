@@ -184,11 +184,12 @@ export async function finalizar(sessaoId: string): Promise<void> {
   await requisitar(rotaDaSessao(sessaoId, "finalizar"), { ...jsonPost({}), keepalive: true });
 }
 
-export async function enviarImagem(sessaoId: string, imagem: Blob, horario: string): Promise<string> {
+export async function enviarImagem(sessaoId: string, imagem: Blob, horario: string, opcoes: { final?: boolean } = {}): Promise<string> {
   const rota = rotaDaSessao(sessaoId, "imagens");
   const formulario = new FormData();
   formulario.append("imagem", imagem, "quadro.png");
   formulario.append("horario", horario);
+  if (opcoes.final) formulario.append("final", "1");
   const dados = await lerJson(rota, { method: "POST", body: formulario });
   return validar(rota, dados, EsquemaImagem).url;
 }

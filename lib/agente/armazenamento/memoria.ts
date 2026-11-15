@@ -1,6 +1,6 @@
 // Repositório em memória: serve para desenvolvimento e testes. Perde tudo ao reiniciar o servidor.
 // Limites: no máximo 200 sessões (a menos usada sai primeiro, LRU), 2000 eventos por sessão (os mais
-// antigos saem), 20 imagens por sessão e 256 MB de imagens no total.
+// antigos saem), 60 imagens intermediárias por sessão e 256 MB de imagens no total.
 import { createHash, randomUUID } from "node:crypto";
 import {
   ErroLimite,
@@ -22,7 +22,7 @@ export type LimitesMemoria = {
 export const LIMITES_PADRAO: LimitesMemoria = {
   maxSessoes: 200,
   maxEventosPorSessao: 2000,
-  maxImagensPorSessao: 20,
+  maxImagensPorSessao: 60,
   maxBytesImagens: 256 * 1024 * 1024,
 };
 
@@ -116,29 +116,41 @@ export function criarRepositorioEmMemoria(limites: Partial<LimitesMemoria> = {})
       const r = usar(id);
       return r ? r.eventos.map((x) => structuredClone(x.evento)) : [];
     },
-    async salvarImagem(id, imagem) {
+    async salvarImagem(id, imagem, opcoes = {}) {
       const r = usar(id);
       if (!r) throw new ErroLimite("sessão inexistente");
-      if (r.imagens.length >= lim.maxImagensPorSessao) throw new ErroLimite("limite de imagens da sessão");
-      r.imagens.push({ bytes: imagem.bytes.slice(), horario: imagem.horario });
+      const final = opcoes.final ?? imagem.final ?? false;
+      const indiceFinal = r.imagens.findIndex((i) => i.final);
+      if (!final && r.imagens.filter((i) => !i.final).length >= lim.maxImagensPorSessao) throw new ErroLimite("limite de imagens da sessão");
+      const gravada = { bytes: imagem.bytes.slice(), horario: imagem.horario, final };
+      const anterior = final && indiceFinal >= 0 ? r.imagens[indiceFinal] : undefined;
+      if (anterior) {
+        bytesImagens -= anterior.bytes.byteLength;
+        r.imagens[indiceFinal] = gravada;
+      }
+      else r.imagens.push(gravada);
       bytesImagens += imagem.bytes.byteLength;
       despejar(id);
       if (bytesImagens > lim.maxBytesImagens) {
         // Só esta sessão sobrou e mesmo assim estoura: desfaz.
-        r.imagens.pop();
+        if (anterior) r.imagens[indiceFinal] = anterior;
+        else r.imagens.pop();
         bytesImagens -= imagem.bytes.byteLength;
+        if (anterior) bytesImagens += anterior.bytes.byteLength;
         throw new ErroLimite("limite de memória de imagens");
       }
-      return r.imagens.length;
+      return r.imagens.indexOf(gravada) + 1;
     },
     async obterImagem(id, numero) {
       const r = usar(id);
       const img = r?.imagens[numero - 1];
-      return img ? { bytes: img.bytes.slice(), horario: img.horario } : null;
+      return img ? { bytes: img.bytes.slice(), horario: img.horario, final: img.final } : null;
     },
     async listarImagens(id) {
       const r = usar(id);
-      return r ? r.imagens.map((i, k) => ({ numero: k + 1, horario: i.horario })) : [];
+      return r ? r.imagens.map((i, k) => ({ imagem: i, numero: k + 1, horario: i.horario }))
+        .sort((a, b) => Number(a.imagem.final) - Number(b.imagem.final) || a.numero - b.numero)
+        .map(({ numero, horario }) => ({ numero, horario })) : [];
     },
     async salvarScorecard(id, scorecard) {
       const r = usar(id);
