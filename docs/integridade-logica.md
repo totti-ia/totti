@@ -33,7 +33,7 @@ Executada em 14/11/2026, nesta worktree:
 - Runner efetivo do repositório: `npx tsx --test --test-reporter=tap` sobre os 174 arquivos `*.test.ts` de `lib`, `app`, `scripts` e `components`, exceto `supabase.integration.test.ts`: **2.372 testes passaram, zero falhas**.
 - Testes novos em `lib/integridade/__tests__/`: contrato antigo, contadores, origem da colagem e inferência legada, foco nas duas rotas, reenvio, duração/minuto, convergência, independência, entrevista honesta, canário nas duas salas, isolamento dos prompts, injeção, gravação e preservação de nota/recomendação.
 - Após o ajuste de `snapshot.foco`: TypeScript e lint passaram novamente; 50 testes focados de integridade, colagem e adaptadores passaram. Cobrem o limite de 200 saídas, união das fontes sem duplicação, persistência e gatilho do snapshot antes, no limite e depois do prazo, com e sem código do candidato.
-- `npx --no-install vitest run`: falhou nos 176 arquivos então descobertos. O projeto usa `node:test`/`tsx`; Vitest não reconhece suas suítes e não tem configuração para os aliases `@/`. Não houve migração de framework ou alteração de dependências para contornar isso.
+- Runner confirmado pelo Claude: o projeto usa `node:test` + `node:assert/strict`, executados por `tsx --test`. Os testes de integridade já seguem esse padrão e têm o script `npm run test:integridade`. A solicitação inicial de Vitest foi corrigida; ele não é requisito de validação desta entrega e não foi adicionado às dependências.
 
 ## Medições com modelo real ainda pendentes
 
