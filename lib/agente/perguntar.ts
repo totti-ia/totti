@@ -15,7 +15,7 @@ import {
   sinalDeConclusao,
   type LeituraDoTurno, type SituacaoDoTurno,
 } from "../totti/turno";
-import { garantirMarca, mapearAcoesVisuais, pecasCitadas, type AcaoVisual } from "../presenca/acoesVisuais";
+import { garantirMarca, mapearAcoesVisuais, pecasCitadas, conexoesDoGrafo, olharODesenho, type AcaoVisual } from "../presenca/acoesVisuais";
 import { caminhoPrincipalDesenhado } from "./sessao/fechamento";
 import { extrairIdsDoGrafo, parametrosDoFechamentoNoQuadro } from "./sessao/politica";
 import type { LlmCliente } from "./llm/cliente";
@@ -276,7 +276,9 @@ async function responderFala(
     // A pergunta final que veio da análise traz as peças e as marcas dela; as outras marcam a peça que citam pelo nome.
     const apontar = passo.apontar as ApontarNoQuadro | undefined;
     const alvos = (apontar?.elementos ?? (perguntou ? pecasCitadas(texto, entrada.grafo ?? "") : [])).filter((id) => ids.has(id));
-    const visual = garantirMarca(mapearAcoesVisuais(apontar?.visual, (id) => ids.has(id) ? id : null), alvos, estado.conversa.length);
+    const pediuOlhar = /\b(olh\w*|confere|veja)\b.*\b(desenho|quadro)\b/i.test(entrada.texto);
+    const visual = o.concluiu || pediuOlhar ? olharODesenho(entrada.grafo ?? "")
+      : garantirMarca(mapearAcoesVisuais(apontar?.visual, (id) => ids.has(id) ? id : null), alvos, estado.conversa.length, conexoesDoGrafo(entrada.grafo ?? ""));
     return {
       responder: true, texto, requisito: null, concluiu: o.concluiu, desfecho: o.desfecho, estado: final,
       ...(perguntou ? { perguntou } : {}), ...encerrar, ...(visual !== undefined ? { visual } : {}),
@@ -530,7 +532,8 @@ async function responderFala(
       const aviso = AVISOS_DE_QUE_VAI_OLHAR[conclusoesAntes % AVISOS_DE_QUE_VAI_OLHAR.length];
       // A pergunta da análise vem logo atrás deste aviso (a conclusão é um marco: ver `motivoBloqueioPlin`).
       return { responder: true, texto: aviso, requisito: null, concluiu, desfecho,
-        estado: transicionar(comConclusao(comFala), { tipo: "AGENTE_FALOU", texto: aviso }, agora).estado };
+        estado: transicionar(comConclusao(comFala), { tipo: "AGENTE_FALOU", texto: aviso }, agora).estado,
+        visual: olharODesenho(entrada.grafo ?? "") };
     }
     if (!texto || (!saida.responder && !porqueForcado)) return calar();
     // Pergunta de porquê: é continuação do mesmo fio, então a pergunta ativa segue aberta e o quadro espera a resposta.
@@ -560,7 +563,9 @@ async function responderFala(
   const final = transicionar(comConclusao(comFala), { tipo: "AGENTE_FALOU", texto, ...(perguntou ? { perguntou } : {}) }, agora).estado;
   // A pergunta que cita uma peça pelo nome marca essa peça no quadro, mesmo que o modelo não tenha pedido gesto.
   const citadas = perguntou ? pecasCitadas(texto, entrada.grafo ?? "").filter((id) => ids.has(id)) : [];
-  const visual = garantirMarca(mapearAcoesVisuais(saida.visual, (id) => ids.has(id) ? id : null), citadas, estado.conversa.length);
+  const pediuOlhar = /\b(olh\w*|confere|veja)\b.*\b(desenho|quadro)\b/i.test(entrada.texto);
+  const visual = concluiu || pediuOlhar ? olharODesenho(entrada.grafo ?? "")
+    : garantirMarca(mapearAcoesVisuais(saida.visual, (id) => ids.has(id) ? id : null), citadas, estado.conversa.length, conexoesDoGrafo(entrada.grafo ?? ""));
   return { responder: true, texto, requisito: repetido ? null : requisito, concluiu, desfecho, estado: final,
     ...(perguntou ? { perguntou } : {}),
     ...(seguimento ? { seguimento } : {}),
