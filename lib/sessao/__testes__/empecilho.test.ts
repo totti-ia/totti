@@ -51,9 +51,9 @@ describe("hora do empecilho no quadro", () => {
 });
 
 describe("piso entre perguntas do quadro (#129, decisão G)", () => {
-  it("nenhuma mudança nos 2 min depois de uma pergunta; depois, pode", () => {
-    assert.equal(esperaDoEmpecilho({ ...base, ultimaPerguntaEm: base.agora - 60_000 }), "piso entre perguntas");
-    assert.equal(esperaDoEmpecilho({ ...base, ultimaPerguntaEm: base.agora - 130_000 }), null);
+  it("#140: o piso de 45 s entre perguntas continua valendo", () => {
+    assert.equal(esperaDoEmpecilho({ ...base, ultimaPerguntaEm: base.agora - 30_000 }), "piso entre perguntas");
+    assert.equal(esperaDoEmpecilho({ ...base, ultimaPerguntaEm: base.agora - 46_000 }), null);
   });
 
   it("sem pergunta registrada (ou campo ausente), o piso não se aplica", () => {
@@ -62,7 +62,7 @@ describe("piso entre perguntas do quadro (#129, decisão G)", () => {
   });
 
   it("vale também na garantia dos 60%", () => {
-    const na_garantia = { ...base, ...emEntrevistaAos(0.7), ultimaPerguntaEm: base.agora - 60_000 };
+    const na_garantia = { ...base, ...emEntrevistaAos(0.7), ultimaPerguntaEm: base.agora - 30_000 };
     assert.equal(esperaDoEmpecilho(na_garantia), "piso entre perguntas");
   });
 });
@@ -117,7 +117,7 @@ describe("conclusão recente como brecha para a mudança (#129, decisão F)", ()
 
   it("o piso entre perguntas continua valendo, e o respiro e a pergunta ativa também", () => {
     const c = { ...base, conclusaoRecente: true };
-    assert.equal(esperaDoEmpecilho({ ...c, ultimaPerguntaEm: base.agora - 60_000 }), "piso entre perguntas");
+    assert.equal(esperaDoEmpecilho({ ...c, ultimaPerguntaEm: base.agora - 30_000 }), "piso entre perguntas");
     assert.equal(esperaDoEmpecilho({ ...c, ultimaFalaDoAgenteEm: base.agora - 5_000 }), "respiro depois da última fala");
     assert.equal(esperaDoEmpecilho({ ...c, respondendoPergunta: true }), "candidato respondendo uma pergunta");
   });
