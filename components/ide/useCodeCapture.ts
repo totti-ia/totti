@@ -2,6 +2,14 @@ import { useCallback, useRef, useState } from "react";
 import type { RunResult } from "@/lib/contracts";
 import { INITIAL_LANGUAGE } from "@/lib/ide-constants";
 import type { EventInput } from "./useSession";
+import { ContadorDeEscrita, type MudancaDoEditor } from "./contadorDeEscrita";
+
+/** Saída de foco na régua da IDE (`t` em ms desde o começo da sessão), como vai no snapshot (#123). */
+export interface SaidaDeFocoDaIde {
+  t: number;
+  duracaoMs: number;
+  motivo: "aba" | "janela";
+}
 
 const SNAPSHOT_DEBOUNCE_MS = 1500;
 const SNAPSHOT_THROTTLE_MS = 5000;
@@ -16,6 +24,8 @@ interface CaptureDeps {
   starters: Record<string, string>;
   /** Linguagem com que a IDE abre (a primeira da vaga). */
   initialLanguage?: string;
+  /** Saídas de foco fechadas desde o último envio (#123): vão no próximo snapshot, sem POST a mais. */
+  saidasDeFoco?: () => SaidaDeFocoDaIde[];
 }
 
 /** Linhas a mais numa única mudança a partir das quais o bloco conta como colado. */
@@ -33,7 +43,7 @@ function firstChangedLine(a: string, b: string): number {
 /**
  * Captura de código: snapshot (debounce + throttle), pause, paste, language e run.
  */
-export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, initialLanguage = INITIAL_LANGUAGE }: CaptureDeps) {
+export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, initialLanguage = INITIAL_LANGUAGE, saidasDeFoco }: CaptureDeps) {
   const [language, setLanguage] = useState<string>(initialLanguage);
   const [code, setCode] = useState<string>(STARTERS[initialLanguage] ?? "");
 
@@ -48,6 +58,10 @@ export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, 
   const pausedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contadorRef = useRef<ContadorDeEscrita | null>(null);
+  contadorRef.current ??= new ContadorDeEscrita();
+  const saidasRef = useRef(saidasDeFoco);
+  saidasRef.current = saidasDeFoco;
 
   const flushSnapshot = useCallback(async (): Promise<void> => {
     if (debounceRef.current !== null) {
@@ -60,11 +74,16 @@ export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, 
     lastSentCodeRef.current = current;
     lastSnapshotAtRef.current = nowT();
     versionRef.current += 1;
+    // Jeito de escrever e saídas de foco (#123) só pegam carona: campos opcionais, nada dispara por eles.
+    const escrita = contadorRef.current?.esvaziar() ?? null;
+    const foco = saidasRef.current?.() ?? [];
     await sendEvent({
       type: "snapshot",
       code: current,
       version: versionRef.current,
       language: langRef.current,
+      ...(escrita ? { escrita } : {}),
+      ...(foco.length ? { foco } : {}),
     });
   }, [endedRef, nowT, sendEvent]);
 
@@ -116,17 +135,26 @@ export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, 
    * vai antes, senão o agente analisaria a colagem olhando o código antigo.
    */
   const onPaste = useCallback(
-    (text: string, startLine: number) => {
+    (text: string, startLine: number, origem?: "editor" | "fora") => {
       if (endedRef.current) return;
       const lines = text.split("\n").length;
       if (lines < 2 && text.length < PASTE_MIN_CHARS) return;
       lastPasteAtRef.current = nowT();
       // setTimeout: o onPaste dispara antes do onChange que atualiza codeRef.
       setTimeout(() => {
-        void flushSnapshot().then(() => sendEvent({ type: "paste", chars: text.length, lines, startLine }));
+        void flushSnapshot().then(() => sendEvent({ type: "paste", chars: text.length, lines, startLine, ...(origem ? { origem } : {}) }));
       }, 0);
     },
     [endedRef, flushSnapshot, sendEvent, nowT],
+  );
+
+  /** Mudanças digitadas ou apagadas no editor (#123): só contam, não mandam nada. */
+  const onEscrever = useCallback(
+    (mudancas: MudancaDoEditor[], colando: boolean) => {
+      if (endedRef.current) return;
+      contadorRef.current?.registrar(mudancas, performance.now(), colando);
+    },
+    [endedRef],
   );
 
   const changeLanguage = useCallback(
@@ -164,6 +192,7 @@ export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, 
     getLiveCode,
     onCodeChange,
     onPaste,
+    onEscrever,
     changeLanguage,
     runWithResult,
   };

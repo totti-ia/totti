@@ -5,6 +5,7 @@
 // O microfone mede o volume e fornece o mesmo stream à transcrição.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AUDIO_DO_MICROFONE } from "./microfone";
+import { ignorarFocoDurante } from "@/lib/foco/saidasDeFoco";
 
 export type ErroMidia = "camera" | "microfone" | null;
 
@@ -35,9 +36,10 @@ export function useMidiaLocal() {
     const versao = versaoRef.current;
     const pedido = (async () => {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({
+        // O diálogo de permissão tira o foco da janela: não é saída de foco (#123).
+        const s = await ignorarFocoDurante(() => navigator.mediaDevices.getUserMedia({
           audio: AUDIO_DO_MICROFONE,
-        });
+        }));
         if (versaoRef.current !== versao) {
           s.getTracks().forEach((t) => t.stop());
           throw new DOMException("Captura cancelada", "AbortError");

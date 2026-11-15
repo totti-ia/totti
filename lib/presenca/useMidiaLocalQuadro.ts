@@ -5,6 +5,7 @@
 // O microfone daqui só mede o volume (para o orb); a transcrição usa o mesmo stream depois.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AUDIO_DO_MICROFONE } from "./microfone";
+import { ignorarFocoDurante } from "@/lib/foco/saidasDeFoco";
 
 export type ErroMidia = "camera" | "microfone" | null;
 
@@ -29,15 +30,16 @@ export function useMidiaLocal() {
     if (streamRef.current) return;
     let s: MediaStream | null = null;
     try {
-      s = await navigator.mediaDevices.getUserMedia({
+      // O diálogo de permissão tira o foco da janela: não é saída de foco (#123).
+      s = await ignorarFocoDurante(() => navigator.mediaDevices.getUserMedia({
         video: { width: 320, height: 240, facingMode: "user" },
         audio: AUDIO_DO_MICROFONE,
-      });
+      }));
       setCameraLigada(true);
     } catch {
       // Sem câmera (ou negada): segue só com o microfone.
       try {
-        s = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_DO_MICROFONE });
+        s = await ignorarFocoDurante(() => navigator.mediaDevices.getUserMedia({ audio: AUDIO_DO_MICROFONE }));
         setErro("camera");
       } catch {
         setErro("microfone");

@@ -31,6 +31,8 @@ import Legenda from "./Legenda";
 import { postEncerramento, postForcarEmpecilho } from "./ide/api";
 import { RECONHECIMENTOS, useConversa } from "./ide/useConversa";
 import { useCodeCapture } from "./ide/useCodeCapture";
+import { useRegistroDeFoco } from "@/lib/foco/useRegistroDeFoco";
+import { nomeDoCanario } from "@/lib/integridade/canario";
 import { useSession } from "./ide/useSession";
 
 /** Margem esquerda do editor: o painel do problema (360) mais o respiro. */
@@ -88,12 +90,21 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
       body: JSON.stringify({ convite, sessionId }),
     }).catch(() => {});
   }, [convite, session.sessionId]);
+  // Saídas de foco (#123): só com a sessão de pé; vão no próximo snapshot, na régua da sessão (`t`).
+  const registroDeFoco = useRegistroDeFoco(!!session.sessionId && !session.ended);
+  const nowTDaSessao = session.nowT;
+  const saidasDeFoco = useCallback(() => {
+    const agora = Date.now();
+    const t = nowTDaSessao();
+    return registroDeFoco.esvaziar().map((s) => ({ t: Math.max(0, t - (agora - s.inicioEm)), duracaoMs: s.duracaoMs, motivo: s.motivo }));
+  }, [registroDeFoco, nowTDaSessao]);
   const capture = useCodeCapture({
     sendEvent: session.sendEvent,
     nowT: session.nowT,
     endedRef: session.endedRef,
     starters: problem.starters,
     initialLanguage,
+    saidasDeFoco,
   });
 
   const [run, setRun] = useState<RunState>({ status: "idle" });
@@ -331,13 +342,20 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
     await criarEncerrarComDespedida({
       dizer: (fala) => falarVoz(fala),
       registrarFala: async (fala) => { await sendEvent({ type: "speech", role: "agent", text: fala }); },
-      endSession,
+      endSession: async (razao) => {
+        // As saídas de foco que não pegaram carona num snapshot vão num lote só, antes do fim (#123).
+        const agora = Date.now();
+        const t = nowTDaSessao();
+        const saidas = registroDeFoco.encerrar(agora).map((s) => ({ t: Math.max(0, t - (agora - s.inicioEm)), duracaoMs: s.duracaoMs, motivo: s.motivo }));
+        if (saidas.length) void sendEvent({ type: "foco", saidas });
+        await endSession(razao);
+      },
       navegar: () => router.push("/obrigado"),
       pedirEncerramento: async () => sessionId ? (await postEncerramento(sessionId, "pediu_encerrar")).despedida : undefined,
       mostrarTexto: (fala, ms) => new Promise<void>((resolve) => { setLegendaSemVoz({ quem: "agente", texto: fala, ate: Date.now() + ms }); setTimeout(resolve, ms); }),
       reserva: DESPEDIDA_LIVE_CODING,
     })(motivo, texto);
-  }, [pararConversa, router, endSession, sendEvent, sessionId, setIncomingBlip, falarVoz]);
+  }, [pararConversa, router, endSession, sendEvent, sessionId, setIncomingBlip, falarVoz, registroDeFoco, nowTDaSessao]);
   encerrarComDespedidaRef.current = (motivo, texto) => { void encerrarComDespedida(motivo, texto); };
   fioFechadoRef.current = () => { editorRef.current?.focus(); };
 
@@ -521,6 +539,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
                 capture.onCodeChange(codigo);
               }}
               onPaste={capture.onPaste}
+              onEscrever={capture.onEscrever}
               onReady={(editor: MonacoEditor.IStandaloneCodeEditor, monaco) => {
                 editorRef.current = editor;
                 executorRef.current = createAnimatedExecutor(editor, createExecutor(editor, monaco));
@@ -556,6 +575,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
             aberto={problemaAberto}
             onToggle={setProblemaAberto}
             mudanca={mudanca}
+            canario={session.sessionId ? nomeDoCanario(session.sessionId) : null}
           />
           <div className="flex flex-wrap items-center gap-2">
             {remaining <= 5 * 60_000 && !session.ended && (

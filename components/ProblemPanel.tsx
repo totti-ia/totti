@@ -6,6 +6,7 @@ import { duracaoLenta, curvaSaida, entrada } from "@/lib/design/motion";
 import type { EmpecilhoPublico, FaseDaEntrevista } from "@/lib/contracts";
 import type { PublicProblem } from "@/lib/problems";
 import { formatMs } from "@/lib/format";
+import { fraseDoCanario } from "@/lib/integridade/canario";
 
 /**
  * Rótulo da fase que o servidor decidiu pelos eventos (lib/agents/fase.ts). Antes o rótulo vinha do tempo decorrido
@@ -46,7 +47,25 @@ type Props = {
   onToggle: (aberto: boolean) => void;
   /** Mudança que o Totti trouxe no meio da entrevista (empecilho), se já veio. */
   mudanca?: EmpecilhoPublico | null;
+  /** Nome raro desta sessão (#123): vai junto do texto copiado do enunciado, nunca na tela. */
+  canario?: string | null;
 };
+
+/** Seleção a partir da qual a cópia é do enunciado, e não de uma palavra ou de um nome de função. */
+const MIN_CHARS_COPIA_DO_ENUNCIADO = 60;
+
+/**
+ * Canário (#123): quem copia o enunciado leva junto, só na área de transferência, uma frase dirigida a IAs. Se o
+ * nome dela aparecer no código, o enunciado passou por um modelo. A frase não entra no DOM, no leitor de tela nem
+ * em nenhum prompt.
+ */
+function copiarComCanario(e: React.ClipboardEvent, canario: string | null | undefined) {
+  if (!canario) return;
+  const selecionado = window.getSelection()?.toString() ?? "";
+  if (selecionado.trim().length < MIN_CHARS_COPIA_DO_ENUNCIADO) return;
+  e.preventDefault();
+  e.clipboardData.setData("text/plain", `${selecionado}\n\n${fraseDoCanario(canario)}`);
+}
 
 const TIPO_MUDANCA = { requisito: "O requisito mudou", caso_novo: "Entrou um caso novo" } as const;
 /** Quantos testes da mudança aparecem como exemplo no bloco. */
@@ -95,7 +114,7 @@ function BlocoMudanca({ mudanca }: { mudanca: EmpecilhoPublico }) {
  * que recolhe para uma pílula. Só a parte pública do problema.
  * Animação só com opacity/transform (entrada de lib/design/motion).
  */
-export default function ProblemPanel({ problem, elapsedMs, durationMs, fase, aberto, onToggle, mudanca }: Props) {
+export default function ProblemPanel({ problem, elapsedMs, durationMs, fase, aberto, onToggle, mudanca, canario }: Props) {
   const tempo = `${formatMs(elapsedMs)} / ${formatMs(durationMs)}`;
   const chip = fase ? ROTULO_DA_FASE[fase] : null;
 
@@ -135,7 +154,7 @@ export default function ProblemPanel({ problem, elapsedMs, durationMs, fase, abe
               </button>
             </header>
 
-            <div className="space-y-4 overflow-y-auto px-4 pb-4 pt-3 text-corpo">
+            <div className="space-y-4 overflow-y-auto px-4 pb-4 pt-3 text-corpo" onCopy={(e) => copiarComCanario(e, canario)}>
               {mudanca && <BlocoMudanca mudanca={mudanca} />}
               <p>
                 <Texto>{problem.statement}</Texto>

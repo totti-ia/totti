@@ -3,6 +3,7 @@
 // "Antes de começar": a última tela antes da entrevista, no mesmo papel e tinta do resto do site
 // (tema-recrutador). Pouca coisa: a vaga, três passos curtos do formato (live coding ou system design),
 // o essencial em pílulas e um botão. O passo das dicas segue o que a recrutadora combinou (`config.hints`).
+// Antes do botão, as regras (#123): o que pode, o que é registrado e o que não é (transparência da LGPD).
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ArrowRight, Clock, Mic } from "lucide-react";
@@ -32,6 +33,19 @@ const DICAS: Record<NonNullable<InterviewConfig["hints"]>, Passo> = {
   leves: { titulo: "Uma dica, se travar", texto: "Dá para pedir uma dica leve, uma vez só." },
   nenhuma: { titulo: "Sem dicas", texto: "Se travar, conte onde travou e o que já tentou: isso também conta." },
 };
+
+/**
+ * O que vale na entrevista (#123). Curto e sem tom de ameaça: colar não é proibido, não saber explicar é que pesa.
+ * Câmera, tela e teclas nunca são gravadas (nada no app usa MediaRecorder nem captura de tela).
+ */
+function regras(mode: InterviewConfig["mode"]): string[] {
+  const trabalho = mode === "system_design" ? "o desenho" : "o código";
+  return [
+    "Pode consultar documentação e sintaxe à vontade.",
+    "Não use IA para resolver: o que conta é o seu raciocínio. Se colar algo, tudo bem, só esteja pronto para explicar.",
+    `Ficam registrados a conversa, ${trabalho}, as colagens e quando você sai desta janela. Câmera, tela e teclas não são gravadas.`,
+  ];
+}
 
 /** `vaga`: config da vaga (saída da pré-entrevista da recrutadora); sem ela, a padrão. */
 export default function PreInterview({ vaga = DEFAULT_CONFIG, convite }: { vaga?: InterviewConfig; convite?: string }) {
@@ -100,6 +114,26 @@ export default function PreInterview({ vaga = DEFAULT_CONFIG, convite }: { vaga?
             </motion.li>
           ))}
         </ol>
+
+        <motion.section
+          aria-labelledby="regras-da-entrevista"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.36, ease: curvaSuave, delay: 0.12 + 0.06 * passos.length }}
+          className="flex flex-col gap-2.5 px-1"
+        >
+          <h2 id="regras-da-entrevista" className="font-mono text-[13px] text-texto-suave">
+            O que vale aqui
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {regras(mode).map((r) => (
+              <li key={r} className="flex gap-2.5 text-[14px] leading-relaxed text-texto-suave">
+                <span aria-hidden className="mt-[0.6em] size-1 shrink-0 rounded-full bg-texto-suave" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </motion.section>
 
         <motion.div
           initial={{ opacity: 0 }}

@@ -4,6 +4,7 @@
 // É o modelo dos dados mockados: veredito e nota, números que importam, nota por critério com a prova a um clique,
 // linha do tempo, regra de reprovação, adaptação e aprendizado, e a decisão no fim. Quem alimenta é o tipo comum
 // de `lib/relatorio` (ver `do-quadro.ts` e `da-ide.ts`); aqui não se sabe de onde o dado veio.
+// O bloco Integridade (#123) fica à parte da nota: evidência com minuto, nunca veredito.
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Check, ChevronDown, Printer, TriangleAlert, X } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   NOME_DO_STATUS_ELIMINATORIO,
   type AdaptacaoComum,
   type AprendizadoComum,
+  type BlocoDeIntegridade,
   type EliminatorioComum,
   type ProvaComum,
   type RelatorioComum,
@@ -29,6 +31,7 @@ const ORIGEM_ADAPTACAO = "Adaptação à mudança";
 const ORIGEM_APRENDIZADO = "Aprendizado";
 const ORIGEM_HISTORIA = "Acontecimento";
 const ORIGEM_ELIMINATORIO = "Regra de reprovação";
+const ORIGEM_INTEGRIDADE = "Integridade";
 
 /** "Próxima conversa" só faz sentido quando a pessoa segue no processo ou ainda falta evidência. */
 const ROTULO_DO_BRIEFING: Record<RelatorioComum["recomendacao"], string> = {
@@ -78,6 +81,8 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
       const texto = a.detalhe ? `${a.titulo}. ${a.detalhe}` : a.titulo;
       lista.push({ prova: { t: a.t, texto, tipo: "fala", elementos: [], imagem: null }, origem: ORIGEM_HISTORIA, texto });
     }
+    // Destaques e sinais da integridade também abrem o momento na gravação (o código e a conversa daquele minuto).
+    for (const p of provasDaIntegridade(r.integridade)) lista.push({ prova: p, origem: ORIGEM_INTEGRIDADE, texto: p.texto });
     const ordenada = lista
       .filter((p) => abrivel(p.prova))
       .sort((a, b) => (a.prova.t ?? Infinity) - (b.prova.t ?? Infinity));
@@ -166,7 +171,10 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
     return { ...a, momento: i >= 0 ? i : undefined };
   });
 
-  const totalDeProvas = todas.filter((p) => p.origem !== ORIGEM_HISTORIA).length;
+  const fora = (p: ProvaIndexada) => p.origem === ORIGEM_HISTORIA || p.origem === ORIGEM_INTEGRIDADE;
+  const totalDeProvas = todas.filter((p) => !fora(p)).length;
+  const provaDaIntegridade = (t: number, texto: string) =>
+    todas.find((p) => p.origem === ORIGEM_INTEGRIDADE && p.prova.t === t && p.texto === texto)?.prova;
   const comNota = r.criterios.filter((c) => c.nota !== null).length;
   const semProva = r.criterios.filter((c) => c.nota === null);
 
@@ -288,7 +296,17 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
           onAbrir={gravacao ? abrir : undefined}
         />
       ) : (
-        <LinhaDoTempo provas={todas.filter((p) => p.origem !== ORIGEM_HISTORIA)} indices={indices} onAbrir={abrir} />
+        <LinhaDoTempo provas={todas.filter((p) => !fora(p))} indices={indices} onAbrir={abrir} />
+      )}
+
+      {r.integridade && (
+        <Integridade
+          bloco={r.integridade}
+          desenhar={(t, texto, chave) => {
+            const p = provaDaIntegridade(t, texto);
+            return p ? desenharProva(p, ORIGEM_INTEGRIDADE, chave) : null;
+          }}
+        />
       )}
 
       <details className="group -mt-6 rounded-padrao border border-borda">
@@ -362,6 +380,82 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
       {gravacao && <MomentoDaSessao gravacao={gravacao} momentos={momentos} aberto={aberto} onFechar={fechar} onAbrir={setAberto} />}
       <ImagemAmpliada url={imagem} aoFechar={() => setImagem(null)} />
     </main>
+  );
+}
+
+/** As provas do bloco Integridade: os destaques primeiro, depois cada sinal (com o detalhe, quando houver). */
+function provasDaIntegridade(b: BlocoDeIntegridade | null): ProvaComum[] {
+  if (!b) return [];
+  const prova = (t: number, texto: string): ProvaComum => ({ t, texto, tipo: "codigo", elementos: [], imagem: null });
+  return [
+    ...b.destaques.map((d) => prova(d.t, d.texto)),
+    ...b.sinais.map((s) => prova(s.t, textoDoSinal(s))),
+  ];
+}
+
+const textoDoSinal = (s: BlocoDeIntegridade["sinais"][number]) => (s.detalhe ? `${s.texto}. ${s.detalhe}` : s.texto);
+
+/**
+ * Integridade (#123): o que o navegador registrou (colagem de fora, saídas da janela, jeito de escrever, canário).
+ * Destaque só quando dois sinais independentes se encontram no tempo, ou o canário. Sinal sozinho fica recolhido.
+ * Linguagem de evidência; quem decide é a recrutadora. Não entra na nota.
+ */
+function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar: (t: number, texto: string, chave: number) => ReactNode }) {
+  const { destaques, sinais } = bloco;
+  return (
+    <section aria-labelledby="integridade" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2 id="integridade" className="text-[17px] font-medium">
+          {ORIGEM_INTEGRIDADE}
+        </h2>
+        <p className="text-[13px] text-texto-suave">
+          O que a sala registrou além da conversa: colagens, saídas da janela e o jeito de escrever. Não entra na nota; vale conferir na
+          gravação.
+        </p>
+      </div>
+
+      {destaques.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {destaques.map((d, i) => (
+            <li key={`${d.t}-${i}`} className="rounded-padrao border-l-2 border-texto bg-superficie py-2 pr-3 pl-4 shadow-cartao">
+              {desenhar(d.t, d.texto, i) ?? (
+                <p className="flex items-baseline gap-2 py-1 text-corpo">
+                  <span className="numero shrink-0 font-medium">{formatMs(d.t)}</span>
+                  {d.texto}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[14.5px]">{sinais.length ? "Nenhum sinal se repetiu ou se juntou a outro." : "Nenhum sinal registrado nesta entrevista."}</p>
+      )}
+
+      {sinais.length > 0 && (
+        <details className="group rounded-padrao border border-borda">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[14px] font-medium select-none [&::-webkit-details-marker]:hidden">
+            Todos os sinais
+            <span className="flex items-center gap-1 text-sm font-normal text-texto-suave">
+              <span className="numero">{sinais.length}</span>
+              <ChevronDown size={14} strokeWidth={1.75} className="transition-transform duration-150 group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <div className="border-t border-borda px-4 py-3">
+            {sinais.map((s, i) => {
+              const texto = textoDoSinal(s);
+              return (
+                desenhar(s.t, texto, i) ?? (
+                  <p key={s.id} className="flex items-baseline gap-2 py-1 text-corpo text-texto-suave">
+                    <span className="numero shrink-0 font-medium">{formatMs(s.t)}</span>
+                    {texto}
+                  </p>
+                )
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </section>
   );
 }
 

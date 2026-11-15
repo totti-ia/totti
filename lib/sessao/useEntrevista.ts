@@ -55,6 +55,8 @@ import { criarGatilho, type Gatilho } from "@/lib/sessao/gatilho";
 import { criarConversor, type Instantaneo } from "@/lib/excalidraw/conversor";
 import { descreverMudancas, houveMudancaRelevante } from "@/lib/excalidraw/diff";
 import { falaInterrompida } from "@/lib/totti/interrupcao";
+import { useRegistroDeFoco } from "@/lib/foco/useRegistroDeFoco";
+import { eventoDeFoco } from "@/lib/foco/eventoDoQuadro";
 
 /** Como uma fala do Totti entra na fila única (ver lib/audio/filaDoAgente.ts). */
 /**
@@ -488,16 +490,30 @@ export function useEntrevista(
     return () => { cancelado = true; };
   }, [configId, convite]);
 
+  // Saídas de foco (#123): só com a entrevista andando. Pegam carona no lote da linha do tempo, sem POST a mais.
+  const registroDeFoco = useRegistroDeFoco(!!sessao && estado.fase !== "AGUARDANDO" && estado.fase !== "ENCERRADA");
+
   // Linha do tempo da entrevista: vai ao servidor em lotes.
   useEffect(() => {
     if (!sessao) return;
-    const linha = criarLinhaDoTempo({ enviar: (lote) => enviarEventos(sessao.sessao_id, lote) });
+    const linha = criarLinhaDoTempo({
+      enviar: async (lote) => {
+        const saidas = registroDeFoco.esvaziar();
+        if (!saidas.length) return enviarEventos(sessao.sessao_id, lote);
+        try {
+          await enviarEventos(sessao.sessao_id, [...lote, eventoDeFoco(saidas)]);
+        } catch (erro) {
+          registroDeFoco.devolver(saidas);
+          throw erro;
+        }
+      },
+    });
     linhaDoTempo.current = linha;
     return () => {
       linha.parar();
       void linha.descarregar().catch(() => {});
     };
-  }, [sessao]);
+  }, [sessao, registroDeFoco]);
 
   useEffect(() => {
     if (estado.fase !== "AGUARDANDO") registrar("fase", { fase: estado.fase });
@@ -518,11 +534,14 @@ export function useEntrevista(
     } finally {
       if (timer) clearTimeout(timer);
     }
+    // A saída de foco ainda aberta (e as que sobraram) entram no último lote (#123).
+    const saidas = registroDeFoco.encerrar(Date.now());
+    if (saidas.length) linhaDoTempo.current?.registrar("foco", eventoDeFoco(saidas).dados);
     // O relatório é gerado com a linha do tempo que já chegou ao servidor: o envio final tem o mesmo prazo da foto,
     // e não o prazo curto usado entre análises (um lote leva mais de um segundo com o banco longe).
     await descarregarJa(PRAZO_FOTO_FINAL_MS);
     finalizarNoServidor();
-  }, [descarregarJa, finalizarNoServidor]);
+  }, [descarregarJa, finalizarNoServidor, registroDeFoco]);
   useEffect(() => {
     // Sair no meio da foto/despedida não perde a finalização. O mesmo flag impede um segundo pedido depois.
     const aoSair = () => { if (encerrandoRef.current) finalizarNoServidor(); };
