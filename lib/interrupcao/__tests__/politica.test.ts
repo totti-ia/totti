@@ -14,34 +14,34 @@ import {
 const MIN = 60_000;
 
 test("orçamento escala com a duração, entre o mínimo e o máximo", () => {
-  assert.equal(orcamentoDeInterrupcoes(15), 8);
-  assert.equal(orcamentoDeInterrupcoes(30), 15);
-  assert.equal(orcamentoDeInterrupcoes(35), 18);
+  assert.equal(orcamentoDeInterrupcoes(15), 10);
+  assert.equal(orcamentoDeInterrupcoes(30), 20);
+  assert.equal(orcamentoDeInterrupcoes(35), 20);
   assert.equal(orcamentoDeInterrupcoes(5), RITMO.orcamentoMinimo);
   assert.equal(orcamentoDeInterrupcoes(90), RITMO.orcamentoMaximo);
-  // Intervalo mínimo ~1 min nas durações usuais.
-  assert.equal(intervaloMinimoMs(30), 60_000);
+  // #140: 1,5 min de ritmo médio e metade disso como intervalo mínimo.
+  assert.equal(intervaloMinimoMs(30), 45_000);
 });
 
 test("cota proporcional: não gasta o orçamento no começo", () => {
-  assert.equal(cotaAte(0, 8), 1);
-  assert.equal(cotaAte(0.25, 8), 3);
+  assert.equal(cotaAte(0, 8), 2);
+  assert.equal(cotaAte(0.25, 8), 4);
   assert.equal(cotaAte(1, 8), 8);
   const base = { agora: 5 * MIN, inicioEm: 0, duracaoMin: 30, ultimaEm: 1 * MIN };
-  // Aos 5 de 30 min (cota 3), a quarta espera, mesmo depois de um marco.
-  assert.match(motivoDoRitmo({ ...base, feitas: 3, marco: true })?.codigo ?? "", /cota/);
+  // Aos 5 de 30 min (cota 5), a sexta espera, mesmo depois de um marco.
+  assert.match(motivoDoRitmo({ ...base, feitas: 5, marco: true })?.codigo ?? "", /cota/);
   assert.equal(motivoDoRitmo({ ...base, feitas: 1, ultimaEm: 2 * MIN }), null);
 });
 
 test("intervalo entre interrupções; o marco reduz ao respiro", () => {
   const base = { inicioEm: 0, duracaoMin: 30, feitas: 2, ultimaEm: 10 * MIN, ultimaConversaFimEm: 10 * MIN + 10_000 };
-  assert.match(motivoDoRitmo({ ...base, agora: 10 * MIN + 50_000 })?.codigo ?? "", /intervalo/);
-  assert.equal(motivoDoRitmo({ ...base, agora: 10 * MIN + 50_000, marco: true }), null);
+  assert.match(motivoDoRitmo({ ...base, agora: 10 * MIN + 40_000 })?.codigo ?? "", /intervalo/);
+  assert.equal(motivoDoRitmo({ ...base, agora: 10 * MIN + 40_000, marco: true }), null);
   assert.equal(motivoDoRitmo({ ...base, agora: 11 * MIN + 5_000 }), null);
   // Marco logo depois de uma conversa ainda respeita o respiro curto.
   assert.match(motivoDoRitmo({ ...base, agora: 10 * MIN + 20_000, marco: true })?.codigo ?? "", /respiro/);
   assert.equal(motivoDoRitmo({ ...base, agora: 10 * MIN + 30_000, marco: true }), null);
-  assert.match(motivoDoRitmo({ ...base, feitas: 15, agora: 29 * MIN, marco: true })?.codigo ?? "", /orcamento/);
+  assert.match(motivoDoRitmo({ ...base, feitas: 20, agora: 29 * MIN, marco: true })?.codigo ?? "", /orcamento/);
 });
 
 test("momento: nunca no meio da fala; mãos paradas, curta depois de marco, longa focado", () => {
@@ -56,11 +56,11 @@ test("momento: nunca no meio da fala; mãos paradas, curta depois de marco, long
 
 test("atraso: muito tempo sem interromper com cota livre", () => {
   const base = { inicioEm: 0, duracaoMin: 30, feitas: 2, ultimaEm: 5 * MIN };
-  // Um ritmo (2 min numa entrevista de 30) sem interromper já é atraso.
-  assert.equal(interrupcaoAtrasada({ ...base, agora: 6 * MIN + 30_000 }), false);
-  assert.equal(interrupcaoAtrasada({ ...base, agora: 7 * MIN + 10_000 }), true);
+  // Um ritmo (1,5 min numa entrevista de 30) sem interromper já é atraso.
+  assert.equal(interrupcaoAtrasada({ ...base, agora: 6 * MIN + 29_000 }), false);
+  assert.equal(interrupcaoAtrasada({ ...base, agora: 6 * MIN + 30_000 }), true);
   // Sem cota livre não é atraso.
-  assert.equal(interrupcaoAtrasada({ ...base, feitas: 15, agora: 25 * MIN }), false);
+  assert.equal(interrupcaoAtrasada({ ...base, feitas: 20, agora: 25 * MIN }), false);
 });
 
 test("paciência: quem não para de digitar ou desenhar também recebe pergunta numa pausa curta", () => {

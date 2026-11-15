@@ -17,10 +17,11 @@ export const RITMO = {
    * Em média, uma interrupção a cada tantos minutos de entrevista. Com 3, numa entrevista real de quadro o candidato
    * desenhou 7 minutos e ouviu uma pergunta só: a entrevista é a conversa sobre o que ele está fazendo.
    */
-  minutosPorInterrupcao: 2,
+  /** #140: de 2 para 1,5 min porque, mesmo com a folga 2, a cota segurou intervalos de 140 s no quadro e 196 s na IDE; com 1,5 min caíram para 98 s e 112 s. */
+  minutosPorInterrupcao: 1.5,
   orcamentoMinimo: 4,
   orcamentoMaximo: 20,
-  /** Intervalo mínimo entre duas interrupções comuns, como fração do ritmo médio (~1 min). */
+  /** Intervalo mínimo entre duas interrupções comuns, como fração do ritmo médio (~45 s em 30 min). */
   fracaoDoRitmoEntreInterrupcoes: 0.5,
   /**
    * Respiro mínimo desde o começo e o fim da última conversa (a última fala de qualquer um dos dois). Com 45 s, numa
@@ -29,8 +30,8 @@ export const RITMO = {
   respiroMs: 30_000,
   /** Depois de um marco (primeiro run verde, colagem, começo de fase), a hora passa rápido: respiro curto. */
   respiroDeMarcoMs: 15_000,
-  /** A cota pode estar adiantada em até tantas interrupções em relação ao tempo decorrido. */
-  folgaDaCota: 1,
+  /** #140: de 1 para 2 porque a cota segurou intervalos de 140 s no quadro e 182 s na IDE; com folga 2 e ritmo de 1,5 min caíram para 98 s e 112 s. */
+  folgaDaCota: 2,
   /**
    * Pausa real: tanto tempo sem digitar nem desenhar (mãos paradas)... Com 8 s o agente só falava com o candidato
    * parado de vez: quem programa ou desenha direto, com pausas de 3 a 5 s, quase não era perguntado.
@@ -79,13 +80,13 @@ export const RITMO = {
  */
 export const RITMO_QUADRO = {
   /** Nunca duas perguntas da análise em menos de tanto tempo. A quebra de silêncio não respeita este piso. */
-  pisoEntrePerguntasMs: 120_000,
+  pisoEntrePerguntasMs: 45_000,
   /**
    * Passado tanto tempo sem pergunta e havendo desenho novo, a pergunta é obrigatória mesmo sem parte fechada: o "ok"
    * não vale nessa análise (ver `perguntaObrigatoria`, lib/agente/sessao/politica.ts). Era 5 min; a linha do tempo com
-   * o modelo real mostrou uma lacuna de 13 min sem pergunta, e o dono baixou o teto para 3 min.
+   * o modelo real mostrou uma lacuna de 13 min sem pergunta, e o dono baixou o teto para 90 s na #140.
    */
-  tetoSemPerguntaMs: 180_000,
+  tetoSemPerguntaMs: 90_000,
 } as const;
 
 /**
@@ -95,9 +96,9 @@ export const RITMO_QUADRO = {
  */
 export const RITMO_IDE = {
   /** Nunca duas perguntas da análise em menos de tanto tempo. Marco (run verde, colagem) e quebra de silêncio não respeitam. */
-  pisoEntrePerguntasMs: 120_000,
+  pisoEntrePerguntasMs: 45_000,
   /** Passado tanto tempo sem pergunta e com código novo, a pergunta sai mesmo sem parte fechada. */
-  tetoSemPerguntaMs: 180_000,
+  tetoSemPerguntaMs: 90_000,
   /** Mãos paradas e calado há tanto tempo: a pergunta é a quebra de silêncio, sem esperar parte fechada nem piso. */
   quebraDeSilencioMs: 60_000,
 } as const;
