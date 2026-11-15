@@ -180,11 +180,22 @@ export const SessionEvent = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("voz_descartada"), contexto: z.enum(["quadro", "coding", "pre"]), caracteres: z.number().int(), fala_id: z.string().optional(), motivo: z.enum(["substituida", "cancelada"]) }),
   z.object({ ...base, type: z.literal("session_started"), configId: z.string(), problemId: z.string(), language: z.string() }),
   /** Código inteiro. Mandar ~1,5 s depois de parar de digitar, ou no máximo a cada 5 s. */
-  z.object({ ...base, type: z.literal("snapshot"), code: z.string(), version: z.number().int(), language: z.string() }),
+  z.object({ ...base, type: z.literal("snapshot"), code: z.string(), version: z.number().int(), language: z.string(), escrita: z.object({
+    digitados: z.number().int().nonnegative(),
+    apagados: z.number().int().nonnegative(),
+    maiorTrechoSemPausa: z.number().int().nonnegative(),
+    voltouParaCima: z.boolean(),
+  }).optional() }),
   /** Sem digitar há `idleMs` (a IDE manda a partir de 8 s). */
   z.object({ ...base, type: z.literal("pause"), idleMs: z.number() }),
   z.object({ ...base, type: z.literal("run"), result: RunResult }),
-  z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int() }),
+  z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int(), origem: z.enum(["editor", "fora"]).optional() }),
+  /** Só registro, enviado em lote junto dos eventos que já saem. */
+  z.object({ ...base, type: z.literal("foco"), saidas: z.array(z.object({
+    t: z.number().nonnegative(),
+    duracaoMs: z.number().nonnegative(),
+    motivo: z.enum(["aba", "janela"]),
+  })).max(200) }),
   z.object({ ...base, type: z.literal("speech"), role: z.enum(["candidate", "agent"]), text: z.string(), blipId: z.string().optional() }),
   /** O candidato cortou a fala do Totti (#97): falando por cima ou pelo botão/Esc. `heardChars`: até onde ele ouviu. */
   z.object({ ...base, type: z.literal("speech_interrupted"), by: z.enum(["voz", "manual"]), heardChars: z.number().int().nonnegative() }),
