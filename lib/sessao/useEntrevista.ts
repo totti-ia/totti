@@ -98,7 +98,7 @@ const FALAS_DE_REPETICAO = [
 ];
 /** Entre um pedido de mudança recusado pelo servidor e o próximo. */
 const INTERVALO_PEDIDO_EMPECILHO_MS = 15_000;
-/** Quanto o encerramento espera pela foto final do quadro antes de gerar o relatório sem ela. */
+/** Prazo de cada tentativa de foto final do quadro. */
 const PRAZO_FOTO_FINAL_MS = 8_000;
 /** Respostas do servidor que encerram as tentativas nesta sessão. */
 const MOTIVOS_DEFINITIVOS_EMPECILHO = ["problema sem mudança prevista", "já anunciado"];
@@ -514,7 +514,7 @@ export function useEntrevista(
     const final = capturaFinal.current;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      if (final) await Promise.race([final().catch(() => {}), new Promise<void>((resolver) => { timer = setTimeout(resolver, PRAZO_FOTO_FINAL_MS); })]);
+      if (final) await Promise.race([final().catch(() => false), new Promise<boolean>((resolver) => { timer = setTimeout(() => resolver(false), PRAZO_FOTO_FINAL_MS * 2); })]);
     } finally {
       if (timer) clearTimeout(timer);
     }
@@ -543,11 +543,15 @@ export function useEntrevista(
     const miniaturas = new WeakMap<PedidoAnalise, Promise<string | null>>();
     let falaAoAnalisar = 0;
     let conversaAoAnalisar = 0;
+    let limiteIntermediarioAvisado = false;
+    // #143: tipos novos da linha do tempo; o contrato TipoEvento ainda não os inclui.
+    const tipoEventoNovo = (tipo: "imagem_recusada" | "imagem_falhou" | "foto_final_falhou") =>
+      tipo as unknown as Parameters<ReturnType<typeof criarLinhaDoTempo>["registrar"]>[0];
     /**
      * Foto do quadro (estes elementos) que vai ao servidor e entra na linha do tempo como "desenho" com
      * `imagem_url`. É a foto que o relatório usa como prova e como desenho final.
      */
-    const fotografar = (elementos: ReturnType<typeof quadro.api.getSceneElements>, grafo: string, mudancas: string, horario: string) => {
+    const fotografar = (elementos: ReturnType<typeof quadro.api.getSceneElements>, grafo: string, mudancas: string, horario: string, final = false, registrarDesenho = true) => {
       const linha = linhaDoTempo.current;
       return (async () => {
         const estadoDaCaptura = quadro.api.getAppState();
@@ -566,17 +570,24 @@ export function useEntrevista(
           return null;
         }
         const { enviarImagem } = await import("@/lib/sessao/servidor");
-        const url = await enviarImagem(sessao.sessao_id, png, horario);
+        const url = await enviarImagem(sessao.sessao_id, png, horario, { final });
         const dados = { grafo, mudancas, imagem_url: url, horario };
-        if (ativo && linha) {
-          linha.registrar("desenho", dados);
-          if (estadoAtual.current.fase === "ENCERRADA") void linha.descarregar().catch(() => {});
-        } else {
-          await enviarEventos(sessao.sessao_id, [{ horario, tipo: "desenho", dados }]);
+        if (registrarDesenho) {
+          if (ativo && linha) {
+            linha.registrar("desenho", dados);
+            if (estadoAtual.current.fase === "ENCERRADA") void linha.descarregar().catch(() => {});
+          } else {
+            await enviarEventos(sessao.sessao_id, [{ horario, tipo: "desenho", dados }]);
+          }
         }
         return url;
       })().catch((erro) => {
         console.warn("[desenho] imagem indisponível:", erro);
+        const limite = erro instanceof Error && erro.message.includes("limite de imagens da sessão");
+        if (!final && limite) {
+          if (!limiteIntermediarioAvisado) registrar(tipoEventoNovo("imagem_recusada"), { motivo: "limite de imagens da sessão" });
+          limiteIntermediarioAvisado = true;
+        } else if (!final) registrar(tipoEventoNovo("imagem_falhou"), { motivo: erro instanceof Error ? erro.message.slice(0, 200) : "desconhecido" });
         return null;
       });
     };
@@ -587,10 +598,22 @@ export function useEntrevista(
       const elementos = quadro.api.getSceneElements();
       const r = conversor.current.converter(elementos);
       const mudancas = descreverMudancas(ultimoInstantaneo.current, r.instantaneo);
-      if (!mudancas && !houveMudancaRelevante(ultimoInstantaneo.current, r.instantaneo)) return;
+      const mudou = Boolean(mudancas || houveMudancaRelevante(ultimoInstantaneo.current, r.instantaneo));
       ultimoInstantaneo.current = r.instantaneo;
-      registrar("desenho", { grafo: r.texto, mudancas });
-      await fotografar(elementos, r.texto, mudancas, new Date().toISOString());
+      let url: string | null = null;
+      for (let tentativa = 0; tentativa < 2 && !url; tentativa++) {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          url = await Promise.race([
+            fotografar(elementos, r.texto, mudancas, new Date().toISOString(), true, mudou),
+            new Promise<null>((resolver) => { timer = setTimeout(() => resolver(null), PRAZO_FOTO_FINAL_MS); }),
+          ]);
+        } finally { if (timer) clearTimeout(timer); }
+      }
+      if (!url) {
+        registrar(tipoEventoNovo("foto_final_falhou"), { motivo: "duas tentativas sem sucesso" });
+        return;
+      }
     };
     const g = criarGatilho({
       podeAnalisar: () => !encerrandoRef.current && podeAnalisar(estadoAtual.current) && !falaParcial.current
@@ -623,7 +646,9 @@ export function useEntrevista(
         console.log("[análise] pedido", pedido);
         if (mudancas) {
           registrar("desenho", { grafo: r.texto, mudancas });
-          const imagem = fotografar(elementos, r.texto, mudancas, new Date().toISOString());
+          const imagem = limiteIntermediarioAvisado
+            ? Promise.resolve(null)
+            : fotografar(elementos, r.texto, mudancas, new Date().toISOString());
           imagens.set(pedido, imagem);
           if (usarServidor()) {
             miniaturas.set(pedido, (async () => {
