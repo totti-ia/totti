@@ -3,7 +3,7 @@
 // Tudo pertence a um grupo temporário; nenhuma ação altera o desenho do candidato.
 import type { Quadro } from "@/components/Canvas";
 import type { ControleCursor } from "@/components/CursorAgente";
-import { alvosDaAcao, escolherAcoesVisuais, criarMemoriaVisual, type AcaoVisual, type MemoriaVisual } from "./acoesVisuais";
+import { alvosDaAcao, garantirCoberturaVisual, escolherAcoesVisuais, criarMemoriaVisual, type AcaoVisual, type MemoriaVisual } from "./acoesVisuais";
 import { comporGestos, formaDoElemento } from "./gestos";
 import {
   caixaDosElementos,
@@ -12,6 +12,7 @@ import {
   parteDoTraco,
   planejarMovimento,
   scrollParaCentralizar,
+  precisaReduzirZoom,
   suavizar,
   type Caixa,
   type Ponto,
@@ -69,7 +70,16 @@ export type OpcoesApontar = {
   semente: number;
   /** Abortar para a coreografia no meio (o cursor some; o que já foi desenhado fica para quem chamou apagar). */
   sinal?: AbortSignal;
+  /** Resolvido quando termina a resposta do candidato; o destaque fica até lá (no máximo 45 s). */
+  sinalPodeApagar?: AbortSignal;
+  /** Resolve no fim da fala do Totti; o teto de 45 s começa nesse instante. */
+  fimDaFala?: Promise<void>;
+  /** Texto da fala/pergunta, usado como nota curta quando `nota` não foi fornecida. */
+  fala?: string;
+  /** Para gesto sem pergunta: apaga 9 s após a coreografia. */
+  semPergunta?: boolean;
   visual?: AcaoVisual[];
+  conexoes?: readonly (readonly [string, string])[];
   memoria?: MemoriaVisual;
 };
 
@@ -257,13 +267,81 @@ function areaLivre(v: Vista): Caixa {
  * quando o grupo da pergunta é apagado. Notas e letras do comparar ficam até lá.
  */
 export const DESTAQUE_DURA_MS = 9_000;
+export const DESTAQUE_TETO_MS = 45_000;
+
+/** Acrescenta rastro sem ultrapassar o teto de cinco ações da fala. */
+export function incluirAnotacoesComLimite(acoesOriginais: AcaoVisual[], alvos: readonly string[], texto: string): AcaoVisual[] {
+  const acoes = [...acoesOriginais];
+  for (const [indice, alvo] of alvos.entries()) {
+    if (acoes.some((a) => a.tipo === "anotar" && (a.alvo ?? alvo) === alvo) || acoes.some((a) => a.tipo === "interrogar" && a.alvo === alvo)) continue;
+    const anotacao: AcaoVisual = { tipo: "anotar", alvo, texto: texto.slice(0, 40) };
+    if (acoes.length < 5) acoes.push(anotacao);
+    else {
+      // Substitui primeiro uma ação redundante, preservando a única ação que cobre cada peça citada.
+      const substituivel = acoes.findLastIndex((acao, indiceAcao) => alvos.every((id) => {
+        const cobre = (candidata: AcaoVisual) => candidata.tipo !== "anotar" && alvosDaAcao(candidata).includes(id);
+        return !cobre(acao) || acoes.some((outra, i) => i !== indiceAcao && cobre(outra));
+      }));
+      if (indice === 0 && substituivel >= 0) acoes[substituivel] = anotacao;
+      else break;
+    }
+  }
+  return acoes;
+}
 export const ESTILO_DO_DESTAQUE = { espessura: 1.5, opacidade: 65 } as const;
 export const grupoDoDestaque = (grupo: string) => `${grupo}:destaque`;
+export function notaCurtaDaFala(fala?: string) {
+  return (fala ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 4).join(" ").slice(0, 40);
+}
+
+/** Agenda remoção depois que a fala terminou: com sinal, espera a resposta ou o teto; sem sinal, espera 9 s. */
+export function agendarRemocaoDestaque(apagar: () => void, sinalPodeApagar?: AbortSignal, semPergunta = false,
+  relogio = { set: (cb: () => void, ms: number) => setTimeout(cb, ms), clear: (id?: ReturnType<typeof setTimeout>) => { if (id !== undefined) clearTimeout(id); } },
+  fimDaFala?: Promise<void>) {
+  let feito = false;
+  let falaTerminou = !fimDaFala;
+  let respostaTerminou = !!sinalPodeApagar?.aborted;
+  let semResposta: ReturnType<typeof setTimeout> | undefined;
+  let teto: ReturnType<typeof setTimeout> | undefined;
+  const apagarUmaVez = () => {
+    if (feito) return;
+    feito = true;
+    relogio.clear(teto);
+    relogio.clear(semResposta);
+    sinalPodeApagar?.removeEventListener("abort", respostaAcabou);
+    apagar();
+  };
+  const iniciarPrazo = () => {
+    if (feito) return;
+    falaTerminou = true;
+    if (respostaTerminou && sinalPodeApagar && !semPergunta) return apagarUmaVez();
+    teto = relogio.set(apagarUmaVez, DESTAQUE_TETO_MS);
+    if (!sinalPodeApagar || semPergunta) semResposta = relogio.set(apagarUmaVez, DESTAQUE_DURA_MS);
+  };
+  const respostaAcabou = () => {
+    respostaTerminou = true;
+    if (falaTerminou && !semPergunta) apagarUmaVez();
+  };
+  if (sinalPodeApagar && !semPergunta) sinalPodeApagar.addEventListener("abort", respostaAcabou, { once: true });
+  if (fimDaFala) void fimDaFala.then(iniciarPrazo, iniciarPrazo);
+  else iniciarPrazo();
+  return () => {
+    feito = true;
+    relogio.clear(teto);
+    relogio.clear(semResposta);
+    sinalPodeApagar?.removeEventListener("abort", respostaAcabou);
+  };
+}
 
 async function coreografar(o: OpcoesApontar) {
   const { quadro, cursor, grupo, sinal } = o;
   const memoria = o.memoria ?? criarMemoriaVisual();
-  const acoes = escolherAcoesVisuais(o.visual, o.alvos, o.nota, memoria);
+  const plano = garantirCoberturaVisual(o.visual, o.alvos);
+  const acoes = escolherAcoesVisuais(plano, o.alvos, o.nota, memoria).map((acao) =>
+    acao.tipo === "anotar" ? { ...acao, texto: acao.texto.slice(0, 40) } : acao);
+  const textoNota = o.nota.trim() || notaCurtaDaFala(o.fala);
+  const podeDeixarRastro = !!textoNota && (!!o.fala?.trim().endsWith("?") || !o.fala);
+  if (podeDeixarRastro) acoes.splice(0, acoes.length, ...incluirAnotacoesComLimite(acoes, o.alvos, textoNota));
   if (!acoes.length || sinal?.aborted) return;
   await quadro.agente.esperarCandidatoLivre();
   if (quadro.agente.candidatoOcupado() || sinal?.aborted) return;
@@ -279,16 +357,33 @@ async function coreografar(o: OpcoesApontar) {
     await animar(Math.min(450, movimento.duracaoMs), (p) => { conferir(); cursor.mover(movimento.pontoEm(p)); }, sinal);
   };
   const ids = [...new Set(acoes.flatMap(alvosDaAcao))];
-  const primeiro = quadro.api.getSceneElements().find((e) => e.id === ids[0] && !e.isDeleted);
-  const foco = primeiro && caixaDosElementos([primeiro], 12);
+  const elementosAlvo = quadro.api.getSceneElements().filter((e) => ids.includes(e.id) && !e.isDeleted);
+  const caixasAlvo = elementosAlvo.flatMap((e) => caixaDosElementos([e], 12) ?? []);
+  const foco = caixasAlvo.length ? {
+    x: Math.min(...caixasAlvo.map((c) => c.x)), y: Math.min(...caixasAlvo.map((c) => c.y)),
+    largura: Math.max(...caixasAlvo.map((c) => c.x + c.largura)) - Math.min(...caixasAlvo.map((c) => c.x)),
+    altura: Math.max(...caixasAlvo.map((c) => c.y + c.altura)) - Math.min(...caixasAlvo.map((c) => c.y)),
+  } : undefined;
   if (foco && !estaVisivel(foco, vistaDe(quadro), 60)) {
+    await quadro.agente.esperarCandidatoLivre();
+    conferir();
+    if (precisaReduzirZoom(foco, vistaDe(quadro), 60)) {
+      // O ajuste instantâneo evita uma animação interna impossível de cancelar se o candidato retomar o traço.
+      conferir();
+      await quadro.api.scrollToContent(elementosAlvo, { animate: false, fitToContent: true });
+      conferir();
+    }
     const inicial = vistaDe(quadro);
+    if (estaVisivel(foco, inicial, 60)) {
+      // O Excalidraw já ajustou o zoom/enquadramento do conjunto.
+    } else {
     const para = scrollParaCentralizar(foco, inicial);
     await animar(420, (p) => {
       conferir();
       const k = suavizar(p);
       quadro.agente.rolar(inicial.scrollX + (para.scrollX - inicial.scrollX) * k, inicial.scrollY + (para.scrollY - inicial.scrollY) * k);
     }, sinal);
+    }
   }
   if (ids.length) quadro.agente.ancorar(grupo, ids);
   cursor?.mostrar();
@@ -305,9 +400,10 @@ async function coreografar(o: OpcoesApontar) {
         : undefined;
       // A forma decide o gesto de marcar (contorno numa elipse, canto num retângulo...).
       const forma = formaDoElemento(e.type);
-      return [[e.id, pontos ? { ...caixa, pontos, forma } : { ...caixa, forma }] as const];
+      return [[e.id, pontos ? { ...caixa, pontos, forma, containerId: "containerId" in e ? e.containerId : null }
+        : { ...caixa, forma, containerId: "containerId" in e ? e.containerId : null }] as const];
     }));
-    for (const gesto of comporGestos(acao, caixas, areaLivre(vistaDe(quadro)), o.semente + indice)) {
+    for (const gesto of comporGestos(acao, caixas, areaLivre(vistaDe(quadro)), o.semente + indice, o.conexoes)) {
       conferir();
       const id = `agente-${grupo}-gesto-${indice++}`;
       if (gesto.tipo === "apontar") {
@@ -315,8 +411,11 @@ async function coreografar(o: OpcoesApontar) {
         await animar(220, () => conferir(), sinal);
       } else if (gesto.tipo === "texto") {
         await mover(gesto.ponto, o.semente + indice);
-        await quadro.agente.escrever({ id, grupo, texto: gesto.texto, x: gesto.ponto.x, y: gesto.ponto.y,
-          tamanho: 20, largura: 26, velocidade: 55, sinal });
+        const anotacao = acao.tipo === "anotar" ? acao.alvo : acao.tipo === "interrogar" ? acao.alvo : undefined;
+        const escrita = { id, grupo, texto: gesto.texto, x: gesto.ponto.x, y: gesto.ponto.y,
+          tamanho: 16, largura: 26, velocidade: 55, sinal };
+        if (anotacao) await quadro.agente.anotarPergunta({ ...escrita, grupo: `rastro:${anotacao}`, alvoId: anotacao });
+        else await quadro.agente.escrever(escrita);
       } else {
         const destaque = gesto.destaque ? grupoDoDestaque(grupo) : null;
         if (destaque && !destaquesDesenhados) {
@@ -340,6 +439,6 @@ async function coreografar(o: OpcoesApontar) {
     // Some sozinho: o quadro do candidato não acumula tinta do Totti. Se a pergunta acabar antes, o grupo dela leva
     // o destaque junto (apagarGrupo apaga os subgrupos).
     const destaque = grupoDoDestaque(grupo);
-    setTimeout(() => { void quadro.agente.apagarGrupo(destaque); }, DESTAQUE_DURA_MS);
+    agendarRemocaoDestaque(() => { void quadro.agente.apagarGrupo(destaque); }, o.sinalPodeApagar, o.semPergunta, undefined, o.fimDaFala);
   }
 }
