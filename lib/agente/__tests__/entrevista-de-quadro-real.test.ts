@@ -149,7 +149,7 @@ describe("#84: fechamento do quadro na sessão 4e38b42f", () => {
     assert.equal(inicio.perguntou, true);
     assert.equal(inicio.encerrar, undefined);
     // A pergunta que a análise tinha pronta sai agora, com a marca dela, e deixa de esperar a vez.
-    assert.deepEqual(inicio.visual, [{ tipo: "circular", alvo: "r2" }]);
+    assert.deepEqual(inicio.visual, [{ tipo: "percorrer", alvos: ["r1", "r2", "r3"] }]);
     assert.equal(inicio.estado.perguntaPendente, null);
     assert.equal(motivoBloqueioPlin(inicio.estado, AGORA + 5_000, undefined, { paradoHaS: 30 }), "FECHAMENTO");
 
@@ -319,10 +319,10 @@ describe("peça citada é marcada", () => {
     assert.deepEqual(r.visual, [{ tipo: "marcar", alvo: "r3" }]);
   });
 
-  it("a pergunta da conversa que cita uma peça também marca", async () => {
+  it("a pergunta da conversa que cita peças sem ligação compara", async () => {
     const r = await perguntar(deps({ responder: true, texto: "Como as mensagens saem desse banco de dados e chegam na conversa aberta?", visual: [] }),
       estadoEm("ALTO_NIVEL"), { fase: "ALTO_NIVEL", texto: "Pronto, tem alguma dúvida?", grafo: GRAFO }, AGORA);
-    assert.equal(r.visual?.[0] && "alvo" in r.visual[0] ? r.visual[0].alvo : null, "r3");
+    assert.deepEqual(r.visual?.[0], { tipo: "comparar", alvos: ["r3", "r4"] });
   });
 });
 

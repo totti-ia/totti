@@ -174,7 +174,7 @@ export function refiltrarComEstadoAtual(
     : resposta;
   // A regra do escopo (#129, decisão I) vale contra o estado atual: o primeiro redirecionamento pode ter saído na análise.
   const porEscopo = aplicarRegraDoEscopo(atual, porConteudo, agora, pecas).resposta;
-  return filtrarResposta(atual, porEscopo, extrairIdsDoGrafo(pedido.grafo), agora, regras, { paradoHaS });
+  return filtrarResposta(atual, porEscopo, extrairIdsDoGrafo(pedido.grafo), agora, regras, { paradoHaS }, pedido.grafo);
 }
 
 export async function analisar(
@@ -380,7 +380,7 @@ export async function analisar(
   // Português claro (decisão H, #129): a pergunta vai ao candidato, então o termo em inglês que a vaga não usa sai aqui.
   if (resposta.pergunta) resposta = { ...resposta, pergunta: emPortugues(resposta.pergunta, estado.plano?.descricaoVaga) };
 
-  const filtrada = filtrarResposta(estado, resposta, extrairIdsDoGrafo(pedido.grafo), agora, regras, { paradoHaS: pedido.parado_ha_s });
+  const filtrada = filtrarResposta(estado, resposta, extrairIdsDoGrafo(pedido.grafo), agora, regras, { paradoHaS: pedido.parado_ha_s }, pedido.grafo);
   if (resposta.status !== "ok" && filtrada.status === "ok") ajustes.push("rebaixada_pela_politica");
 
   const t = transicionar(estado, { tipo: "ANALISE_RECEBIDA", resposta: filtrada, pecas }, agora, regras);

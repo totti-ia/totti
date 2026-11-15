@@ -3,7 +3,7 @@
 // como defesa barata (evita gastar uma chamada ao LLM que o quadro ia descartar de qualquer jeito).
 import { SILENCIO_INICIAL_S, SILENCIO_REQUISITOS_S, SILENCIO_SEM_ACAO_S } from "../../contracts";
 import { motivoDoRitmo, orcamentoDeInterrupcoes, RITMO, RITMO_QUADRO, type Ritmo } from "../../interrupcao/politica";
-import { garantirMarca, mapearAcoesVisuais } from "../../presenca/acoesVisuais";
+import { garantirMarca, mapearAcoesVisuais, conexoesDoGrafo } from "../../presenca/acoesVisuais";
 import { limiarDoFechamentoNoQuadro } from "../../totti/fechamento";
 import { emGarantiaDoEmpecilho } from "../../sessao/empecilho";
 import type { Kit, Problema } from "../kits/tipos";
@@ -496,8 +496,9 @@ export function filtrarResposta(
   agora: number,
   regras: Regras = REGRAS_PADRAO,
   candidato: ContextoDoCandidato = {},
+  grafo = "",
 ): RespostaAnalise {
-  const filtrada = filtrarPlin(estado, resposta, idsDoGrafo, agora, regras, {
+  const filtrada = filtrarPlin(estado, resposta, idsDoGrafo, agora, regras, grafo, {
     ...candidato,
     temDesenho: candidato.temDesenho || idsDoGrafo.size > 0,
     escopo: resposta.status === "redirecionar" && resposta.escopo === true,
@@ -512,6 +513,7 @@ function filtrarPlin(
   idsDoGrafo: ReadonlySet<string>,
   agora: number,
   regras: Regras,
+  grafo: string,
   candidato: ContextoDoCandidato,
 ): RespostaAnalise {
   if (resposta.status === "ok") return silenciar(resposta);
@@ -524,6 +526,6 @@ function filtrarPlin(
   // A pergunta que fala de uma peça sempre a marca (o modelo às vezes manda `visual: []` com elementos citados).
   const visual = garantirMarca(
     resposta.visual ? mapearAcoesVisuais(resposta.visual, (id) => idsDoGrafo.has(id) ? id : null) : undefined,
-    elementos, estado.perguntasFeitas);
+    elementos, estado.perguntasFeitas, conexoesDoGrafo(grafo));
   return { ...resposta, pergunta, nota, elementos, ...(visual ? { visual } : {}) };
 }
