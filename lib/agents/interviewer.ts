@@ -15,11 +15,11 @@ import { FALAS_DE_REPETICAO } from "@/lib/conversa/falasDeReserva";
 import { completeJson } from "@/lib/llm";
 import { registrarUsoLlm } from "./uso";
 import {
-  aplicarGuardas, emPortugues, ePerguntaDePorque, eSoReacao, escolherConvite, falaNaoRepetida, perguntaDePorque, reacaoAoPensar, reacaoNeutra,
+  aplicarGuardas, emPortugues, ePerguntaDePorque, eSoReacao, escolherConvite, falaNaoRepetida, promessaVazia, pediuParaOlhar, perguntaDePorque, reacaoAoPensar, reacaoNeutra,
   semConviteDeSeguir, semReacaoRepetida,
 } from "@/lib/totti/guardas";
 import {
-  avisoDePerguntaSemResposta, avisosDeQueVaiOlhar, comRespostaDeReserva, decidirTurno, deSaidaDoLiveCoding, paraSaidaDoLiveCoding, pedePorque,
+  avisoDePerguntaSemResposta, avisoDePromessaVazia, falaComObservacaoEPergunta, FALAS_DE_RESERVA_AO_OLHAR, comRespostaDeReserva, decidirTurno, deSaidaDoLiveCoding, paraSaidaDoLiveCoding, pedePorque, sinalDeConclusao,
   type SituacaoDoTurno,
 } from "@/lib/totti/turno";
 import { appendEvent, latestCode, numberCode, sessionNow } from "@/lib/session/store";
@@ -302,11 +302,48 @@ async function turno(
     return { ...o, respond: true, reply: [base, perguntaDePorque(falasDoAgente(session, req.messages))].filter(Boolean).join(" "), end: false };
   };
   const calou = (o: InterviewerOutput): boolean => o.respond === false || o.reply.trim() === "";
+  let prometeuOlhar = false;
+  let regenerouPromessa = false;
+  const pediuComentario = (o?: InterviewerOutput) => !opening && (pediuParaOlhar(falaDoCandidato) || sinalDeConclusao(situacao) || o?.concluded === true || prometeuOlhar);
+  const linhasDoInicio = new Set((problem.public.starters[session.language] ?? "").split("\n").map((linha) => linha.trim()).filter(Boolean));
+  const linhaObservada = code.split("\n").findIndex((linha) => linha.trim() && !linha.trim().startsWith("//") && !linhasDoInicio.has(linha.trim()));
+  const linha = linhaObservada >= 0 ? linhaObservada + 1 : null;
+  const linhaTexto = linha === null ? "" : code.split("\n")[linha - 1] ?? "";
+  const identificador = linhaTexto.match(/(?:def|function|const|let|var|class)\s+([A-Za-z_$][\w$]*)/)?.[1]
+    ?? linhaTexto.match(/[A-Za-z_$][\w$]*/)?.[0]
+    ?? "esse trecho";
+  const reservaDeComentario = (concluido?: boolean): InterviewerOutput => InterviewerOutput.parse({
+    respond: true,
+    concluded: concluido ?? disseQueTerminou(falaDoCandidato),
+    reply: `${linha === null
+      ? `${FALAS_DE_RESERVA_AO_OLHAR.ideSemTrecho} Por onde você pensa em começar?`
+      : `${FALAS_DE_RESERVA_AO_OLHAR.ideComTrecho(linha, linhaTexto.trim())} ${FALAS_DE_RESERVA_AO_OLHAR.pergunta()}`}`,
+    highlight: linha === null ? null : { startLine: linha, endLine: linha },
+    end: false,
+  });
   let output: InterviewerOutput;
   const prazo = Date.now() + PRAZO_TURNO_MS;
   const sobra = () => prazo - Date.now();
   try {
-    output = lida(await generate(session, system, user, Math.min(PRAZO_GERACAO_MS, sobra())));
+    const primeira = await generate(session, system, user, Math.min(PRAZO_GERACAO_MS, sobra()));
+    prometeuOlhar = promessaVazia(primeira.reply);
+    if (prometeuOlhar) {
+      regenerouPromessa = true;
+      const segunda = await generate(session, system, `${user}\n\n${avisoDePromessaVazia("codigo")}`, Math.min(PRAZO_GERACAO_MS, sobra())).catch(() => null);
+      output = segunda ? lida(segunda) : reservaDeComentario(primeira.concluded);
+      if (!segunda || promessaVazia(segunda.reply)) output = reservaDeComentario(segunda?.concluded ?? primeira.concluded);
+    } else output = lida(primeira);
+    if (pediuComentario(output) && (linha === null || !falaComObservacaoEPergunta(output.reply, identificador, linhaTexto.trim()))) {
+      if (!regenerouPromessa) {
+        regenerouPromessa = true;
+        const segunda = await generate(session, system, `${user}\n\n${avisoDePromessaVazia("codigo")}`, Math.min(PRAZO_GERACAO_MS, sobra())).catch(() => null);
+        if (segunda) output = lida(segunda);
+      }
+      if (linha === null || !falaComObservacaoEPergunta(output.reply, identificador, linhaTexto.trim())) output = reservaDeComentario(output.concluded);
+    }
+    if (pediuComentario(output) && linha !== null && falaComObservacaoEPergunta(output.reply, identificador, linhaTexto.trim())) {
+      output = { ...output, highlight: { startLine: linha, endLine: linha } };
+    }
     const t = elapsedMs(session);
     const tempoRestanteMs = Math.max(0, session.config.durationMin * 60_000 - t);
     // Pediu tempo para pensar (#130, item 7): na primeira vez da entrevista, uma reação curta; depois, calado. Nunca
@@ -363,10 +400,9 @@ async function turno(
         console.info("[interviewer] turno", { regras: reserva.regras });
         output = { ...paraSaidaDoLiveCoding(reserva.leitura, output), end: false, highlight: null };
       }
-      // Ele avisou que terminou (pelo modelo ou pelo sinal da fala com as mãos paradas) e não veio fala: o Totti
-      // avisa que vai olhar, e a pergunta seguinte vem da análise do código, como no quadro.
+      // Uma conclusão sem texto válido já foi composta com comentário, pergunta e grifo antes desta etapa.
       if (output.concluded === true && output.finish !== true && calou(output)) {
-        output = { ...output, respond: true, reply: falaNaoRepetida(avisosDeQueVaiOlhar("codigo"), falasDoAgente(session, req.messages)), end: true, highlight: null };
+        output = reservaDeComentario(output.concluded);
       }
     }
     // Encerramento com todos os pontos já perguntados: a resposta dele ao último é o fim. Ficar ouvindo deixava o
@@ -439,6 +475,10 @@ async function turno(
     }
   } catch (err) {
     console.error("[interviewer] falha no LLM:", err instanceof Error ? err.message : err);
+    if (pediuComentario()) {
+      const reserva = reservaDeComentario();
+      return { reply: reserva.reply, commands: highlightCommands(reserva.highlight ?? undefined), end: false, ...(reserva.concluded ? { concluded: true } : {}) };
+    }
     // Primeira fala de um blip: a pergunta preparada, com o grifo dela. Senão, pede pra repetir.
     if (found && req.messages.length === 0) {
       const grifo = found.question.highlight;

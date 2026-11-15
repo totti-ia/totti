@@ -8,7 +8,7 @@ import { analisar } from "../analisar";
 import { perguntaDeConducao, perguntaJaFeita } from "../guardas";
 import { KIT_SYSTEM_DESIGN as kitDemo } from "../kits/system-design";
 import { criarClienteFalso, ErroLlm } from "../llm/cliente";
-import { AVISOS_DE_QUE_VAI_OLHAR, perguntar } from "../perguntar";
+import { perguntar } from "../perguntar";
 import { estadoInicial, transicionar, type EstadoSessao } from "../sessao/estado";
 import { extrairIdsDoGrafo, filtrarResposta, motivoBloqueioPlin } from "../sessao/politica";
 import { garantirMarca, pecasCitadas } from "../../presenca/acoesVisuais";
@@ -86,11 +86,11 @@ describe("pergunta repetida", () => {
 });
 
 describe("candidato diz que terminou", () => {
-  it("na primeira vez o Totti avisa que vai olhar o desenho, sem convite vago, e a pergunta seguinte fica liberada", async () => {
+  it("na primeira vez o Totti comenta uma peça e pergunta no mesmo turno", async () => {
     const r = await perguntar(deps({ responder: true, texto: "Tranquilo. O que mais você gostaria de detalhar ou adicionar no desenho?", concluiu: true }),
       estadoEm("APROFUNDAMENTO"), { fase: "APROFUNDAMENTO", texto: "Acho que eu terminei aqui.", grafo: GRAFO }, AGORA);
-    // O convite vago em forma de pergunta não passa: no lugar dele, o aviso.
-    assert.ok(AVISOS_DE_QUE_VAI_OLHAR.includes(r.texto), r.texto);
+    assert.match(r.texto, /Novo usuário/);
+    assert.ok(r.texto.trim().endsWith("?"), r.texto);
     assert.equal(r.concluiu, true);
     assert.equal(r.estado.conclusoes, 1);
     for (const vaga of ["Quer seguir para outra parte do desenho ou detalhar algo que a gente passou por cima?", "O que mais você gostaria de detalhar ou adicionar no desenho?"]) {
@@ -100,9 +100,11 @@ describe("candidato diz que terminou", () => {
     assert.equal(perguntaDeConducao("Como a mensagem chega em quem está offline?"), false);
     const semPergunta = await perguntar(deps({ responder: true, texto: "Tudo bem. Fica à vontade.", concluiu: true }),
       estadoEm("APROFUNDAMENTO"), { fase: "APROFUNDAMENTO", texto: "Acho que eu terminei aqui.", grafo: GRAFO }, AGORA);
-    assert.ok(AVISOS_DE_QUE_VAI_OLHAR.includes(semPergunta.texto));
-    // ...e a regra "a bola está com o candidato" não segura a pergunta da análise logo depois do aviso.
-    assert.equal(motivoBloqueioPlin(semPergunta.estado, AGORA + 3_000, undefined, { paradoHaS: 3 }), null);
+    assert.match(semPergunta.texto, /Novo usuário/);
+    assert.ok(semPergunta.texto.trim().endsWith("?"));
+    // A pergunta já saiu no turno da conclusão, então a análise não pode emendar outra logo depois.
+    assert.notEqual(motivoBloqueioPlin(semPergunta.estado, AGORA + 3_000, undefined, { paradoHaS: 3 }), null);
+    assert.equal(motivoBloqueioPlin(semPergunta.estado, AGORA + 59_999, undefined, { paradoHaS: 59.999 }), "BOLA_COM_O_CANDIDATO");
   });
 });
 
@@ -143,7 +145,7 @@ describe("#84: fechamento do quadro na sessão 4e38b42f", () => {
     assert.equal(inicio.concluiu, true);
     assert.equal(inicio.fechamento, "perguntas_finais");
     assert.equal(inicio.estado.fase, "FECHAMENTO");
-    assert.equal(inicio.texto, `Beleza. Só preciso fechar uns pontos com você antes de encerrar. ${PENDENTE}`);
+    assert.equal(inicio.texto, `Tá, olhei: App do usuário liga em Servidor de conexão. Beleza. Só preciso fechar uns pontos com você antes de encerrar. ${PENDENTE}`);
     assert.equal(inicio.perguntou, true);
     assert.equal(inicio.encerrar, undefined);
     // A pergunta que a análise tinha pronta sai agora, com a marca dela, e deixa de esperar a vez.
@@ -219,9 +221,10 @@ describe("#84: fechamento do quadro na sessão 4e38b42f", () => {
     assert.equal(deNovo.texto.includes(PENDENTE), false);
   });
 
-  it("primeira conclusão sem o caminho principal: avisa que vai olhar; na segunda, fecha", async () => {
+  it("primeira conclusão sem o caminho principal: comenta e pergunta; na segunda, fecha", async () => {
     const primeira = await turno(estadoEm("APROFUNDAMENTO", { empecilho: MUDANCA_ANUNCIADA }), "Acho que eu terminei aqui.", { responder: true, texto: "Tudo bem.", concluiu: true }, AGORA, { grafo: GRAFO });
-    assert.ok(AVISOS_DE_QUE_VAI_OLHAR.includes(primeira.texto), primeira.texto);
+    assert.match(primeira.texto, /Novo usuário/);
+    assert.ok(primeira.texto.trim().endsWith("?"), primeira.texto);
     assert.equal(primeira.fechamento, undefined);
     // Depois de concluído, o convite de seguir desenhando não passa, mesmo sem fechamento.
     const depois = await turno(primeira.estado, "E o que você acha do banco que eu escolhi?", { responder: true, texto: "Depende da leitura que você espera. Pode seguir com a próxima parte do seu desenho." }, AGORA + 20_000, { grafo: GRAFO });
@@ -229,7 +232,7 @@ describe("#84: fechamento do quadro na sessão 4e38b42f", () => {
     assert.match(depois.texto, /Depende da leitura/);
     const segunda = await turno(depois.estado, "Já falei, pô. Eu acho que eu terminei aqui.", { responder: true, texto: "Tudo bem. Se quiser dar uma última olhada, fica à vontade.", concluiu: true }, AGORA + 60_000, { grafo: GRAFO });
     assert.equal(segunda.fechamento, "perguntas_finais");
-    assert.match(segunda.texto, /^Beleza\. Só preciso fechar uns pontos com você antes de encerrar\. .+\?$/);
+    assert.match(segunda.texto, /^Tá, olhei: Novo usuário Número: Senha: liga em Contatos\. Beleza\. Só preciso fechar uns pontos com você antes de encerrar\. .+\?$/);
     assert.equal(segunda.estado.conclusoes, 2);
   });
 

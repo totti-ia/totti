@@ -65,7 +65,8 @@ describe("os dois prompts incluem a persona", () => {
     // #129: +1.150 caracteres desde a gio/main (11.925 → 13.075: pedido de tempo, porquê, pergunta no fechamento, português claro, perguntas finais e urgência), ~+290 tokens por fala (~7 a 8% a mais no custo do prompt de fala).
     // #130 (acréscimo): +884 caracteres no live coding (26.745 → 27.629: pedido de tempo, pergunta junto do fim,
     // "terminei" solto como fim, abertura sem molde e português claro), ~+220 tokens por fala.
-    const ANTES_DA_PERSONA = { quadro: 13_075, codigo: 27_650 };
+    // Medido com o mesmo kit e problema: gio/main 27.629 → atual 27.840 (+211 caracteres pela pergunta de raciocínio e promessa cumprida na mesma fala).
+    const ANTES_DA_PERSONA = { quadro: 13_075, codigo: 27_840 };
     assert.ok(quadro.length <= ANTES_DA_PERSONA.quadro, `quadro: ${quadro.length} caracteres`);
     assert.ok(codigo.length <= ANTES_DA_PERSONA.codigo, `código: ${codigo.length} caracteres`);
   });

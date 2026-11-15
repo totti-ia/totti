@@ -8,7 +8,7 @@
 //   - depois de "não sei" ou "pula" não vem pergunta nova na mesma fala;
 //   - "terminei" dito com as mãos paradas conta como conclusão mesmo que o modelo não tenha marcado.
 // Este arquivo não importa nada de `lib/agente` nem de `lib/agents`: as salas é que importam daqui.
-import { comVezDevolvida, eSoReacao, escolherConvite, falaNaoRepetida, semPerguntaNoFimSeSobrar } from "./guardas";
+import { comVezDevolvida, eSoReacao, escolherConvite, falaNaoRepetida, semPerguntaNoFimSeSobrar, promessaVazia } from "./guardas";
 import { frasesDe, normalizar, type Sala } from "./texto";
 
 export const INTENCOES = ["perguntou", "respondeu", "nao_sabe", "pulou", "concluiu", "encerrar", "pensando_alto", "conversa", "outro"] as const;
@@ -338,3 +338,35 @@ export function decidirTurno(lida: LeituraDoTurno, situacao: SituacaoDoTurno): {
 export function avisosDeQueVaiOlhar(sala: Sala): string[] {
   return [`Tá, deixa eu dar uma olhada ${sala === "codigo" ? "no código" : "no desenho"}.`, "Certo, só um instante que eu olho o que você fez."];
 }
+
+/** #141: textos aprovados pelo Lucas. */
+export const FALAS_DE_RESERVA_AO_OLHAR = {
+  quadroComLigacao: (peca: string, destino: string) => `Tá, olhei: ${peca} liga em ${destino}.`,
+  quadroSemLigacao: (peca: string) => `Tá, olhei: ${peca} ainda está sem ligação.`,
+  quadroSemPecas: "Ainda não vejo peças no desenho. Por onde você pensa em começar?",
+  ideComTrecho: (linha: number, trecho: string) => `Olhei a linha ${linha}: ${trecho.slice(0, 40)}.`,
+  // Sem trecho do candidato, não há grifo possível; a pergunta fica sobre o plano.
+  ideSemTrecho: "Ainda não há trecho de código para comentar.",
+  pergunta: (decisao?: string) => `Como você pensou essa decisão${decisao ? ` em ${decisao}` : ""}?`,
+} as const;
+
+/** A instrução comum às salas para a segunda geração substituir uma promessa vazia por conteúdo. */
+export function avisoDePromessaVazia(sala: Sala): string {
+  return `ATENÇÃO: você prometeu olhar ${sala === "codigo" ? "o código" : "o desenho"}. Nesta fala, cite uma peça ou trecho pelo nome e faça uma pergunta sobre uma decisão ou o raciocínio. Não responda só que vai olhar.`;
+}
+
+/** Exige uma observação factual antes da pergunta e exatamente uma pergunta na fala. */
+export function falaComObservacaoEPergunta(fala: string, referencia: string, trecho?: string): boolean {
+  const texto = fala.trim();
+  if (!referencia || !texto.endsWith("?") || (texto.match(/\?/g) ?? []).length !== 1) return false;
+  const pergunta = texto.lastIndexOf("?");
+  const observacao = texto.slice(0, pergunta).trim();
+  const primeiraFrase = observacao.match(/^(.+?[.!])(?:\s|$)/)?.[1];
+  if (!primeiraFrase || !primeiraFrase.toLocaleLowerCase().includes(referencia.toLocaleLowerCase())) return false;
+  // Nome solto na frase não é comentário: precisa descrever uma relação, ação ou estado observável.
+  const descreveFato = /\b(liga|conecta|envia|recebe|guarda|armazena|consulta|chama|usa|l[eê]|escreve|retorna|devolve|percorre|filtra|compara|valida|declara|inicializa|fica|est[aá]|cont[eé]m|separa|salva|busca|cria|adiciona|remove|atualiza|calcula|come[cç]a|termina|executa|passa|transforma|ainda sem|vejo)\b/i.test(primeiraFrase);
+  const citaTrecho = !!trecho && primeiraFrase.includes(trecho.trim());
+  return descreveFato || citaTrecho;
+}
+
+export { promessaVazia };

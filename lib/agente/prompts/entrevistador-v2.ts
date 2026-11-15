@@ -10,7 +10,7 @@ import type { Kit, Problema } from "../kits/tipos";
 import { blocoDoPlanoParaEntrevistar } from "../plano";
 import { criteriosSemEvidencia, type EstadoSessao } from "../sessao/estado";
 import type { FalaRecente, Fase } from "../sessao/tipos";
-import { blocoDaEntrevista, conversaEmTexto, historicoDaConversa, INSTRUCAO_IMAGEM, perguntasFeitasEmTexto } from "./contexto";
+import { blocoDaEntrevista, conversaEmTexto, historicoDaConversa, INSTRUCAO_IMAGEM, perguntasFeitasEmTexto, promessaPendente } from "./contexto";
 
 /** Nome próprio para o v2 ir ao papel "conversa_quadro" (modelo escolhido à parte do resto do produto). */
 export const NOME_SCHEMA_PERGUNTAR_V2 = "resposta_entrevistador_v2";
@@ -32,7 +32,7 @@ O QUE VOCÊ BUSCA EM CADA MOMENTO, E POR QUÊ
 - Ele explica uma decisão ou responde à sua pergunta. Você conduz a entrevista, então decida como um entrevistador sênior decidiria:
   · resposta de uma ou poucas palavras a uma pergunta sua com alternativas ("no back ou no front?" → "back"): pergunte o porquê da escolha DELE antes de seguir ("Por que no backend?"), mesmo que você já tenha aprofundado esse ponto.
   · vaga ("fica melhor", "é o padrão", "todo mundo faz"): uma pergunta curta sobre o porquê do que ELE disse, com as palavras dele.
-  · com motivo concreto: na maioria das vezes, NÃO pergunte. Fique quieto ou dê uma reação curta e deixe ele continuar; se a sua última fala já foi só uma reação, fique quieto. Só puxe um fio (uma troca que ele não pesou, um número que ele não usou, uma consequência da escolha DELE) quando for o ponto mais importante que apareceu até agora e você não perguntou nada nas últimas falas.
+  · com motivo concreto: você pode fazer UMA pergunta de raciocínio sobre a decisão dele (o que pesou, o que descartou, o que muda se X), no máximo uma por decisão. Critério sem sinal pode ser puxado quando ligado ao que ele acabou de dizer ou desenhar; nunca do nada, cite o critério ou dê dica.
   · ele fechou uma parte e passou a vez ("é isso", "acho que é isso nessa parte"), ou pergunta se você tem alguma dúvida: é o convite para perguntar. Faça a pergunta que mais ajuda a ver como ele pensa, sobre uma peça que está no desenho (chame-a pelo nome e marque-a em "visual") ou sobre algo que ele disse, num aspecto que AINDA NÃO apareceu na conversa. Se tudo o que você perguntaria já foi perguntado, não invente uma variação: marque "concluiu" true e não pergunte.
   Antes de perguntar, confira as perguntas já feitas (mesmo com outras palavras). No mesmo ponto, aprofunde no máximo uma vez.
 - Ele pede tempo para pensar ("calma", "deixa eu pensar", "tô pensando"): desfecho "pensando", sem pergunta.
@@ -86,15 +86,14 @@ export function blocoDoRitmo(conversa: FalaRecente[]): string {
   const minhas = conversa.filter((f) => f.quem === "agente").map((f) => f.texto.trim());
   const total = minhas.filter((t) => t.endsWith("?")).length;
   const recentes = minhas.slice(-JANELA_DO_RITMO);
-  const emSeguida = recentes.filter((t) => t.endsWith("?")).length;
   const linhas = [`Perguntas suas até agora: ${total} (o ideal é umas 10 a 15 na entrevista inteira).`];
   // As perguntas da conversa ficam listadas à parte: entre "Hm." e "Tá.", elas saíam da janela das últimas falas
   // e o modelo voltava ao mesmo assunto.
   const feitas = minhas.filter((t) => t.endsWith("?")).slice(-MAX_PERGUNTAS_LISTADAS);
   if (feitas.length) linhas.push(`Perguntas que você já fez na conversa (não volte a esses assuntos, nem com outras palavras): ${JSON.stringify(feitas)}`);
-  if (emSeguida >= 2) {
+  if (recentes.slice(-2).length === 2 && recentes.slice(-2).every((t) => t.endsWith("?"))) {
     linhas.push(
-      `Ritmo: ${emSeguida} das suas últimas ${recentes.length} falas terminaram em pergunta. Nesta, NÃO pergunte: fique quieto ou reaja curto e devolva a vez. Só responda se ele perguntou algo a você; pergunta nova só se ele acabou de fechar uma parte e passou a vez.`,
+      `Ritmo: as duas últimas falas terminaram em pergunta. Nesta, NÃO pergunte: fique quieto ou reaja curto e devolva a vez. Só responda se ele perguntou algo a você; pergunta nova só se ele acabou de fechar uma parte e passou a vez.`,
     );
   }
   return linhas.join("\n");
@@ -187,6 +186,7 @@ CONVERSA ATÉ AGORA (as últimas falas; a fala nova do candidato vem na mensagem
     { bloco: "resto", texto: `${blocoDaEntrevista({ ...estado, fase }, agora)}
 
 ${blocoDoRitmo(historico)}
+O que você disse que ia fazer e ainda não fez: ${JSON.stringify(promessaPendente(historico) ?? "(nada pendente)")}. Se houver promessa, cumpra-a nesta fala antes de qualquer outra coisa.
 Fase: ${fase}
 ${linhaDoFechamento(fechamento)}Pergunta que o candidato está respondendo: ${JSON.stringify(perguntaAtiva || estado.perguntaAtiva?.pergunta || null)}
 ` },
