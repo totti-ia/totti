@@ -166,14 +166,14 @@ describe("briefing por etapa", () => {
     assert.match(blocoDoBriefing(kit, emFase("FECHAMENTO"), INICIO + 36 * MIN), /Objetivo desta etapa: fazer a última pergunta/);
   });
 
-  it("antes do aprofundamento não há alvo, lista do que falta nem ritmo", () => {
-    for (const fase of ["REQUISITOS", "ALTO_NIVEL"] as const) {
-      const bloco = blocoDoBriefing(kit, emFase(fase), INICIO + 10 * MIN);
-      assert.doesNotMatch(bloco, /Próximo alvo/);
-      assert.doesNotMatch(bloco, /O que ainda falta/);
-      assert.doesNotMatch(bloco, /Ritmo:/);
-      assert.match(bloco, /O que já temos do candidato/);
-    }
+  it("#140: alto nível já vê critérios pendentes; requisitos ainda não", () => {
+    const requisitos = blocoDoBriefing(kit, emFase("REQUISITOS"), INICIO + 3 * MIN);
+    assert.doesNotMatch(requisitos, /Próximo alvo|O que ainda falta|Ritmo:/);
+    assert.match(requisitos, /O que já temos do candidato/);
+    const alto = blocoDoBriefing(kit, emFase("ALTO_NIVEL"), INICIO + 10 * MIN);
+    assert.match(alto, /Próximo alvo/);
+    assert.match(alto, /O que ainda falta/);
+    assert.match(alto, /Ritmo:/);
   });
 
   it("no aprofundamento o alvo nunca é requisitos nem comunicação", () => {
