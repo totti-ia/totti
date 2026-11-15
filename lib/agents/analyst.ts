@@ -199,6 +199,7 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
         ? formatElapsed(trigger.t - (session.blips.at(-1)?.createdAt ?? 0))
         : undefined,
       trechosPerguntados: trechosParaPrompt(session),
+      ganchosRecentes: session.queue.filter((q) => q.status === "blipped").slice(-3).map((q) => (q as typeof q & { gancho?: string }).gancho ?? "parte_fechada"),
     });
 
     // Papel "codigo": gemini-3.7-flash no OpenRouter, com o GLM da Featherless de reserva (ver lib/llm/index.ts).
@@ -280,6 +281,13 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
         console.info(`[analyst] pergunta rejeitada (${verdict.reason}): ${question.question}`);
         return;
       }
+      const gancho = question.gancho ?? (parteFechada === true || keyMoment !== undefined ? "parte_fechada" : null);
+      const ultimoGancho = (session.queue.findLast((q) => q.status === "blipped" && !q.kickoff) as (typeof session.queue)[number] & { gancho?: string } | undefined)?.gancho;
+      if (gancho && ultimoGancho === gancho) {
+        blocked += 1;
+        console.info(`[analyst] pergunta rejeitada (gancho repetido): ${question.question}`);
+        return;
+      }
       // A fila nunca perde itens (stale continua lá), então o tamanho dá um id único.
       session.queue.push({
         id: `q-${session.queue.length + 1}`,
@@ -292,11 +300,12 @@ async function analyzeOnce(session: SessionState, book: AnalystBookkeeping, trig
         status: "queued",
         keyMoment: focusArea ? undefined : keyMoment,
         focusArea,
-        parteFechada: parteFechada === true || keyMoment !== undefined,
+        parteFechada: parteFechada === true || question.gancho === "parte_fechada" || keyMoment !== undefined,
         fase,
         kind: question.kind ?? "explicar",
         criterionId: question.criterionId && criterionIds.has(question.criterionId) ? question.criterionId : undefined,
-      });
+      } as (typeof session.queue)[number] & { gancho?: "parte_fechada" | "decisao" | "raciocinio" | null });
+      (session.queue.at(-1) as (typeof session.queue)[number] & { gancho?: "parte_fechada" | "decisao" | "raciocinio" | null }).gancho = gancho;
     });
     analyst.lastOutcome = {
       t: trigger.t,

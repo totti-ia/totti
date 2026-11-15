@@ -76,7 +76,7 @@ const BOOST_LONG_PAUSE = 0.1;
 /** Pausa a partir desse tamanho conta como pausa longa pro boost. */
 const LONG_PAUSE_MS = 30_000;
 /** A partir dessa fração do tempo, pergunta de critério ainda não explorado ganha reforço (30%, como no quadro: #129). */
-const AGENDA_START_FRACTION = 0.3;
+const AGENDA_START_FRACTION = 0.1;
 /** Reforço de agenda: critério da recrutadora que ainda não foi explorado. */
 const BOOST_UNCOVERED = 0.15;
 /**
@@ -867,17 +867,23 @@ export function tetoDaPerguntaNaIde(session: SessionState, t: number): boolean {
  *     de silêncio (mãos paradas e calado há RITMO_IDE.quebraDeSilencioMs).
  * Os portões do ritmo comum (orçamento, cota, intervalo, momento) continuam valendo por cima.
  */
+type PerguntaComGancho = QueuedQuestion & { gancho?: "parte_fechada" | "decisao" | "raciocinio" | null };
+
 export function motivoDoConteudo(session: SessionState, q: QueuedQuestion, t: number): string | undefined {
+  const gancho = (q as PerguntaComGancho).gancho ?? (q.parteFechada ? "parte_fechada" : null);
+  const ultima = ultimaPerguntaDaAnaliseEm(session);
+  const ultimaComGancho = session.queue.findLast((item) => item.status === "blipped" && daAnalise(item)) as PerguntaComGancho | undefined;
+  if (daAnalise(q) && gancho && (ultimaComGancho?.gancho ?? (ultimaComGancho?.parteFechada ? "parte_fechada" : null)) === gancho) return "gancho igual ao da pergunta anterior";
   if (!daAnalise(q) || q.keyMoment !== undefined) return undefined;
   if (session.ultimaConclusaoEm !== undefined && t - session.ultimaConclusaoEm < RITMO.marcoDeConclusaoMs) return undefined;
   const { maosParadasHaMs, falaHaMs } = momentoDaSessao(session, t);
   if (maosParadasHaMs >= RITMO_IDE.quebraDeSilencioMs && falaHaMs >= RITMO_IDE.quebraDeSilencioMs) return undefined;
-  const ultima = ultimaPerguntaDaAnaliseEm(session);
   const pisoPassou = ultima === undefined || t - ultima >= RITMO_IDE.pisoEntrePerguntasMs;
-  if (q.parteFechada && pisoPassou) return undefined;
+  if (gancho && pisoPassou && maosParadasHaMs >= RITMO.pausaRealMs) return undefined;
   if (tetoDaPerguntaNaIde(session, t)) return undefined;
-  if (q.parteFechada) return `piso entre perguntas (faltam ${Math.ceil((RITMO_IDE.pisoEntrePerguntasMs - (t - (ultima ?? 0))) / 1000)} s)`;
-  return "nenhum trecho pronto ainda (a pergunta sai quando ele fechar uma parte ou no teto)";
+  if (!gancho) return "nenhum gancho ainda (a pergunta sai no teto)";
+  if (!pisoPassou) return `piso entre perguntas (faltam ${Math.ceil((RITMO_IDE.pisoEntrePerguntasMs - (t - (ultima ?? 0))) / 1000)} s)`;
+  return "aguardando pausa real";
 }
 
 /**

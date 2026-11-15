@@ -3,6 +3,7 @@ import { z } from "zod";
 
 export const AnalystQuestion = z.object({
   question: z.string(),
+  gancho: z.enum(["parte_fechada", "decisao", "raciocinio"]).nullable().optional(),
   kind: z.enum(["explicar", "sondar", "desafio"]).optional(),
   /** Critério da config que a pergunta explora. */
   criterionId: z.string().optional(),
@@ -39,6 +40,7 @@ export const AnalystOutput = z.object({
    * bloco pela metade, false.
    */
   parteFechada: z.boolean().optional(),
+  gancho: z.enum(["parte_fechada", "decisao", "raciocinio"]).nullable().optional(),
   suspiciousLines: z
     .array(z.object({ startLine: z.number().int(), endLine: z.number().int(), reason: z.string() }))
     .max(5),
