@@ -66,7 +66,7 @@ export function getOrCreateSession(sessionId: string, config: InterviewConfig = 
  * Eventos que a IDE reenvia até o servidor confirmar (components/ide/useSession.ts): o código, a colagem, o run e o
  * fim. Um reenvio pode chegar depois de eventos mais novos, então eles entram na linha do tempo na ordem do `t`.
  */
-const EVENTOS_REENVIADOS = new Set<SessionEvent["type"]>(["snapshot", "paste", "run", "session_ended"]);
+const EVENTOS_REENVIADOS = new Set<SessionEvent["type"]>(["snapshot", "paste", "run", "session_ended", "foco"]);
 
 /** O mesmo evento já está na linha do tempo (o reenvio chegou depois de o primeiro envio já ter entrado). */
 export function eventoRepetido(session: SessionState, event: SessionEvent): boolean {

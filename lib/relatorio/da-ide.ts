@@ -1,6 +1,7 @@
 // Adaptador do relatório do Live Coding (`Report`, da IDE) para o tipo comum.
 import { CONCEITOS_EMPECILHO, type Gravacao, type Report } from "@/lib/contracts";
 import { formatMs } from "@/lib/format";
+import { integridadeDosTextos } from "@/lib/integridade/montar";
 import { duracaoCurta, duracaoDaEntrevista, plural } from "./formato";
 import type {
   AcontecimentoComum,
@@ -183,6 +184,10 @@ export function relatorioDaIde(
   const duracaoMs = gravacao?.durationMs ?? s.durationMs;
   return {
     formato: "live_coding",
+    integridade: gravacao?.integridade ?? integridadeDosTextos(report.sessionId, [
+      ...(gravacao?.codigo ?? []).map((v) => ({ t: v.t, onde: "no código", texto: v.code })),
+      ...(gravacao?.falas ?? []).filter((f) => f.role === "candidate").map((f) => ({ t: f.t, onde: "na fala", texto: f.text })),
+    ]),
     id: report.sessionId,
     titulo: report.roleTitle,
     contexto: "relatório da entrevista de Live Coding",

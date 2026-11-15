@@ -13,6 +13,8 @@ import { montarRelatorio, type RelatorioVisto } from "@/lib/agente/relatorio";
 import { candidatosPorSessao } from "@/lib/convites/store";
 import { relatorioDaIde } from "@/lib/relatorio/da-ide";
 import { relatorioDoQuadro } from "@/lib/relatorio/do-quadro";
+import { integridadeDoQuadro } from "@/lib/integridade/montar";
+import { INTEGRIDADE_QUADRO_EXEMPLO } from "@/lib/agente/relatorio-exemplo";
 import { gravacaoDaSessao } from "@/lib/session/gravacao";
 import { sessaoViva } from "@/lib/session/persistencia";
 import { exemploHabilitado, GRAVACAO_EXEMPLO, relatorioExemplo } from "@/lib/session/relatorio-exemplo";
@@ -61,7 +63,7 @@ async function Conteudo({ params, searchParams }: Props) {
     return <Relatorio r={relatorioDaIde(relatorioExemplo(), GRAVACAO_EXEMPLO, { demonstracao: true })} gravacao={GRAVACAO_EXEMPLO} />;
   }
   const exemploDoQuadro = devHabilitado() ? EXEMPLOS[id] : undefined;
-  if (exemploDoQuadro) return <Relatorio r={relatorioDoQuadro(exemploDoQuadro)} comDecisao={false} />;
+  if (exemploDoQuadro) return <Relatorio r={relatorioDoQuadro(exemploDoQuadro, INTEGRIDADE_QUADRO_EXEMPLO)} comDecisao={false} />;
 
   return (await relatorioDoQuadroSalvo(id)) ?? (await relatorioDaIdeSalvo(id)) ?? <SessaoNaoEncontrada />;
 }
@@ -78,7 +80,10 @@ async function relatorioDoQuadroSalvo(id: string) {
   if (!scorecard) return <GerandoRelatorio sessaoId={id} area={alvo.kit.area} problema={alvo.problema.titulo} />;
 
   const [eventos, imagens] = await Promise.all([repositorio.listarEventos(id), repositorio.listarImagens(id)]);
-  return <Relatorio r={relatorioDoQuadro(montarRelatorio({ sessao, scorecard, kit: alvo.kit, problema: alvo.problema, eventos, imagens }))} />;
+  return <Relatorio r={relatorioDoQuadro(
+    montarRelatorio({ sessao, scorecard, kit: alvo.kit, problema: alvo.problema, eventos, imagens }),
+    integridadeDoQuadro(sessao.id, eventos, sessao.criadaEm),
+  )} />;
 }
 
 /** Live Coding: o relatório salvo, ou a avaliação em andamento (a tela de espera consulta /api/report). null = não é da IDE. */
