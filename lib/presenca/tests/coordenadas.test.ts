@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  caixaDosElementos, cenaParaTela, estaVisivel, scrollParaCentralizar, telaParaCena,
+  caixaDosElementos, cenaParaTela, estaVisivel, scrollParaCentralizar, telaParaCena, precisaReduzirZoom,
   type Vista,
 } from "../coordenadas";
 
@@ -46,6 +46,22 @@ test("visibilidade exige a caixa inteira e aplica margem em pixels", () => {
   assert.equal(estaVisivel({ x: 0, y: 0, largura: 500, altura: 350 }, v, 0), true);
   assert.equal(estaVisivel({ x: 0, y: 0, largura: 500.1, altura: 350 }, v, 0), false);
   assert.equal(estaVisivel({ x: 62, y: 62, largura: -50, altura: -50 }, v), true);
+});
+
+test("decisão para vários alvos considera o conjunto e mantém o zoom ao rolar", () => {
+  const v = { ...vista, scrollX: 0, scrollY: 0, zoom: 1 };
+  const alvos = [{ x: 40, y: 50, largura: 80, altura: 60 }, { x: 800, y: 500, largura: 100, altura: 80 }];
+  const conjunto = {
+    x: Math.min(...alvos.map((c) => c.x)), y: Math.min(...alvos.map((c) => c.y)),
+    largura: Math.max(...alvos.map((c) => c.x + c.largura)) - Math.min(...alvos.map((c) => c.x)),
+    altura: Math.max(...alvos.map((c) => c.y + c.altura)) - Math.min(...alvos.map((c) => c.y)),
+  };
+  assert.equal(estaVisivel(conjunto, v, 60), false, "alvo fora de vista faz rolar o grupo inteiro");
+  const destino = { ...v, ...scrollParaCentralizar(conjunto, v) };
+  assert.equal(destino.zoom, v.zoom, "rolagem preserva zoom");
+  assert.equal(estaVisivel(conjunto, destino, 0), true);
+  assert.equal(precisaReduzirZoom(conjunto, v), false);
+  assert.equal(precisaReduzirZoom({ ...conjunto, largura: 1200 }, v), true, "só reduz o zoom se o conjunto não couber");
 });
 
 test("caixas grandes permanecem cortadas ao centralizar sem mudar zoom", () => {
