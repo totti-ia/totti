@@ -163,9 +163,11 @@ export type ContextoDoConteudo = {
   paradoHaS?: number;
   /** Ids das peças do desenho agora (`pecasDoGrafo`); null quando o grafo veio cortado. */
   pecas?: string[] | null;
+  /** Ações do candidato depois da última fala solta do agente devolvem a vez ao candidato. */
+  agiuDepoisDaFala?: boolean;
 };
 
-export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_PARTE_FECHADA";
+export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_GANCHO" | "PAUSA_REAL" | "GANCHO_REPETIDO";
 
 /**
  * Ritmo por conteúdo (#129, bloco B): por que uma resposta "duvida" ou "dica" de ALTO_NIVEL/APROFUNDAMENTO NÃO vira
@@ -177,18 +179,25 @@ export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_PARTE_FECHADA";
  */
 export function motivoDoConteudo(
   estado: EstadoSessao,
-  resposta: Pick<RespostaAnalise, "status" | "parteFechada">,
+  resposta: Pick<RespostaAnalise, "status" | "parteFechada" | "gancho">,
   agora: number,
   contexto: ContextoDoConteudo = {},
 ): MotivoConteudo | null {
   if (!FASES_DO_CONTEUDO.includes(estado.fase) || !STATUS_DO_CONTEUDO.includes(resposta.status)) return null;
+  const gancho = resposta.gancho ?? (resposta.parteFechada ? "parte_fechada" : null);
+  const ultimo = estado.perguntas.at(-1);
+  const ultimoGancho = ultimo?.gancho ?? (ultimo && ultimo.status !== "ok" ? "parte_fechada" : undefined);
+  if (gancho && ultimoGancho === gancho) return "GANCHO_REPETIDO";
   const quebraDeSilencio = contexto.paradoHaS !== undefined && contexto.paradoHaS >= LIMITE_SILENCIO_S;
   const marco = estado.ultimaConclusaoEm != null && agora - estado.ultimaConclusaoEm < RITMO.marcoDeConclusaoMs;
   if (quebraDeSilencio || marco) return null;
   const pisoPassou = estado.ultimaPerguntaEm == null || agora - estado.ultimaPerguntaEm >= RITMO_QUADRO.pisoEntrePerguntasMs;
-  if (resposta.parteFechada && pisoPassou) return null;
+  if (gancho && pisoPassou) {
+    if ((contexto.paradoHaS !== undefined && contexto.paradoHaS * 1000 >= RITMO.pausaRealMs) || contexto.agiuDepoisDaFala) return null;
+    return "PAUSA_REAL";
+  }
   if (tetoDaPergunta(estado, agora, contexto.pecas)) return null;
-  return resposta.parteFechada ? "PISO_ENTRE_PERGUNTAS" : "SEM_PARTE_FECHADA";
+  return gancho ? "PISO_ENTRE_PERGUNTAS" : "SEM_GANCHO";
 }
 
 /**
