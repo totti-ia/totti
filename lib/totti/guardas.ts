@@ -431,7 +431,19 @@ export type ContextoDaFala = {
   barrarConducao?: boolean;
 };
 
-export type Trava = "cumprimento" | "validacao" | "eco" | "reacao_repetida" | "pergunta_repetida" | "pergunta_de_conducao";
+export type Trava = "cumprimento" | "validacao" | "eco" | "reacao_repetida" | "pergunta_repetida" | "pergunta_de_conducao" | "promessa_vazia";
+
+/** Promessa de olhar sem comentário nem pergunta: não pode ser a fala inteira do Totti. */
+export function promessaVazia(fala: string): boolean {
+  const texto = normalizar(fala).replace(/[.!?,;:]+$/g, "").trim();
+  if (!texto || texto.includes("?") || texto.split(/\s+/).length > 12) return false;
+  return /\b(vou olhar|vou dar uma olhada|deixa eu (dar uma olhada|olhar|ver|analisar)|ja te falo|vou analisar|vou ver|deixa eu conferir|so um instante que eu olho o que voce fez)\b/.test(texto);
+}
+
+/** Detecta o pedido para olhar que precisa virar comentário e pergunta nesta fala. */
+export function pediuParaOlhar(fala: string): boolean {
+  return /\b(?:da uma olhada|d[aá] uma olhada|olha (?:a[ií]|isso)|pode olhar|olha o desenho|olha o c[oó]digo|comenta (?:a[ií]|isso)|o que acha do desenho|o que acha do c[oó]digo)(?:\s|[?.!,]|$)/i.test(fala);
+}
 
 /**
  * Passa a fala por todas as travas, na ordem, e devolve o que sobrou com o nome de cada trava que agiu. Texto
@@ -455,6 +467,7 @@ export function aplicarGuardas(fala: string, contexto: ContextoDaFala = {}): { t
     const semJuizo = semValidacao(texto);
     passo("validacao", semJuizo || reacaoNeutra(falasDoTotti));
   }
+  if (texto && promessaVazia(texto)) passo("promessa_vazia", "");
   if (texto && contexto.falaDoCandidato) passo("eco", semEcoNoComeco(texto, contexto.falaDoCandidato, contexto.candidatoPerguntou));
   if (texto) {
     const repetida = texto.endsWith("?") && !!perguntasJaFeitas?.length && perguntaJaFeita(texto, perguntasJaFeitas);

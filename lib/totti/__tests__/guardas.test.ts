@@ -3,9 +3,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  aplicarGuardas, comVezDevolvida, convitesPara, escolherConvite, ePerguntaDePorque, eSoReacao, falaNaoRepetida, perguntaDeConducao, perguntaDePorque, perguntaJaFeita,
+  aplicarGuardas, comVezDevolvida, convitesPara, escolherConvite, ePerguntaDePorque, eSoReacao, falaNaoRepetida, perguntaDeConducao, perguntaDePorque, perguntaJaFeita, promessaVazia,
   reacaoNeutra, semCumprimento, semEcoNoComeco, semPerguntaNoFim, semPerguntaNoFimSeSobrar, semReacaoRepetida, semValidacao, emPortugues,
 } from "../guardas";
+import { avisosDeQueVaiOlhar } from "../turno";
 
 describe("cumprimento e reapresentação fora da abertura", () => {
   it("o caso real da #83: o cumprimento sai e a pergunta fica", () => {
@@ -180,6 +181,12 @@ describe("convite para seguir", () => {
 });
 
 describe("aplicarGuardas", () => {
+  it("barra promessa vazia e aceita comentário com pergunta", () => {
+    const avisosDasDuasSalas = [...avisosDeQueVaiOlhar("quadro"), ...avisosDeQueVaiOlhar("codigo")];
+    for (const fala of [...avisosDasDuasSalas, "Vou olhar.", "Vou dar uma olhada.", "Só um instante que eu olho o que você fez.", "Deixa eu ver.", "Já te falo.", "Vou analisar.", "Certo, vou olhar o desenho.", "Deixa eu dar uma olhada no código."]) assert.equal(promessaVazia(fala), true, fala);
+    assert.equal(promessaVazia("Tá, olhei: o cache fica antes do banco. Por que ali?"), false);
+    assert.equal(aplicarGuardas("Vou analisar.").travas.includes("promessa_vazia"), true);
+  });
   it("os três casos reais de 11/11, com o nome da trava que agiu", () => {
     assert.deepEqual(
       aplicarGuardas("Oi, tudo bem? Como você está pensando em abordar esse problema?", { falaDoCandidato: "tá bom" }),
