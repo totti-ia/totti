@@ -12,12 +12,13 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import { runAnalyst } from "@/lib/agents/analyst";
+import { buildAnalystUser } from "@/lib/agents/prompts/analyst";
 import { startEvaluation, waitForEvaluation } from "@/lib/agents/evaluator";
 import { runInterviewerTurn } from "@/lib/agents/interviewer";
 import { faseDaEntrevista } from "@/lib/agents/fase";
 import { resumoDoCusto } from "./custo";
 import { disparaAnalise } from "@/lib/agents/gatilhos";
-import { allPassed, decideBlip, enqueueCola, enqueueKickoff, lastBlipDecision } from "@/lib/agents/policy";
+import { allPassed, decideBlip, enqueueCola, enqueueKickoff, estadoDaBola, lastBlipDecision, motivoDoConteudo, ritmoDaSessao } from "@/lib/agents/policy";
 import { DEFAULT_CONFIG } from "@/lib/config/default";
 import { normalizarConfig } from "@/lib/config/store";
 import { type Blip, type ChatMessage, InterviewConfig, type Report, type SessionEvent } from "@/lib/contracts";
@@ -27,6 +28,8 @@ import { completeJson } from "@/lib/llm";
 import { problems as IDE_PROBLEMS } from "@/lib/problems";
 import { appendEvent, getOrCreateSession } from "@/lib/session/store";
 import type { SessionState } from "@/lib/session/types";
+import { imprimirMedicao140, type ResultadoMedicao140 } from "./linha-do-tempo-quadro";
+import { motivoDoRitmo, RITMO, RITMO_IDE } from "@/lib/interrupcao/politica";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type EventInput = DistributiveOmit<SessionEvent, "sessionId" | "t">;
@@ -41,11 +44,97 @@ let LINHA_DO_TEMPO = false;
 let COM_RELATORIO = false;
 /** O relatório roda testes escondidos em Python: se travar, a simulação segue sem ele. */
 const PRAZO_RELATORIO_MS = 4 * 60_000;
-const TICK_MS = 5_000;
+const TICK_MS = 1_000;
 const PAUSE_MS = 8_000;
 /** Cada fala (do candidato ou do agente) "custa" esse tempo de sessão. */
 const TURN_MS = 15_000;
 const MAX_TURNS = 8;
+
+/** Modelo falso e candidato contínuo para medir os filtros reais da IDE sem rede. */
+export function medirOfflineIde(): ResultadoMedicao140 {
+  const duracao = 30 * 60_000;
+  const criterios = CONFIG.criteria.map((c) => c.id);
+  const session = getOrCreateSession(`medicao-140-${Date.now()}`, { ...CONFIG, durationMin: 30 });
+  const tempos: number[] = [];
+  const ganchos: string[] = [];
+  const criteriosPerguntados: string[] = [];
+  const provocados = new Set<string>();
+  // Cada análise acompanha uma escolha visível no código contínuo; os testes de política cobrem o caso sem gancho.
+  const tipos = ["decisao", "raciocinio", "parte_fechada"] as const;
+  let maiorIntervaloComLacunaS = 0;
+  let falaAte = -1;
+  let ultimaFalaAgente: number | undefined;
+  let duranteFalaOuTraco = 0;
+  const motivosDaEspera: string[] = [];
+  const contagemDeBloqueios = new Map<string, number>();
+  let motivoAnterior = "a análise ainda não pediu uma pergunta";
+  let analisesDoModelo = 0;
+  for (let t = 1_000, passo = 0; t < duracao * 0.8; t += TICK_MS, passo++) {
+    // O candidato digita por 9 s e pausa por 5 s; snapshots só chegam enquanto ele está trabalhando.
+    const ciclo = t % 14_000;
+    const emTraco = ciclo < 9_000;
+    const paradoHaS = emTraco ? 0 : Math.floor((ciclo - 9_000) / 1_000);
+    if (emTraco) session.events.push({ type: "snapshot", sessionId: session.sessionId, t, code: `linha ${passo}`, language: "python", version: passo });
+    if (ultimaFalaAgente !== undefined && !session.events.some((e) => e.type === "speech" && e.role === "agent" && e.t === ultimaFalaAgente)) {
+      session.events.push({ type: "speech", sessionId: session.sessionId, t: ultimaFalaAgente, role: "agent", text: "Por que escolheu isso?" });
+    }
+    const emFala = t % 97_000 >= 89_000 && t % 97_000 < 94_000;
+    if (emFala) session.events.push({ type: "speech", sessionId: session.sessionId, t, role: "candidate", text: "Estou pensando nessa escolha." });
+    const analiseRoda = paradoHaS >= 3 || (emTraco && t % RITMO.analiseMaximaSemPausaMs === 0)
+      || t - (tempos.at(-1) ?? 0) >= RITMO_IDE.tetoSemPerguntaMs;
+    const gancho = analiseRoda ? tipos[analisesDoModelo++ % tipos.length] : null;
+    const pendentes = criterios.filter((c) => !provocados.has(c));
+    const prompt = buildAnalystUser({
+      fase: "implementando", elapsedLabel: formatMs(t), remainingLabel: formatMs(duracao - t), trigger: "pause", language: "python",
+      numberedCode: `1 | linha ${passo}`, conversations: "", recentEvents: [], pendingQuestions: [], uncovered: pendentes.map((id) => `${id}: ${id}`),
+      hasWorkingSolution: false,
+    });
+    const agenda = prompt.split("Critérios ainda não explorados:")[1]?.split("Desafio liberado:")[0] ?? "";
+    const criterioId = pendentes.find((id) => agenda.includes(`${id}:`)) ?? criterios[passo % criterios.length];
+    const q = {
+      id: `medicao-${passo}`, question: `Por que escolheu ${criterioId}?`, followUpTopic: criterioId,
+      priority: 1, createdAt: t, status: "queued" as const, criterionId: criterioId, gancho, kind: "sondar" as const,
+      parteFechada: gancho === "parte_fechada",
+    };
+    const bola = estadoDaBola(session, t);
+    const conteudo = motivoDoConteudo(session, q, t);
+    const ritmo = motivoDoRitmo(ritmoDaSessao(session, t));
+    if (bola.espera || conteudo || ritmo) {
+      motivoAnterior = bola.espera ?? conteudo ?? ritmo?.texto ?? "aguardando";
+      contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1);
+      continue;
+    }
+    if (gancho === null) { motivoAnterior = "sem análise/gancho neste passo"; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    if (passo % 23 === 0) falaAte = t + 2_000;
+    if (t < falaAte) { motivoAnterior = "fala do candidato em andamento"; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    if (ganchos.at(-1) === gancho) { motivoAnterior = "gancho igual ao da pergunta anterior"; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    motivosDaEspera.push(`${formatMs(t)} · intervalo ${tempos.length ? Math.round((t - tempos.at(-1)!) / 1000) : Math.round(t / 1000)} s; bloqueios desde a anterior: ${[...contagemDeBloqueios].map(([m, n]) => `${m} × ${n}`).join(", ") || "nenhum"}`);
+    contagemDeBloqueios.clear();
+    motivoAnterior = "sem bloqueio anterior";
+    if (emFala || emTraco) duranteFalaOuTraco++;
+    tempos.push(t);
+    ganchos.push(gancho);
+    criteriosPerguntados.push(criterioId);
+    provocados.add(criterioId);
+    session.blips.push({ id: q.id, createdAt: t, preview: criterioId, priority: 1 });
+    session.queue.push({ ...q, status: "blipped" });
+    session.lastConversationEndedAt = t;
+    ultimaFalaAgente = t;
+  }
+  const ate70 = new Set(criteriosPerguntados.filter((_, i) => tempos[i] <= duracao * 0.7));
+  const feitos = new Set(criteriosPerguntados);
+  const gaps = tempos.slice(1).map((t, i) => (t - tempos[i]) / 1000);
+  maiorIntervaloComLacunaS = gaps.length ? Math.max(...gaps) : (tempos[0] ?? 0) / 1000;
+  return {
+    sala: "IDE", perguntas: tempos, ganchos, criterios,
+    feitasAntesDoTerminei: tempos.filter((t) => t < duracao * 0.8).length,
+    maiorIntervaloComLacunaS, percentualAntesDoFechamento: tempos.length ? Math.round(100 * tempos.filter((t) => t < duracao * 0.8).length / tempos.length) : 0,
+    criteriosAte70: ate70.size, totalCriterios: criterios.length, naoExploradosNoFim: criterios.length - feitos.size,
+    menorIntervaloS: gaps.length ? Math.min(...gaps) : 0, duranteFalaOuTraco,
+    ganchosIguaisSeguidos: ganchos.slice(1).filter((g, i) => g === ganchos[i]).length,
+    motivosDaEspera,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Perfis
@@ -558,6 +647,12 @@ async function main(): Promise<void> {
     // sem .env.local: usa as variáveis do ambiente
   }
   const args = process.argv.slice(2);
+  if (args.includes("--linha-do-tempo") && args.includes("--offline")) {
+    DURATION_MIN = 30;
+    const passou = imprimirMedicao140(medirOfflineIde());
+    if (!passou) process.exitCode = 1;
+    return;
+  }
   const only = args.includes("--only") ? args[args.indexOf("--only") + 1].split(",") : undefined;
   const outDir = args.includes("--out") ? args[args.indexOf("--out") + 1] : "sim-runs";
   if (args.includes("--config")) {
@@ -628,9 +723,11 @@ async function main(): Promise<void> {
 }
 
 // Sai explicitamente: timers do agente e da avaliação (Pyodide) seguravam o processo aberto depois do fim.
-main()
-  .catch((err: unknown) => {
-    console.error(err instanceof Error ? err.message : err);
-    process.exitCode = 1;
-  })
-  .finally(() => process.exit());
+if (process.argv[1]?.endsWith("simulate.ts")) {
+  main()
+    .catch((err: unknown) => {
+      console.error(err instanceof Error ? err.message : err);
+      process.exitCode = 1;
+    })
+    .finally(() => process.exit());
+}
