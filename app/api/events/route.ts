@@ -53,6 +53,11 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   }
   appendEvent(session, event);
+  if (event.type === "foco") {
+    // Registro passivo: nem a fila já existente pode soltar uma fala por causa deste evento.
+    await guardarSessao(session);
+    return NextResponse.json({});
+  }
   if (session.fechamento && session.fechamentoCodigoInicial !== undefined) {
     const suspender = voltouATrabalhar(session.fechamento, event, session.fechamentoCodigoInicial);
     if (suspender) {

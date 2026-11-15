@@ -3,6 +3,7 @@
  * O conteúdo das perguntas vem do Analyst (lib/agents/analyst.ts), menos a pergunta de abertura.
  */
 import { isCovered, uncoveredCriteria } from "@/lib/agents/coverage";
+import { COLA_MIN_LINES, colagemDeFora } from "./colagem";
 import { empecilhoDaQuestao, empecilhoGarantido, empecilhoPublico, esperaDoEmpecilho, primeiraAdaptacao } from "@/lib/agents/empecilho";
 import { faseDaEntrevista, linesWrittenBeyondStarter } from "@/lib/agents/fase";
 import type { Blip, RunResult, SessionEvent } from "@/lib/contracts";
@@ -110,11 +111,9 @@ const QUESTION_MAX_AGE_MS = 90_000;
  * Bloco colado a partir desse tanto de linhas vira pergunta sempre: de onde veio e como funciona. Antes a colagem só
  * era um "momento-chave" da análise, e a pergunta dela podia nunca sair (outro assunto aberto, o Finalizar logo depois).
  */
-export const COLA_MIN_LINES = 5;
+export { COLA_MIN_LINES } from "./colagem";
 /** Linhas do grifo da colagem, no máximo (mais que isso já é o arquivo, não um trecho). */
 const COLA_MAX_LINHAS_GRIFO = 12;
-/** Das linhas coladas, a fração que já existia no código antes: acima disso ele só moveu código dele de lugar. */
-const COLA_FRACAO_JA_EXISTENTE = 0.7;
 /** Das linhas coladas, a fração que precisa continuar no código para a pergunta ainda valer. */
 const COLA_FRACAO_QUE_FICOU = 0.5;
 
@@ -648,7 +647,7 @@ const linhasComConteudo = (texto: string) => texto.split("\n").map((l) => l.trim
  * Devolve true se a colagem virou pergunta. Código dele mesmo movido de lugar não conta.
  */
 export function enqueueCola(session: SessionState, event: PasteEvent): boolean {
-  if (session.ended || event.lines < COLA_MIN_LINES) return false;
+  if (session.ended || event.origem === "editor" || event.lines < COLA_MIN_LINES) return false;
   // Já na conversa de encerramento: não cabe assunto novo.
   if (session.queue.some((q) => q.kind === "encerramento")) return false;
   const code = latestCode(session);
@@ -662,8 +661,7 @@ export function enqueueCola(session: SessionState, event: PasteEvent): boolean {
   const starter = getProblem(session.config.problemId).public.starters[session.language] ?? "";
   // A versão de antes da colagem: a última diferente do código de agora (o snapshot com o bloco chega antes do evento).
   const anterior = session.codeHistory.findLast((v) => v.code !== code)?.code ?? starter;
-  const tinha = new Set(linhasComConteudo(anterior));
-  if (coladas.filter((l) => tinha.has(l)).length / coladas.length >= COLA_FRACAO_JA_EXISTENTE) return false;
+  if (!colagemDeFora(event, code, anterior)) return false;
 
   const doStarter = new Set(linhasComConteudo(starter));
   const dele = linhasComConteudo(anterior).filter((l) => !doStarter.has(l));
