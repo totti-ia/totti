@@ -71,9 +71,12 @@ export type Observacao = z.infer<typeof EsquemaObservacao>;
 
 export const STATUS_ANALISE = ["ok", "duvida", "redirecionar", "dica"] as const;
 export type StatusAnalise = (typeof STATUS_ANALISE)[number];
+export const GANCHOS_ANALISE = ["parte_fechada", "decisao", "raciocinio"] as const;
+export type GanchoAnalise = (typeof GANCHOS_ANALISE)[number];
 
 // Mesmos defaults do `validarResposta` do quadro.
 export const EsquemaRespostaAnalise = z.object({
+  gancho: z.enum(GANCHOS_ANALISE).nullable().optional(),
   status: z.enum(STATUS_ANALISE),
   /** O que a voz fala. */
   pergunta: z.string().nullable().default(null),
