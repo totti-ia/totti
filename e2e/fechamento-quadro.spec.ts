@@ -7,20 +7,54 @@ type Controle = {
 type JanelaTeste = Window & { fechamentoTeste: Controle };
 const DESPEDIDA = "Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.";
 
-async function preparar(page: Page) {
-  const pedidos: { finalizar: number; falas: string[] } = { finalizar: 0, falas: [] };
+function bytesDaImagem(formulario: Buffer | null): Buffer | null {
+  if (!formulario) return null;
+  const inicio = formulario.indexOf(Buffer.from("\r\n\r\n"));
+  if (inicio < 0) return null;
+  const png = formulario.indexOf(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), inicio + 4);
+  if (png < 0) return null;
+  const fim = formulario.indexOf(Buffer.from([0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]), png);
+  return fim < 0 ? null : formulario.subarray(png, fim + 8);
+}
+
+async function desenharPeca(page: Page, indice: number) {
+  const x = 300 + (indice % 8) * 115;
+  const y = 140 + Math.floor(indice / 8) * 65;
+  await page.getByRole("radio", { name: "Retângulo", exact: true }).locator("..").click();
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 45, y + 35, { steps: 2 });
+  await page.mouse.up();
+}
+
+async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean } = {}) {
+  const pedidos: { finalizar: number; falas: string[]; fotosFinais: number; fotosIntermediarias: number; analises: number; eventos: string[]; grafos: string[]; corpoFinal?: string; imagemFinal: Buffer | null; imagemIntermediaria: Buffer | null } = { finalizar: 0, falas: [], fotosFinais: 0, fotosIntermediarias: 0, analises: 0, eventos: [], grafos: [], imagemFinal: null, imagemIntermediaria: null };
   const erros: string[] = [];
   page.on("pageerror", (e) => erros.push(e.message));
   await page.addInitScript(() => {
     let audio: AudioFalso | null = null;
+    let fala: FalaFalsa | null = null;
     let reconhecimento: ReconhecimentoFalso | null = null;
     const controle: Controle = {
       reter: false, tocando: false, ouvindo: false, falas: [], fila: [],
-      terminar: () => { const atual = audio; audio = null; controle.tocando = false; atual?.onended?.(); },
+      terminar: () => {
+        const atual = audio; audio = null;
+        const atualFala = fala; fala = null;
+        controle.tocando = false;
+        atual?.onended?.();
+        atualFala?.onend?.();
+      },
       emitir: (texto) => reconhecimento?.emitir(texto),
     };
+    class FalaFalsa {
+      lang = ""; rate = 1; voice: SpeechSynthesisVoice | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onboundary: (() => void) | null = null;
+      constructor(readonly text: string) {}
+    }
     class AudioFalso {
-      src = ""; preload = ""; currentTime = 0;
+      src = ""; preload = ""; currentTime = 0; readyState = 4;
       onended: (() => void) | null = null;
       onerror: (() => void) | null = null;
       constructor(src = "") { this.src = src; }
@@ -52,6 +86,17 @@ async function preparar(page: Page) {
       }
     }
     Object.defineProperty(window, "Audio", { configurable: true, value: AudioFalso });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: FalaFalsa });
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      getVoices: () => [],
+      cancel: () => { fala = null; controle.tocando = false; },
+      speak: (utterance: FalaFalsa) => {
+        fala = utterance;
+        controle.tocando = true;
+        controle.falas.push(utterance.text);
+        if (!controle.reter) setTimeout(() => { if (fala === utterance) controle.terminar(); }, 20);
+      },
+    } });
     Object.defineProperty(window, "SpeechRecognition", { configurable: true, value: ReconhecimentoFalso });
     Object.defineProperty(window, "webkitSpeechRecognition", { configurable: true, value: ReconhecimentoFalso });
     (window as unknown as JanelaTeste).fechamentoTeste = controle;
@@ -62,14 +107,30 @@ async function preparar(page: Page) {
     tempos: { REQUISITOS: 600, ALTO_NIVEL: 600, APROFUNDAMENTO: 600, FECHAMENTO: 180 },
   } }));
   await page.route("**/api/sessoes/*/eventos", (r) => {
-    const corpo = r.request().postDataJSON() as { eventos: { tipo: string; dados: { quem?: string; texto?: string } }[] };
+    const corpo = r.request().postDataJSON() as { eventos: { tipo: string; dados: { quem?: string; texto?: string; grafo?: string } }[] };
+    pedidos.eventos.push(...corpo.eventos.map((e) => e.tipo));
     for (const e of corpo.eventos) if (e.tipo === "fala" && e.dados.quem === "agente" && e.dados.texto) pedidos.falas.push(e.dados.texto);
+    for (const e of corpo.eventos) if (e.tipo === "desenho" && e.dados.grafo) pedidos.grafos.push(e.dados.grafo);
     return r.fulfill({ json: { ok: true } });
   });
   await page.route("**/api/sessoes/*/finalizar", (r) => { pedidos.finalizar++; return r.fulfill({ json: { ok: true } }); });
-  await page.route("**/api/sessoes/*/analisar", (r) => r.fulfill({ json: { status: "ok", observacoes: [] } }));
+  await page.route("**/api/sessoes/*/analisar", (r) => { pedidos.analises++; return r.fulfill({ json: { status: "ok", observacoes: [] } }); });
   await page.route("**/api/sessoes/*/empecilho", (r) => r.fulfill({ json: { empecilho: null, motivo: "problema sem mudança prevista" } }));
-  await page.route("**/api/sessoes/*/imagens", (r) => r.fulfill({ json: { url: "/prova-do-quadro.png" } }));
+  await page.route("**/api/sessoes/*/imagens", async (r) => {
+    const corpo = r.request().postData() ?? "";
+    if (corpo.includes('name="final"\r\n\r\n1')) {
+      pedidos.fotosFinais++;
+      pedidos.corpoFinal = corpo;
+      pedidos.imagemFinal = bytesDaImagem(r.request().postDataBuffer());
+      if (opcoes.falharFotoFinal) return r.fulfill({ status: 500, json: { erro: "falha de teste" } });
+    } else {
+      pedidos.fotosIntermediarias++;
+      pedidos.imagemIntermediaria = bytesDaImagem(r.request().postDataBuffer());
+      // Simula o repositório da sessão: 60 fotos intermediárias e sempre aceita/substitui a final.
+      if (pedidos.fotosIntermediarias > 60) return r.fulfill({ status: 429, json: { erro: "limite de imagens da sessão" } });
+    }
+    return r.fulfill({ json: { url: "/prova-do-quadro.png" } });
+  });
   await page.route("**/api/stt-token?**", (r) => r.fulfill({ status: 501, json: { erro: "sem transcrição paga no teste" } }));
   await page.route("**/api/falar", async (r) => {
     const { texto } = r.request().postDataJSON() as { texto: string };
@@ -81,8 +142,15 @@ async function preparar(page: Page) {
   });
   await page.goto("/entrevista/system-design");
   await expect(page.getByRole("button", { name: "Começar", exact: true })).toBeEnabled();
+  // No modo demonstração a apresentação usa speechSynthesis; controlar o fim evita depender da voz do navegador.
+  await page.evaluate(() => { (window as unknown as JanelaTeste).fechamentoTeste.reter = true; });
   await page.getByRole("button", { name: "Começar", exact: true }).click();
-  await expect(page.locator("[data-fase=REQUISITOS]")).toBeVisible({ timeout: 40000 });
+  for (let fala = 1; fala <= 2; fala++) {
+    await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).fechamentoTeste.falas.length)).toBe(fala);
+    await page.evaluate(() => (window as unknown as JanelaTeste).fechamentoTeste.terminar());
+  }
+  await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 40000 });
+  await page.evaluate(() => { (window as unknown as JanelaTeste).fechamentoTeste.reter = false; });
   return { pedidos, erros };
 }
 
@@ -145,6 +213,61 @@ test("sem voz: texto aparece antes da página final e não sintetiza despedida",
   await expect(page.locator("main[data-despedindo=true]").getByRole("status")).toContainText("Obrigado");
   await expect(page).toHaveURL(/\/obrigado$/);
   expect(pedidos.finalizar).toBe(1);
+  expect(erros).toEqual([]);
+});
+
+test("foto final preserva o quadro analisado quando nada muda antes de encerrar", async ({ page }) => {
+  const { pedidos, erros } = await preparar(page);
+  await page.getByRole("button", { name: "Silenciar respostas por voz" }).click();
+  await page.clock.install();
+  await page.getByRole("radio", { name: "Retângulo", exact: true }).locator("..").click();
+  await desenharPeca(page, 0);
+  await page.clock.runFor(4000);
+  await expect.poll(() => pedidos.analises).toBeGreaterThan(0);
+  await expect.poll(() => pedidos.fotosIntermediarias).toBeGreaterThan(0);
+  await botaoEncerrar(page);
+  await expect(page).toHaveURL(/\/obrigado$/);
+  await expect.poll(() => pedidos.fotosFinais).toBeGreaterThan(0);
+  expect(pedidos.imagemFinal).not.toBeNull();
+  expect(pedidos.imagemFinal?.equals(pedidos.imagemIntermediaria ?? Buffer.alloc(0))).toBe(true);
+  expect(erros).toEqual([]);
+});
+
+test("foto e desenho final incluem a peça nova depois de mais de 60 análises", async ({ page }) => {
+  test.setTimeout(360_000);
+  const { pedidos, erros } = await preparar(page);
+  await page.getByRole("button", { name: "Silenciar respostas por voz" }).click();
+  await page.clock.install();
+  await page.getByRole("radio", { name: "Retângulo", exact: true }).locator("..").click();
+  for (let i = 0; i < 61; i++) {
+    await desenharPeca(page, i);
+    await page.clock.runFor(4000);
+  }
+  await expect.poll(() => pedidos.analises).toBeGreaterThan(60);
+  await expect.poll(() => pedidos.fotosIntermediarias).toBeGreaterThan(60);
+  const grafoAntesDaPecaFinal = pedidos.grafos.at(-1);
+  // Esta peça é desenhada depois que o teto já foi atingido.
+  await desenharPeca(page, 62);
+  await botaoEncerrar(page);
+  await expect(page).toHaveURL(/\/obrigado$/);
+  await expect.poll(() => pedidos.fotosFinais).toBeGreaterThan(0);
+  expect(pedidos.imagemFinal).not.toBeNull();
+  expect(pedidos.imagemFinal?.equals(pedidos.imagemIntermediaria ?? Buffer.alloc(0))).toBe(false);
+  expect(pedidos.eventos).toContain("imagem_recusada");
+  expect(pedidos.grafos.length).toBeGreaterThan(0);
+  expect(pedidos.grafos.at(-1)).toContain("COMPONENTES");
+  expect(pedidos.grafos.at(-1)).not.toBe(grafoAntesDaPecaFinal);
+  expect(erros).toEqual([]);
+});
+
+test("duas falhas na foto final deixam evento na linha do tempo", async ({ page }) => {
+  const { pedidos, erros } = await preparar(page, { falharFotoFinal: true });
+  await page.getByRole("button", { name: "Silenciar respostas por voz" }).click();
+  await desenharPeca(page, 0);
+  await botaoEncerrar(page);
+  await expect(page).toHaveURL(/\/obrigado$/);
+  await expect.poll(() => pedidos.fotosFinais).toBe(2);
+  await expect.poll(() => pedidos.eventos.filter((tipo) => tipo === "foto_final_falhou").length).toBeGreaterThan(0);
   expect(erros).toEqual([]);
 });
 
