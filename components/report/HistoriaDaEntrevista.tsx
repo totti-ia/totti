@@ -5,12 +5,12 @@
 // código mudou (aparecem mesmo se ele nunca rodou o código); abaixo de tudo, os acontecimentos escritos, em ordem.
 // Passar o mouse num deles acende o outro; clicar abre o código e a conversa daquele minuto.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, ClipboardPaste, Lightbulb, Shuffle, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Check, ChevronRight, CircleHelp, ClipboardPaste, Lightbulb, Shuffle, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { Gravacao } from "@/lib/contracts";
 import { formatMs } from "@/lib/format";
 import { execucaoAte } from "@/lib/gravacao";
 
-export type TipoAcontecimento = "travou" | "dica" | "mudanca" | "adaptou" | "colagem";
+export type TipoAcontecimento = "travou" | "dica" | "mudanca" | "adaptou" | "colagem" | "pergunta";
 
 export interface Acontecimento {
   t: number;
@@ -25,12 +25,23 @@ export interface Acontecimento {
   momento?: number;
 }
 
+/** Um ponto representa uma versão do desenho e abre o mesmo instante. */
+export function instanteDoPontoDoQuadro(t: number): number {
+  return t;
+}
+
+/** No quadro, `momento` guarda o tempo; em live coding, guarda o índice do painel. */
+export function instanteDoAcontecimento(a: Acontecimento): number | undefined {
+  return a.momento;
+}
+
 const ICONE: Record<TipoAcontecimento, LucideIcon> = {
   travou: TriangleAlert,
   dica: Lightbulb,
   mudanca: Shuffle,
   adaptou: Check,
   colagem: ClipboardPaste,
+  pergunta: CircleHelp,
 };
 
 /** O que pesa contra fica em tinta cheia com borda; o resto, em areia. Sem cor: o tema do papel é só tinta. */
@@ -40,6 +51,7 @@ const TOM: Record<TipoAcontecimento, string> = {
   mudanca: "bg-superficie-2 text-texto",
   adaptou: "bg-texto text-texto-claro",
   colagem: "bg-texto text-texto-claro",
+  pergunta: "bg-superficie-2 text-texto",
 };
 
 const ALTURA_PLOT = 150;
@@ -79,18 +91,24 @@ type Props = {
   duracao: number;
   gravacao: Gravacao | null;
   acontecimentos: Acontecimento[];
+  serie?: { eixo: string; pontos: { t: number; valor: number }[] };
+  faixasNeutras?: { nome: string; marcas: number[] }[];
+  fases?: { t: number; nome: string }[];
+  falasNeutras?: { t: number; role: "candidate" | "agent"; text: string }[];
   onAbrir?: (momento: number) => void;
 };
 
-export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, acontecimentos, onAbrir }: Props) {
+export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, acontecimentos, serie, faixasNeutras, fases = [], falasNeutras = [], onAbrir }: Props) {
   const [ref, largura] = useLargura<HTMLDivElement>();
   const [cursor, setCursor] = useState<{ t: number; y: number } | null>(null);
   const [destaque, setDestaque] = useState<number | null>(null);
 
-  const execucoes = gravacao?.execucoes ?? [];
+  const execucoes = serie ? serie.pontos.map((p) => ({ t: p.t, passed: p.valor, total: 1 })) : gravacao?.execucoes ?? [];
+  const ehQuadro = faixasNeutras?.some(f => f.nome === "Desenho") ?? false;
+  const ehLiveCoding = serie?.eixo === "fração dos testes passando";
   const temCurva = execucoes.length > 0;
   // Quando cada um falou e quando o código mudou: é a linha do tempo que existe mesmo sem execução.
-  const faixas = gravacao
+  const faixas = faixasNeutras ? faixasNeutras.map((f, i) => ({ ...f, tom: ["bg-texto", "bg-texto/35", "bg-texto/60"][i % 3] })) : gravacao
     ? [
         { nome: "Candidato", marcas: gravacao.falas.filter((f) => f.role === "candidate").map((f) => f.t), tom: "bg-texto" },
         { nome: "Totti", marcas: gravacao.falas.filter((f) => f.role === "agent").map((f) => f.t), tom: "bg-texto/35" },
@@ -144,7 +162,9 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [execucoes, largura, duracao]);
 
-  const abre = (a: Acontecimento) => a.momento !== undefined && !!onAbrir && !!gravacao;
+  const abre = (a: Acontecimento) => a.momento !== undefined && !!onAbrir;
+  const pontoNoCursor = cursor ? serie?.pontos.filter(p => p.t <= cursor.t).at(-1) : undefined;
+  const falaNoCursor = cursor ? [...falasNeutras].filter(f => f.t <= cursor.t).at(-1) : undefined;
   const acender = (i: number) => ({
     onPointerEnter: () => setDestaque(i),
     onPointerLeave: () => setDestaque(null),
@@ -157,23 +177,25 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
       <div className="flex flex-col gap-0.5">
         <h2 className="text-[17px] font-medium">Como foi a entrevista</h2>
         <p className="text-sm text-texto-suave">
-          {temCurva
+          {serie && ehLiveCoding && gravacao ? "A linha mostra quanto dos testes passava cada vez que ele rodou o código; embaixo, quando cada um falou e quando o código mudou." : serie && ehLiveCoding ? "Quando cada um falou e quando o código mudou. Ele não rodou o código nesta entrevista, então não há linha de testes." : serie && serie.pontos.length > 0 ? `A linha mostra ${serie.eixo}; embaixo, quando cada um falou e quando o desenho mudou.` : serie
+            ? "Ainda não há desenho registrado. Embaixo, quando cada um falou e as fases da entrevista."
+            : temCurva
             ? "A linha mostra quanto dos testes passava cada vez que ele rodou o código; embaixo, quando cada um falou e quando o código mudou."
             : "Quando cada um falou e quando o código mudou. Ele não rodou o código nesta entrevista, então não há linha de testes."}
         </p>
       </div>
 
       <div className="rounded-padrao bg-superficie p-4 sm:p-6">
-        {!gravacao && acontecimentos.length === 0 && (
+        {!gravacao && !serie && acontecimentos.length === 0 && (
           <p className="text-[14px] text-texto-suave">A gravação desta entrevista não está disponível.</p>
         )}
-        <div className={`flex gap-2 ${!gravacao && acontecimentos.length === 0 ? "hidden" : ""}`}>
+        <div className={`flex gap-2 ${!gravacao && !serie && acontecimentos.length === 0 ? "hidden" : ""}`}>
           {/* Coluna da esquerda: o eixo y do gráfico (0, metade e todos) e o nome de cada faixa */}
           <div aria-hidden className="relative w-[4.5rem] shrink-0 text-right text-[11px] text-texto-suave tabular-nums">
             {temCurva &&
               [1, 0.5, 0].map((f) => (
                 <span key={f} className="absolute right-0 -translate-y-1/2" style={{ top: alturaTrilha + yFrac(f) }}>
-                  {f * 100}%
+                  {serie ? `${f * 100}%` : `${f * 100}%`}
                 </span>
               ))}
             {faixas.map((f, k) => (
@@ -192,10 +214,12 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
             <div className="relative" style={{ height: alturaTrilha }}>
               {icones.map(({ a, i, cx, fileira }) => {
                 const Icone = ICONE[a.tipo];
-                return (
-                  <span
+                return ehQuadro ? (
+                  <button
                     key={i}
-                    aria-hidden
+                    type="button"
+                    aria-label={`${formatMs(a.t)}: ${a.titulo}`}
+                    onClick={() => { const t = instanteDoAcontecimento(a); if (serie && t !== undefined) onAbrir?.(t); }}
                     {...acender(i)}
                     className={`absolute flex -translate-x-1/2 items-center justify-center rounded-full ring-2 ring-superficie transition-transform duration-150 ${TOM[a.tipo]} ${
                       destaque === i ? "scale-125" : ""
@@ -203,7 +227,9 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
                     style={{ left: cx, top: (fileiras - 1 - fileira) * ALTURA_FILEIRA, width: TAMANHO_ICONE, height: TAMANHO_ICONE }}
                   >
                     <Icone size={12} strokeWidth={2.25} />
-                  </span>
+                  </button>
+                ) : (
+                  <span key={i} aria-hidden {...acender(i)} className={`absolute flex -translate-x-1/2 items-center justify-center rounded-full ring-2 ring-superficie transition-transform duration-150 ${TOM[a.tipo]} ${destaque === i ? "scale-125" : ""}`} style={{ left: cx, top: (fileiras - 1 - fileira) * ALTURA_FILEIRA, width: TAMANHO_ICONE, height: TAMANHO_ICONE }}><Icone size={12} strokeWidth={2.25} /></span>
                 );
               })}
             </div>
@@ -223,6 +249,7 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
                 [1, 0.5, 0].map((f) => (
                   <span key={f} aria-hidden className="absolute inset-x-0 h-px bg-texto/[0.07]" style={{ top: yFrac(f) }} />
                 ))}
+              {fases.map((f) => <span key={`${f.nome}-${f.t}`} aria-label={f.nome} title={f.nome} className="absolute inset-y-0 z-[1] border-l border-dashed border-texto/25" style={{ left: x(f.t) }}><span className="absolute left-1 top-1 whitespace-nowrap rounded bg-superficie/90 px-1 text-[10px] text-texto-suave">{f.nome}</span></span>)}
 
               {/* Trechos (travou, mudança) em faixa clara; os pontuais, só a linha fina do ícone até embaixo */}
               {acontecimentos.map((a, i) =>
@@ -246,7 +273,7 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
               )}
 
               {curva && (
-                <svg width={largura} height={alturaPlot} className="absolute inset-x-0 top-0 overflow-visible" aria-hidden>
+                <svg width={largura} height={alturaPlot} className="absolute inset-x-0 top-0 overflow-visible" aria-hidden={!ehQuadro || undefined}>
                   <path d={curva.area} fill="var(--texto)" fillOpacity={0.06} />
                   <path d={curva.linha} fill="none" stroke="var(--texto)" strokeWidth={2} strokeLinejoin="round" />
                   {execucoes.map((e, i) => (
@@ -258,6 +285,20 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
                       fill="var(--texto)"
                       stroke="var(--superficie)"
                       strokeWidth={1.5}
+                      className={ehQuadro && onAbrir ? "cursor-pointer" : undefined}
+                      role={ehQuadro ? "button" : undefined}
+                      tabIndex={ehQuadro && onAbrir ? 0 : undefined}
+                      aria-label={ehQuadro ? `Abrir desenho de ${formatMs(e.t)}` : undefined}
+                      onClick={() => {
+                        if (!ehQuadro || !onAbrir) return;
+                        onAbrir(instanteDoPontoDoQuadro(e.t));
+                      }}
+                      onKeyDown={(event) => {
+                        if (ehQuadro && onAbrir && (event.key === "Enter" || event.key === " ")) {
+                          event.preventDefault();
+                          onAbrir(instanteDoPontoDoQuadro(e.t));
+                        }
+                      }}
                     />
                   ))}
                 </svg>
@@ -278,6 +319,7 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
               ))}
 
               {cursor && gravacao && <Cursor cursor={cursor} gravacao={gravacao} x={x(cursor.t)} largura={largura} altura={alturaArea} />}
+              {cursor && serie && !gravacao && <div className="pointer-events-none absolute z-10 rounded-pequeno bg-superficie p-2.5 text-[13px] shadow-flutuante ring-1 ring-borda" style={{ left: Math.min(x(cursor.t) + 12, Math.max(0, largura - 260)), top: Math.max(0, cursor.y + 12), width: Math.min(260, largura) }}><p className="text-xs text-texto-suave tabular-nums">{formatMs(cursor.t)}</p><p className="font-medium">{pontoNoCursor ? `desenho em ${pontoNoCursor.valor.toLocaleString("pt-BR", { style: "percent" })} do tamanho final (peças + conexões)` : "Ainda não há desenho registrado"}</p>{falaNoCursor && <p className="mt-1 line-clamp-2 text-texto-suave">{falaNoCursor.role === "candidate" ? "Candidato" : "Totti"}: “{falaNoCursor.text}”</p>}</div>}
             </div>
 
             {/* Eixo do tempo */}
@@ -329,7 +371,7 @@ export default function HistoriaDaEntrevista({ duracao: duracaoBruta, gravacao, 
                   {abre(a) ? (
                     <button
                       type="button"
-                      onClick={() => onAbrir!(a.momento!)}
+                      onClick={() => onAbrir!(instanteDoAcontecimento(a)!)}
                       aria-label={`${formatMs(a.t)}: ${a.titulo}. Abrir o código e a conversa.`}
                       className={`${classe} w-[calc(100%+1rem)] outline-none hover:bg-superficie-2/70 focus-visible:ring-2 focus-visible:ring-marca`}
                       {...acender(i)}
