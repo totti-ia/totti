@@ -782,7 +782,8 @@ export async function imagemGetHandler(
   { params }: { params: Promise<{ id: string; n: string }> },
 ): Promise<Response> {
   const { id, n } = await params;
-  if (!eIdPlausivel(id) || !/^[1-9]\d{0,3}$/.test(n)) return notFound();
+  // Até 16 dígitos: a foto final tem número próprio (o maior inteiro seguro) para não colidir com as intermediárias.
+  if (!eIdPlausivel(id) || !/^[1-9]\d{0,15}$/.test(n) || !Number.isSafeInteger(Number(n))) return notFound();
   const img = await contexto().repositorio.obterImagem(id, Number(n));
   if (!img) return erro(404, "imagem não encontrada");
   return new Response(img.bytes as BodyInit, {

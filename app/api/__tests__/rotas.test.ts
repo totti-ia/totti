@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { NextRequest } from "next/server";
 import { criarRepositorioEmMemoria, type RepositorioSessoes } from "../../../lib/agente/armazenamento";
+import { criarRepositorioKv } from "../../../lib/agente/armazenamento/kv";
+import { criarArquivosEmMemoria } from "../../../lib/storage/arquivos";
+import { criarKvEmMemoria } from "../../../lib/storage/kv";
 import { resolverAvaliacao } from "../../../lib/agente/kits";
 import { criarClienteFalso, type LlmCliente } from "../../../lib/agente/llm/cliente";
 import { definirContextoParaTestes } from "../../../lib/agente/rotas/contexto";
@@ -512,6 +515,20 @@ describe("imagens", () => {
     const r2 = await imagemPost(formImagem(PNG), params(sessao_id));
     assert.equal((await r2.json()).url, `/api/sessoes/${sessao_id}/imagens/2`);
   });
+  it("a url da foto final (repositório de produção) serve a imagem", async () => {
+    definirContextoParaTestes({ repositorio: criarRepositorioKv(criarKvEmMemoria(), criarArquivosEmMemoria()), llm: criarLlmFalsoDeterministico(), agora: () => relogio });
+    const { sessao_id } = await novaSessao();
+    const f = new FormData();
+    f.append("imagem", new Blob([PNG as BlobPart], { type: "image/png" }), "quadro.png");
+    f.append("horario", "2026-11-07T15:00:00.000Z");
+    f.append("final", "1");
+    const r = await imagemPost(new Request("http://x/api/sessoes/i/imagens", { method: "POST", body: f }), params(sessao_id));
+    assert.equal(r.status, 200);
+    const n = (await r.json()).url.split("/").at(-1);
+    const g = await imagemGet(new Request("http://x"), { params: Promise.resolve({ id: sessao_id, n }) });
+    assert.equal(g.status, 200);
+    assert.deepEqual(new Uint8Array(await g.arrayBuffer()), PNG);
+  });
   it("rejeita o que não é PNG, grande demais, sem campo, sessão ou imagem inexistentes", async () => {
     const { sessao_id } = await novaSessao();
     assert.equal((await imagemPost(formImagem(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9])), params(sessao_id))).status, 400);
@@ -524,6 +541,8 @@ describe("imagens", () => {
     assert.equal(g.status, 404);
     const g2 = await imagemGet(new Request("http://x"), { params: Promise.resolve({ id: sessao_id, n: "abc" }) });
     assert.equal(g2.status, 404);
+    const g3 = await imagemGet(new Request("http://x"), { params: Promise.resolve({ id: sessao_id, n: "99999999999999999" }) });
+    assert.equal(g3.status, 404);
   });
 });
 
