@@ -20,7 +20,7 @@ import {
   type SessaoArmazenada,
 } from "./repositorio";
 
-const MAX_IMAGENS_POR_SESSAO = 20;
+const MAX_IMAGENS_POR_SESSAO = 60;
 const ID_VALIDO = /^[A-Za-z0-9_-]{1,80}$/;
 
 type SessaoGravada = Omit<SessaoArmazenada, "analises" | "estado">;
@@ -34,6 +34,9 @@ const nsEvento = (id: string) => `evento:${id}`;
 const nsImagem = (id: string) => `imagem:${id}`;
 const numeroComoChave = (n: number) => String(n).padStart(4, "0");
 const caminhoDaImagem = (id: string, n: number) => `${id}/${n}.png`;
+// A chave e o caminho fixos tornam a substituição da foto final idempotente mesmo sob concorrência.
+const CHAVE_FINAL = "final";
+const NUMERO_FINAL = Number.MAX_SAFE_INTEGER;
 
 export function criarRepositorioKv(kv: Kv, arquivos: ArmazenamentoDeArquivos): RepositorioSessoes {
   const sessaoExiste = async (id: string) => ID_VALIDO.test(id) && (await kv.get<SessaoGravada>("sessao", id)) !== null;
@@ -92,28 +95,33 @@ export function criarRepositorioKv(kv: Kv, arquivos: ArmazenamentoDeArquivos): R
       return linhas.sort((a, b) => a.value.ordem - b.value.ordem).map((l) => l.value.evento);
     },
 
-    async salvarImagem(id, imagem) {
+    async salvarImagem(id, imagem, opcoes = {}) {
       if (!(await sessaoExiste(id))) throw new ErroLimite("sessão inexistente");
       const existentes = await kv.list(nsImagem(id));
-      if (existentes.length >= MAX_IMAGENS_POR_SESSAO) throw new ErroLimite("limite de imagens da sessão");
-      const numero = existentes.length + 1;
+      const final = opcoes.final ?? imagem.final ?? false;
+      if (!final && existentes.filter((i) => (i.value as { final?: boolean }).final !== true).length >= MAX_IMAGENS_POR_SESSAO) throw new ErroLimite("limite de imagens da sessão");
+      const numero = final ? NUMERO_FINAL : existentes.reduce((m, i) => {
+        const meta = i.value as { numero: number; final?: boolean };
+        return Math.max(m, meta.final ? 0 : meta.numero);
+      }, 0) + 1;
       await arquivos.salvar(caminhoDaImagem(id, numero), imagem.bytes, "image/png");
-      await kv.set(nsImagem(id), numeroComoChave(numero), { numero, horario: imagem.horario, bytes: imagem.bytes.byteLength });
+      await kv.set(nsImagem(id), final ? CHAVE_FINAL : numeroComoChave(numero), { numero, horario: imagem.horario, bytes: imagem.bytes.byteLength, final });
       return numero;
     },
 
     async obterImagem(id, numero) {
       if (!ID_VALIDO.test(id) || !Number.isInteger(numero) || numero < 1) return null;
-      const meta = await kv.get<{ horario: string }>(nsImagem(id), numeroComoChave(numero));
+      const meta = await kv.get<{ horario: string; final?: boolean }>(nsImagem(id), numero === NUMERO_FINAL ? CHAVE_FINAL : numeroComoChave(numero));
       if (!meta) return null;
       const bytes = await arquivos.obter(caminhoDaImagem(id, numero));
-      return bytes ? { bytes, horario: meta.horario } : null;
+      return bytes ? { bytes, horario: meta.horario, final: meta.final } : null;
     },
 
     async listarImagens(id) {
       if (!ID_VALIDO.test(id)) return [];
-      const linhas = await kv.list<{ numero: number; horario: string }>(nsImagem(id));
-      return linhas.map((l) => ({ numero: l.value.numero, horario: l.value.horario })).sort((a, b) => a.numero - b.numero);
+      const linhas = await kv.list<{ numero: number; horario: string; final?: boolean }>(nsImagem(id));
+      return linhas.sort((a, b) => Number((a.value as { final?: boolean }).final) - Number((b.value as { final?: boolean }).final) || (a.value as { numero: number }).numero - (b.value as { numero: number }).numero)
+        .map((l) => ({ numero: l.value.numero, horario: l.value.horario }));
     },
 
     async salvarScorecard(id, scorecard) {

@@ -16,6 +16,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawElement, ExcalidrawImperativeAPI } from "@/lib/excalidraw/tipos";
 import { quebrarLinhas } from "@/lib/excalidraw/texto";
+import { atualizarRastro } from "@/lib/presenca/acoesVisuais";
 
 export const AUTOR_AGENTE = "agente";
 
@@ -60,6 +61,8 @@ export type OpcoesTraco = {
 export type CamadaAgente = {
   /** Escreve um texto letra a letra, com ritmo humano. Resolve quando termina. */
   escrever(opcoes: OpcoesEscrita): Promise<void>;
+  /** Registra uma nota curta de pergunta junto à peça; uma por peça, no máximo oito no quadro. */
+  anotarPergunta(opcoes: OpcoesEscrita & { alvoId: string }): Promise<void>;
   /** Coloca (ou atualiza) um traço do agente: chamar a cada quadro para desenhar aos poucos. */
   tracar(opcoes: OpcoesTraco): void;
   /** Move a vista do quadro (fora do histórico). */
@@ -123,6 +126,17 @@ export function criarCamadaAgente(api: ExcalidrawImperativeAPI): CamadaAgente {
   const deslocamento = new Map<string, { dx: number; dy: number }>();
   const desloc = (grupo: string) => deslocamento.get(grupo) ?? { dx: 0, dy: 0 };
   let restaurando = false;
+  const reconstruirRastro = () => {
+    const mapa = new Map<string, { id: string; grupo: string }>();
+    for (const elemento of api.getSceneElements().filter((e) => !e.isDeleted && ehDoAgente(e))) {
+      const grupo = elemento.customData?.grupo;
+      if (typeof grupo !== "string" || !grupo.startsWith("rastro:")) continue;
+      const alvo = grupo.slice("rastro:".length);
+      mapa.set(alvo, { id: elemento.id, grupo });
+    }
+    return mapa;
+  };
+  let notasPorAlvo = reconstruirRastro();
 
   function candidatoOcupado() {
     const s = api.getAppState();
@@ -177,6 +191,14 @@ export function criarCamadaAgente(api: ExcalidrawImperativeAPI): CamadaAgente {
   }
 
   return {
+    async anotarPergunta(o) {
+      notasPorAlvo = reconstruirRastro();
+      const atualizado = atualizarRastro(notasPorAlvo, o.alvoId, { id: o.id, grupo: o.grupo });
+      notasPorAlvo = atualizado.rastro;
+      for (const removida of atualizado.removidos) await this.apagarGrupo(removida.grupo);
+      await this.escrever({ ...o, texto: o.texto.trim().slice(0, 40) });
+      this.ancorar(o.grupo, [o.alvoId]);
+    },
     async escrever(o) {
       const completo = quebrarLinhas(o.texto, o.largura ?? 48);
       const cps = o.velocidade ?? 38;

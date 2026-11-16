@@ -20,7 +20,7 @@ import { STATUS_ANALISE, type PedidoAnalise } from "../sessao/tipos";
 export const NOME_SCHEMA_ANALISE = "analise_quadro";
 
 export const PRINCIPIOS = `PRINCÍPIOS (siga todos):
-1. O candidato desenha; você conduz a conversa para entender o raciocínio dele, ENQUANTO ele desenha. Pergunte quando ele FECHOU UMA PARTE do desenho: um pedaço coerente (o fluxo de escrita inteiro, a escolha do armazenamento com o porquê, o caminho de leitura) sobre o qual você já tem informação para uma pergunta com conteúdo sobre a parte inteira: o que ela resolve, a decisão principal dentro dela e como ela se liga ao resto. Nesse caso, marque "parteFechada": true e pergunte sobre a parte, citando as peças pelo nome. Nunca pergunte sobre uma peça que acabou de ser colocada, nem com o desenho pela metade: peça solta, texto solto, caixa sem nome, fluxo que ainda para no meio ou seta sem destino pedem "ok", com "parteFechada": false. "ok" também quando ele está no meio de uma fala ou quando não há nada novo nem pendente. No APROFUNDAMENTO, a parte fechada pode ser o caminho que ele já desenhou, e a pergunta é um ponto do plano da vaga ou da rubrica ainda sem evidência, ligado a ela.
+1. Há três ganchos para perguntar enquanto ele trabalha: "parte_fechada" (um pedaço coerente concluído; marque parteFechada true), "decisao" (uma escolha nova visível, como tecnologia nomeada, seta entre partes ou requisito anotado; pergunte por que escolheu) e "raciocinio" (ele está no meio de um caminho; cite a última peça e pergunte o que pesou, descartou ou fará em seguida). Marque gancho com o tipo escolhido; parteFechada é true somente para parte_fechada. Não pergunte no meio de um traço nem de uma fala. Na dúvida, escolha um gancho de decisão ou raciocínio que exista no desenho, em vez de esperar uma parte inteira.
 2. O problema é vago de propósito. Perguntar requisitos antes de desenhar é o primeiro sinal avaliado.
 3. Requisitos só pela ficha: responda com os números da ficha; fora dela, peça para o candidato assumir algo razoável e declarar a suposição.
 4. Não valide nem corrija. Nunca diga que algo está certo, errado, bom, ótimo, excelente ou perfeito; não elogie nem parabenize; não ensine a resposta. Vale para qualquer palavra ou expressão que valide, elogie ou corrija, não só as citadas: julgue pelo sentido. Reaja de forma neutra, inclusive em "pergunta" e "nota".
@@ -128,7 +128,8 @@ REGRAS DE SAÍDA (JSON, exatamente os campos do schema):
 - "degrau": 1, 2 ou 3 conforme a escada de ajuda; senão null.
 - "observacoes": 0 a 3 itens, cada um com "criterio" (id da rubrica; para um critério da recrutadora, o nome exato dele como está em "Critérios da recrutadora"), "sinal" (positivo, negativo ou neutro), "espontaneo" (true/false) e "evidencia" (curta, citando o elemento do desenho ou um trecho da fala). Registre só o que é novo desde as análises anteriores: nunca repita, com outras palavras, uma observação que você já fez. Registre também o que ele FEZ e PENSOU (sinal neutro ou positivo): que peças colocou, como ligou uma à outra, que motivo deu. O relatório precisa contar a solução dele, não só o que faltou. Pedido de repetição ou esclarecimento ("como é?", "não entendi", "repete"), correção ao entrevistador ("não tem interrogação aí") e pedido para encerrar NÃO viram observação: não dizem nada sobre o candidato, e a falha pode ter sido da pergunta.
 - "avancar_fase": true somente quando a fase atual é ALTO_NIVEL e o candidato já mostrou o suficiente dela: as peças principais do desenho estão no quadro e ligadas entre si (o caminho principal do problema aparece de ponta a ponta), de modo que o próximo passo natural é aprofundar. É um sinal de progresso, independente de "status": pode vir com "ok". Em qualquer outra fase, ou se o desenho ainda está incompleto ou o candidato acabou de começar, false. Não use para apressar nem para punir; na dúvida, false.
-- "parteFechada": true somente quando a fase atual é ALTO_NIVEL ou APROFUNDAMENTO, o candidato fechou uma parte do desenho (princípio 1) e você tem o que perguntar sobre a parte inteira. Parte pela metade, peça solta ou texto solto: false. Em REQUISITOS e FECHAMENTO, false. Na dúvida, false.
+- "gancho": "parte_fechada", "decisao" ou "raciocinio" conforme o princípio 1; null se não há conteúdo específico para perguntar.
+- "parteFechada": derive de gancho === "parte_fechada" (compatibilidade com o quadro).
 - "escopo": true só quando o status é "redirecionar" pelo escopo (princípio 8): o desenho não ataca o que o problema pede. Em qualquer outro caso, false.
 - Na dúvida entre perguntar e ficar quieto: com pergunta permitida, uma parte fechada do desenho ainda sem explicação (ALTO_NIVEL, com "parteFechada": true) ou um ponto do plano ou da rubrica sem evidência (APROFUNDAMENTO), pergunte; em REQUISITOS e FECHAMENTO, fique quieto ("ok").
 - Não repita uma pergunta já feita nem uma dúvida já pendente com outras palavras.`;
@@ -162,9 +163,9 @@ Acompanhe como o candidato se adapta: se ele revisa o desenho onde a mudança pe
 
 /**
  * A partir dessa fração do tempo total, a análise prioriza os critérios da recrutadora (do plano) ainda sem evidência.
- * Antes disso, só lista. Mesmo corte do live coding (AGENDA_START_FRACTION em lib/agents/policy.ts, 30% nas duas salas).
+ * Antes disso, só lista. Todo critério do plano deve ser provocado até 70% do tempo.
  */
-export const A_PARTIR_DA_FRACAO_CRITERIOS = 0.3;
+export const A_PARTIR_DA_FRACAO_CRITERIOS = 0.7;
 
 /**
  * Critérios que a recrutadora pediu no plano e ainda sem evidência. Aparecem sempre que o plano tem critérios; a partir
@@ -177,7 +178,7 @@ function blocoDosCriteriosDoPlano(estado: EstadoSessao, total: ReturnType<typeof
   const linha = `Critérios da recrutadora ainda sem evidência: ${pendentes.length ? dadoEmLinha("criterios", pendentes.join(" | ")) : "nenhum"}\n`;
   const fracao = total.totalMin > 0 ? total.decorridoMin / total.totalMin : 0;
   if (!pendentes.length || fracao < A_PARTIR_DA_FRACAO_CRITERIOS) return linha;
-  return `${linha}PRIORIDADE DOS CRITÉRIOS DA RECRUTADORA: já passou ${Math.round(fracao * 100)}% do tempo e ainda faltam critérios dela. Quando for perguntar (parte fechada), prefira uma pergunta que traga evidência de um destes critérios, ligada ao que ELE desenhou, sem citar o nome do critério ao candidato. Cada um deve ser puxado pelo menos uma vez antes do fechamento.
+  return `${linha}PRIORIDADE DOS CRITÉRIOS DA RECRUTADORA: já passou ${Math.round(fracao * 100)}% do tempo e ainda faltam critérios dela. Quando fizer uma pergunta, prefira um destes critérios se houver gancho no que ELE desenhou, sem citar o nome do critério ao candidato. Cada um deve ser puxado pelo menos uma vez até 70% do tempo.
 `;
 }
 
@@ -187,10 +188,10 @@ function blocoDosCriteriosDoPlano(estado: EstadoSessao, total: ReturnType<typeof
  * assunto e o relatório fica sem prova do que a recrutadora pediu.
  */
 function blocoDaAgenda(estado: EstadoSessao, pedido: PedidoAnalise, semEvidencia: string[], agora: number): string {
-  if (!semEvidencia.length || (estado.fase !== "APROFUNDAMENTO" && estado.fase !== "FECHAMENTO")) return "";
+  if (!semEvidencia.length || !(["ALTO_NIVEL", "APROFUNDAMENTO", "FECHAMENTO"] as string[]).includes(estado.fase)) return "";
   const restantes = Math.max(0, orcamentoDeInterrupcoes(ritmoDoEstado(estado, agora).duracaoMin) - pedido.perguntas_feitas);
   if (restantes === 0) return "";
-  return `AGENDA: restam ${restantes} pergunta(s) e ${semEvidencia.length} critério(s) sem evidência. Quando for perguntar, prefira um destes critérios (o mais ligado ao foco do plano), com uma pergunta ancorada no que já está no desenho. Se o desenho ainda não dá gancho para nenhum, siga o que estiver mais forte agora.
+  return `AGENDA: restam ${restantes} pergunta(s) e ${semEvidencia.length} critério(s) sem evidência. Todo critério do plano deve ser provocado ao menos uma vez até 70% do tempo. Quando for perguntar, prefira um destes critérios (o mais ligado ao foco do plano), com um gancho ancorado no que já está no desenho. Se o desenho ainda não dá gancho para nenhum, siga o que estiver mais forte agora.
 `;
 }
 
@@ -302,7 +303,7 @@ Candidato sem mexer no desenho nem falar há: ${
 ${pedidoDeTempoPendente(estado, agora, pedido.parado_ha_s) ? blocoDoPedidoDeTempo(Math.round((agora - (estado.pediuTempoEm ?? agora)) / 1000)) : ""}Requisitos já combinados no quadro: ${pedido.requisitos?.length ? dadoEmLinha("requisitos", pedido.requisitos.join(" | ")) : "(nenhum)"}
 Status permitidos agora: ${permitidos.join(", ")}
 ${blocoDoEscopo(estado, agora)}${blocoDoEmpecilho(estado, agora)}${estado.fase === "FECHAMENTO" && !estado.perguntaFinalFeita ? `PERGUNTA FINAL: ainda falta a pergunta de encerramento (ex.: o que ele mudaria com mais tempo, ou o maior risco do desenho). Faça-a agora como "duvida", ancorada no desenho.
-` : ""}${obrigaPergunta ? `PERGUNTA OBRIGATÓRIA: faz ${Math.round(RITMO_QUADRO.tetoSemPerguntaMs / 60_000)} min que você não pergunta${desenhoNovo ? " e o desenho mudou desde então" : ""}. Nesta análise "ok" não vale: ${desenhoNovo
+` : ""}${obrigaPergunta ? `PERGUNTA OBRIGATÓRIA: faz ${Math.round(RITMO_QUADRO.tetoSemPerguntaMs / 1000)} s que você não pergunta${desenhoNovo ? " e o desenho mudou desde então" : ""}. Nesta análise "ok" não vale: ${desenhoNovo
   ? "pergunte agora sobre a parte mais forte ou a mais recente do desenho dele, concreta, citando as peças pelo nome (princípio 1), mesmo que ela ainda não esteja fechada."
   : "pergunte sobre uma decisão dele ainda não explorada, um critério da recrutadora sem evidência, ou uma variação (escala, falha, custo) do que ele já desenhou: concreta, citando as peças pelo nome e sem repetir pergunta já feita."}
 ` : ""}${bloqueio ? `Atenção: uma pergunta nova NÃO pode ser feita agora (${bloqueio}). Responda "ok" e apenas registre observações.` : "Uma pergunta nova pode ser feita agora, se houver motivo."}
@@ -314,6 +315,7 @@ ${briefing}
 ${linhaDasPecasPerguntadas(estado, pedido.grafo)}
 Perguntas já feitas e como ele reagiu (não repita; assunto encerrado não volta, princípio 14):
 ${perguntasFeitasEmTexto(estado.perguntas)}
+Ganchos das últimas perguntas: ${estado.perguntas.slice(-3).map((p) => p.gancho ?? (p.status !== "ok" ? "parte_fechada" : "sem gancho")).join(" → ") || "(nenhum)"}. Use um gancho diferente do mais recente.
 
 Pergunta pendente (ainda não foi dita ao candidato; ele só a ouve quando fizer uma pausa): ${
     pendente

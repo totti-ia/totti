@@ -117,6 +117,36 @@ export const RELATORIO_EXEMPLO: RelatorioVisto = {
   ],
 };
 
+/** Exemplo de system design com linha do tempo completa para revisar o gráfico do quadro. */
+export const RELATORIO_EXEMPLO_QUADRO: RelatorioVisto = {
+  ...RELATORIO_EXEMPLO,
+  sessaoId: "exemplo-quadro",
+  perguntas: 3,
+  gravacao: {
+    duracaoMs: 34 * 60_000,
+    falas: [
+      { t: 72_000, role: "candidate", text: "Qual é a escala esperada?" },
+      { t: 90_000, role: "agent", text: "Cem leituras por escrita." },
+      { t: 410_000, role: "candidate", text: "Vou separar leitura e criação." },
+      { t: 750_000, role: "agent", text: "Como você lidaria com leituras repetidas?" },
+      { t: 770_000, role: "candidate", text: "Colocaria um cache na frente." },
+    ],
+    desenho: [
+      { t: 300_000, pecas: 2, conexoes: 1, imagem: null },
+      { t: 390_000, pecas: 4, conexoes: 3, imagem: null },
+      { t: 780_000, pecas: 5, conexoes: 4, imagem: null },
+    ],
+    fases: [{ t: 0, nome: "Requisitos" }, { t: 240_000, nome: "Alto nível" }, { t: 600_000, nome: "Aprofundamento" }, { t: 1500_000, nome: "Fechamento" }],
+    acontecimentos: [
+      { t: 72_000, tipo: "pergunta", titulo: "Pergunta sobre escala" },
+      { t: 750_000, tipo: "pergunta", titulo: "Pergunta sobre cache" },
+      { t: 810_000, tipo: "pergunta", titulo: "Pergunta sobre invalidação do cache" },
+      { t: 1260_000, tipo: "mudanca", titulo: "Mudança de cenário: volume 10x" },
+      { t: 1980_000, tipo: "adaptou", titulo: "Terminou o desenho" },
+    ],
+  },
+};
+
 const SEM_PROVA = "Sem evidência suficiente para atribuir nota a este critério.";
 const semProva = (id: string, nome: string) => ({ id, nome, nota: null, significado: null, justificativa: SEM_PROVA, provas: [] });
 

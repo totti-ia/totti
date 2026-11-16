@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { KIT_SYSTEM_DESIGN as kitDemo } from "../kits/system-design";
 import { DESPEDIDAS } from "../../totti/fechamento";
 import { criarClienteFalso, ErroLlm, type LlmArgs } from "../llm/cliente";
-import { AVISOS_DE_QUE_VAI_OLHAR, perguntar } from "../perguntar";
+import { perguntar } from "../perguntar";
 import { estadoInicial, type EstadoSessao } from "../sessao/estado";
 import { conclusaoBarradaRecente } from "../sessao/politica";
 import type { PlanoDaSessao } from "../plano";
@@ -18,6 +18,54 @@ const MUDANCA_ANUNCIADA: NonNullable<EstadoSessao["empecilho"]> = {
   id: "teste_mudanca", fala: "Uma mudança no problema: o volume cresceu dez vezes.", requisito: "Mudança: volume 10x", exige: "Rever gargalos.",
   anunciadoEm: AGORA - 5 * 60_000, fase: "ALTO_NIVEL", forcado: false,
 };
+
+describe("conclusão com comentário no mesmo turno", () => {
+  const grafo = "COMPONENTES\n- [r1] Cache (retângulo)\n- [r2] Banco (cilindro)\nCONEXÕES\n- [s1] Cache → Banco";
+  const entrada = { fase: "ALTO_NIVEL" as const, texto: "Terminei o desenho, dá uma olhada.", grafo };
+  const estadoAlto = { ...estadoInicial(), fase: "ALTO_NIVEL" as const, faseIniciadaEm: AGORA };
+  const resultado = (texto: string) => ({ responder: true, texto, requisito: null, concluiu: true });
+
+  it("resposta normal já comenta uma peça e pergunta, registrando a pergunta depois da conclusão", async () => {
+    const llm = criarClienteFalso([resultado("O Cache fica antes do Banco. Por que você escolheu essa ordem?")]);
+    const r = await perguntar({ ...deps(llm), versao: "v2" }, estadoAlto, entrada, AGORA);
+    assert.match(r.texto, /Cache/);
+    assert.ok(r.texto.trim().endsWith("?"));
+    assert.deepEqual(r.estado.conversa.slice(-2).map((f) => f.quem), ["candidato", "agente"]);
+    assert.equal(r.estado.conversa.at(-1)?.texto, r.texto);
+  });
+
+  it("regenera uma promessa vazia uma vez e reserva comentário e pergunta se ela se repete", async () => {
+    const llm = criarClienteFalso([resultado("Tá, vou olhar."), resultado("Certo, deixa eu analisar.")]);
+    const r = await perguntar({ ...deps(llm), versao: "v2" }, estadoAlto, entrada, AGORA);
+    assert.equal(llm.chamadas.length, 2);
+    assert.match(r.texto, /Cache/);
+    assert.ok(r.texto.trim().endsWith("?"));
+  });
+
+  it("substitui pergunta genérica que só cita a peça por observação concreta e uma pergunta", async () => {
+    const llm = criarClienteFalso([resultado("Como você pensou no Cache?")]);
+    const r = await perguntar({ ...deps(llm), versao: "v2" }, estadoAlto, entrada, AGORA);
+    assert.match(r.texto, /^Tá, olhei: Cache liga em Banco\./);
+    assert.equal((r.texto.match(/\?/g) ?? []).length, 1);
+  });
+
+  it("falha do modelo usa a reserva ligada ao desenho", async () => {
+    const llm = criarClienteFalso([new ErroLlm("rede", "indisponível")]);
+    const r = await perguntar({ ...deps(llm), versao: "v2" }, estadoAlto, entrada, AGORA);
+    assert.equal(r.falhou, undefined);
+    assert.match(r.texto, /Cache/);
+    assert.match(r.texto, /Cache liga em Banco/);
+    assert.ok(r.texto.trim().endsWith("?"));
+  });
+
+  it("conclusão sem peças usa a reserva completa com pergunta", async () => {
+    const llm = criarClienteFalso([new ErroLlm("rede", "indisponível")]);
+    const r = await perguntar({ ...deps(llm), versao: "v2" }, estadoAlto, { ...entrada, grafo: "" }, AGORA);
+    assert.equal(r.responder, true);
+    assert.equal(r.texto, "Ainda não vejo peças no desenho. Por onde você pensa em começar?");
+    assert.equal((r.texto.match(/\?/g) ?? []).length, 1);
+  });
+});
 
 describe("perguntar", () => {
   it("segunda reação vazia seguida (\"Hm.\" depois de \"Hm.\") vira silêncio; a primeira passa", async () => {
@@ -564,11 +612,12 @@ describe("quando o quadro fecha: vaga com plano e mudança de cenário (#129, de
   };
   const terminei = { responder: true, texto: "Beleza, vou olhar.", concluiu: true };
 
-  it("vaga de 30 min, 'terminei' aos 9 min com critérios do plano sem evidência: não fecha, avisa que vai olhar e a análise fica liberada", async () => {
+  it("vaga de 30 min, 'terminei' aos 9 min com critérios do plano sem evidência: comenta e pergunta no mesmo turno", async () => {
     const r = await turno(vaga(9), "Pronto, terminei.", terminei);
     assert.equal(r.fechamento, undefined);
     assert.ok(!r.estado.fechamento, "o fechamento não começou");
-    assert.ok(AVISOS_DE_QUE_VAI_OLHAR.includes(r.texto), r.texto);
+    assert.match(r.texto, /Cliente/);
+    assert.ok(r.texto.trim().endsWith("?"), r.texto);
     assert.equal(conclusaoBarradaRecente(r.estado, AGORA, { kit: kitDemo, problema }), "faltam_criterios", "a análise recebe a linha da conclusão barrada");
   });
 
@@ -576,7 +625,8 @@ describe("quando o quadro fecha: vaga com plano e mudança de cenário (#129, de
     let r = await turno(vaga(9), "Pronto, terminei.", terminei);
     r = await turno(r.estado, "Já falei, pronto.", terminei, AGORA + 30_000);
     assert.equal(r.fechamento, undefined);
-    assert.ok(AVISOS_DE_QUE_VAI_OLHAR.includes(r.texto), r.texto);
+    assert.match(r.texto, /Cliente/);
+    assert.ok(r.texto.trim().endsWith("?"), r.texto);
     r = await turno(r.estado, "Eu já terminei mesmo.", terminei, AGORA + 60_000);
     assert.equal(r.fechamento, undefined);
     assert.equal(r.estado.conclusoes, 3);

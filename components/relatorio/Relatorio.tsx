@@ -5,7 +5,7 @@
 // linha do tempo, regra de reprovação, adaptação e aprendizado, e a decisão no fim. Quem alimenta é o tipo comum
 // de `lib/relatorio` (ver `do-quadro.ts` e `da-ide.ts`); aqui não se sabe de onde o dado veio.
 // O bloco Integridade (#123) fica à parte da nota: evidência com minuto, nunca veredito.
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import React, { useCallback, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Check, ChevronDown, Printer, TriangleAlert, X } from "lucide-react";
 import VoltarLink from "@/components/VoltarLink";
@@ -75,6 +75,7 @@ type Props = {
 export default function Relatorio({ r, gravacao = null, comDecisao = true }: Props) {
   const [aberto, setAberto] = useState<number | null>(null);
   const [imagem, setImagem] = useState<string | null>(null);
+  const [momentoQuadro, setMomentoQuadro] = useState<number | null>(null);
   const fechar = useCallback(() => setAberto(null), []);
 
   // A prova só abre se há o que mostrar: com a gravação, o momento da sessão; sem ela, a foto do quadro.
@@ -179,7 +180,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
   const acontecimentos: Acontecimento[] = r.acontecimentos.map((a) => {
     const texto = a.detalhe ? `${a.titulo}. ${a.detalhe}` : a.titulo;
     const i = provas.findIndex((p) => p.origem === ORIGEM_HISTORIA && p.prova.t === a.t && p.texto === texto);
-    return { ...a, momento: i >= 0 ? i : undefined };
+    return { ...a, momento: gravacao ? (i >= 0 ? i : undefined) : r.gravacaoQuadro ? a.t : undefined };
   });
 
   const fora = (p: ProvaIndexada) => p.origem === ORIGEM_HISTORIA || p.origem === ORIGEM_INTEGRIDADE;
@@ -188,6 +189,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
     todas.find((p) => p.origem === ORIGEM_INTEGRIDADE && p.prova.t === t && p.texto === texto)?.prova;
   const comNota = r.criterios.filter((c) => c.nota !== null).length;
   const semProva = r.criterios.filter((c) => c.nota === null);
+  const linhaDoTempoDoQuadroIndisponivel = !r.gravacaoQuadro || [r.gravacaoQuadro.falas, r.gravacaoQuadro.desenho, r.gravacaoQuadro.fases, r.gravacaoQuadro.acontecimentos].every(lista => lista.length === 0);
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-12 px-4 py-8 sm:px-8">
@@ -208,7 +210,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         </div>
 
         {/* Veredito: o que o Totti recomenda, a nota geral e o porquê */}
-        <header className="flex flex-col gap-4">
+        <header data-secao="cabeçalho" className="flex flex-col gap-4">
           <p className="text-[13px] text-texto-suave">
             {r.titulo} · {r.contexto}
           </p>
@@ -224,7 +226,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
           )}
           <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
             <div className="flex flex-col gap-1">
-              <span className="text-[13px] text-texto-suave">O Totti recomenda</span>
+              <span data-secao="decisão" className="text-[13px] text-texto-suave">O Totti recomenda</span>
               <h1 className="titulo-display text-[44px] leading-none">{NOME_DA_RECOMENDACAO[r.recomendacao]}</h1>
             </div>
             <NotaGeral nota={r.notaGeral} comNota={comNota} total={r.criterios.length} />
@@ -255,7 +257,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         )}
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section data-secao="pontos fortes/atenção" className="grid gap-4 sm:grid-cols-2">
         <Lista titulo="Pontos fortes" icone={<Check size={13} strokeWidth={2.5} />} itens={r.pontosFortes} vazio="Nada a destacar." />
         <Lista titulo="Pontos de atenção" icone={<TriangleAlert size={12} strokeWidth={2.25} />} itens={r.pontosDeAtencao} vazio="Nada a destacar." />
       </section>
@@ -283,12 +285,12 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
 
       {r.eliminatorios.length > 0 && <Eliminatorios lista={r.eliminatorios} desenharProva={desenharProva} />}
 
-      <NotasDosCriterios
+      <div data-secao="notas por critério"><NotasDosCriterios
         titulo="Nota por critério"
         descricao="De 1 a 4. A nota geral é a média dos critérios com prova."
         notas={notas}
         onAbrir={abrirAdiante}
-      />
+      /></div>
       {semProva.length > 0 && r.formato === "system_design" && (
         <p className="-mt-8 text-[13px] text-texto-suave">
           {r.recomendacao === "nao_avancar" ? "O que ficou sem prova: " : "Sem prova, para a próxima conversa: "}
@@ -296,24 +298,26 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         </p>
       )}
       {notasFora.length > 0 && (
+        <div data-secao="adaptação">
         <NotasDosCriterios
           titulo="Também observado"
           descricao="Como ele reagiu à mudança no problema e à ajuda. Não entra na nota geral."
           notas={notasFora}
           onAbrir={abrirAdiante}
         />
+        </div>
       )}
 
-      {r.formato === "live_coding" ? (
-        <HistoriaDaEntrevista
+      {r.formato === "system_design" && linhaDoTempoDoQuadroIndisponivel ? <section data-secao="história da entrevista" className="rounded-padrao bg-superficie p-4 text-sm text-texto-suave">Linha do tempo indisponível para esta entrevista.</section> : <div data-secao="história da entrevista"><HistoriaDaEntrevista
           duracao={gravacao?.durationMs ?? r.duracaoMs ?? 0}
           gravacao={gravacao}
           acontecimentos={acontecimentos}
-          onAbrir={gravacao ? abrir : undefined}
-        />
-      ) : (
-        <LinhaDoTempo provas={todas.filter((p) => !fora(p))} indices={indices} onAbrir={abrir} />
-      )}
+          serie={r.formato === "live_coding" && !gravacao ? undefined : r.serie}
+          faixasNeutras={r.faixas}
+          fases={r.fases}
+          falasNeutras={r.gravacaoQuadro?.falas}
+          onAbrir={gravacao ? abrir : r.gravacaoQuadro ? setMomentoQuadro : undefined}
+        />{r.formato === "system_design" && r.gravacaoQuadro && r.perguntasEsperadas !== undefined && r.gravacaoQuadro.acontecimentos.filter(a => a.tipo === "pergunta").length !== r.perguntasEsperadas && <p role="status" className="mt-2 text-xs text-texto-suave">Há uma divergência entre as perguntas registradas na linha do tempo e o total do relatório.</p>}</div>}
 
       {r.integridade && (
         <Integridade
@@ -325,7 +329,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         />
       )}
 
-      <details className="group -mt-6 rounded-padrao border border-borda">
+      <details data-secao="momentos" className="group -mt-6 rounded-padrao border border-borda">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[14px] font-medium select-none [&::-webkit-details-marker]:hidden">
           Ver todas as provas em texto
           <span className="flex items-center gap-1 text-sm font-normal text-texto-suave">
@@ -394,6 +398,7 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
       )}
 
       {gravacao && <MomentoDaSessao gravacao={gravacao} momentos={momentos} aberto={aberto} onFechar={fechar} onAbrir={setAberto} />}
+      {r.gravacaoQuadro && momentoQuadro !== null && <MomentoDoQuadro gravacao={r.gravacaoQuadro} t={momentoQuadro} acontecimento={r.acontecimentos.find(a => a.t === momentoQuadro)} onFechar={() => setMomentoQuadro(null)} />}
       <ImagemAmpliada url={imagem} aoFechar={() => setImagem(null)} />
     </main>
   );
@@ -527,6 +532,63 @@ function NotaGeral({ nota, comNota, total }: { nota: number | null; comNota: num
   );
 }
 
+function MomentoDoQuadro({
+  gravacao,
+  t,
+  acontecimento,
+  onFechar,
+}: {
+  gravacao: NonNullable<RelatorioComum["gravacaoQuadro"]>;
+  t: number;
+  acontecimento?: RelatorioComum["acontecimentos"][number];
+  onFechar: () => void;
+}) {
+  const desenho = [...gravacao.desenho].filter((d) => d.t <= t).at(-1);
+  const antes = gravacao.falas.filter((f) => f.t <= t).slice(-3);
+  const depois = gravacao.falas.filter((f) => f.t > t).slice(0, 3);
+  const falas = [...antes, ...depois];
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Momento da entrevista no quadro"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onFechar}
+    >
+      <section
+        className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-padrao bg-superficie p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex justify-between gap-4">
+          <div>
+            <h2 className="font-medium">{acontecimento?.titulo ?? "Momento da entrevista"}</h2>
+            <p className="text-sm text-texto-suave">{formatMs(t)}</p>
+          </div>
+          <button type="button" onClick={onFechar} className="text-sm underline">Fechar</button>
+        </header>
+        {desenho?.imagem ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- PNG servido pela sessão */}
+            <img className="mt-4 max-h-[55vh] w-full object-contain" src={desenho.imagem} alt="Quadro neste momento" />
+          </>
+        ) : <p className="mt-4 text-sm text-texto-suave">Sem foto do quadro neste momento.</p>}
+        <h3 className="mt-4 text-sm font-medium">Conversa em volta</h3>
+        <ol className="mt-2 space-y-2">
+          {falas.length === 0 && <li className="text-sm text-texto-suave">Sem falas próximas deste momento.</li>}
+          {falas.map((f, i) => (
+            <li key={`${f.t}-${i}`} className="text-sm">
+              <span className="mr-2 text-texto-suave">
+                {formatMs(f.t)} · {f.role === "candidate" ? "Candidato" : "Totti"}
+              </span>
+              {f.text}
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+  );
+}
+
 function Bloco({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -632,51 +694,6 @@ function Aprendizado({ l, desenharProva }: { l: AprendizadoComum; desenharProva:
           <div className="mt-3 space-y-1 border-t border-borda pt-3">{l.provas.map((p, i) => desenharProva(p, ORIGEM_APRENDIZADO, i))}</div>
         )}
       </div>
-    </section>
-  );
-}
-
-/** Sem gravação (quadro): as provas em ordem de tempo, cada uma com o critério de onde veio. Abre a foto do quadro. */
-function LinhaDoTempo({ provas, indices, onAbrir }: { provas: ProvaIndexada[]; indices: Map<ProvaComum, number>; onAbrir: (i: number) => void }) {
-  const comTempo = provas.map((p) => ({ p, i: indices.get(p.prova) })).filter(({ p }) => p.prova.t !== null);
-  if (comTempo.length === 0) return null;
-  return (
-    <section className="flex flex-col gap-3">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-[17px] font-medium">Como foi a entrevista</h2>
-        <p className="text-sm text-texto-suave">As provas em ordem de tempo, com o critério a que pertencem.</p>
-      </div>
-      <ol className="divide-y divide-borda rounded-padrao bg-superficie px-4 sm:px-6">
-        {comTempo.map(({ p, i }, k) => {
-          const abre = i !== undefined && !!p.prova.imagem;
-          const conteudo = (
-            <>
-              <span className="numero w-12 shrink-0 text-texto">{formatMs(p.prova.t!)}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[12.5px] text-texto-suave">{p.origem}</span>
-                <span className="block text-[14px] leading-snug text-pretty">{p.texto}</span>
-              </span>
-              {abre && <ChevronDown size={14} className="-rotate-90 text-texto-suave" aria-hidden />}
-            </>
-          );
-          return (
-            <li key={k}>
-              {abre ? (
-                <button
-                  type="button"
-                  onClick={() => onAbrir(i!)}
-                  aria-label={`Ver o quadro no minuto ${formatMs(p.prova.t!)}`}
-                  className="flex w-full items-center gap-3 py-3 text-left outline-none hover:bg-superficie-2/50 focus-visible:ring-2 focus-visible:ring-marca"
-                >
-                  {conteudo}
-                </button>
-              ) : (
-                <div className="flex items-center gap-3 py-3">{conteudo}</div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
     </section>
   );
 }

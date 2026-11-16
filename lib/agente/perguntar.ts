@@ -8,14 +8,14 @@ import {
   gatilhoDoFechamento, iniciarFechamento, proximoPasso,
   type EstadoFechamento, type EtapaDoFechamento, type PassoDoFechamento,
 } from "../totti/fechamento";
-import { devolveAVez, emPortugues, ePerguntaDePorque, perguntaDePorque, reacaoAoPensar, reacaoNeutra, semConviteDeSeguir } from "../totti/guardas";
+import { devolveAVez, emPortugues, ePerguntaDePorque, perguntaDePorque, pediuParaOlhar, promessaVazia, reacaoAoPensar, reacaoNeutra, semConviteDeSeguir } from "../totti/guardas";
 import { frasesSemPergunta } from "../totti/texto";
 import {
-  avisoDePerguntaSemResposta, avisosDeQueVaiOlhar, comRespostaDeReserva, decidirTurno, deSaidaDoQuadro, ficouSemResposta, pedePorque, perguntouComClareza,
+  avisoDePerguntaSemResposta, avisoDePromessaVazia, avisosDeQueVaiOlhar, falaComObservacaoEPergunta, FALAS_DE_RESERVA_AO_OLHAR, comRespostaDeReserva, decidirTurno, deSaidaDoQuadro, ficouSemResposta, pedePorque, perguntouComClareza,
   sinalDeConclusao,
   type LeituraDoTurno, type SituacaoDoTurno,
 } from "../totti/turno";
-import { garantirMarca, mapearAcoesVisuais, pecasCitadas, type AcaoVisual } from "../presenca/acoesVisuais";
+import { garantirMarca, mapearAcoesVisuais, pecasCitadas, conexoesDoGrafo, olharODesenho, type AcaoVisual } from "../presenca/acoesVisuais";
 import { caminhoPrincipalDesenhado } from "./sessao/fechamento";
 import { extrairIdsDoGrafo, parametrosDoFechamentoNoQuadro } from "./sessao/politica";
 import type { LlmCliente } from "./llm/cliente";
@@ -137,7 +137,7 @@ export type UsoPerguntar = {
   falas_no_prompt: number;
 };
 
-/** Ele disse que terminou: o Totti avisa que vai olhar o desenho, e a pergunta seguinte vem da análise. */
+/** Avisos curtos que podem abrir uma fala de comentário, sempre seguidos pelo conteúdo no mesmo turno. */
 export const AVISOS_DE_QUE_VAI_OLHAR = avisosDeQueVaiOlhar("quadro");
 
 /** A segunda geração (ele fez uma pergunta clara e o modelo ficou quieto) só roda se a primeira foi rápida... */
@@ -256,6 +256,20 @@ async function responderFala(
     ...(nucleo?.etapa === "perguntas_finais" || nucleo?.etapa === "ultima_palavra" ? { etapa: nucleo.etapa } : {}),
   };
   const ids = extrairIdsDoGrafo(entrada.grafo ?? "");
+  const fasesDeDesenho = entrada.fase === "ALTO_NIVEL" || entrada.fase === "APROFUNDAMENTO" || entrada.fase === "FECHAMENTO";
+  const nomeObservado = (entrada.grafo ?? "").match(/-\s*\[[^\]]+\]\s*([^\n(]+)/)?.[1]?.trim();
+  const pecasDoGrafo = [...(entrada.grafo ?? "").matchAll(/^-\s*\[[^\]]+\]\s*([^\n(]+)/gm)].map((m) => m[1].trim());
+  const ligacoesDoGrafo = [...(entrada.grafo ?? "").split(/\nCONEX(?:ÕES|OES)\n/i)[1]?.matchAll(/^-\s*\[[^\]]+\]\s*(.+?)\s*(?:→|->|—|-)\s*(.+)$/gm) ?? []]
+    .map((m) => [m[1].trim(), m[2].trim()] as const);
+  const observacaoDoGrafo = (): string => {
+    if (!nomeObservado) return FALAS_DE_RESERVA_AO_OLHAR.quadroSemPecas;
+    const ligacao = pecasDoGrafo.length
+      ? ligacoesDoGrafo.find(([origem]) => origem.toLocaleLowerCase() === pecasDoGrafo[0].toLocaleLowerCase()) ?? ligacoesDoGrafo[0]
+      : undefined;
+    return ligacao
+      ? FALAS_DE_RESERVA_AO_OLHAR.quadroComLigacao(ligacao[0], ligacao[1])
+      : FALAS_DE_RESERVA_AO_OLHAR.quadroSemLigacao(nomeObservado);
+  };
   /** Um passo do fechamento comum vira a resposta do turno: a fala do núcleo sai como está, sem análise nem ritmo. */
   const comPasso = (
     passo: PassoDoFechamento,
@@ -276,21 +290,23 @@ async function responderFala(
     // A pergunta final que veio da análise traz as peças e as marcas dela; as outras marcam a peça que citam pelo nome.
     const apontar = passo.apontar as ApontarNoQuadro | undefined;
     const alvos = (apontar?.elementos ?? (perguntou ? pecasCitadas(texto, entrada.grafo ?? "") : [])).filter((id) => ids.has(id));
-    const visual = garantirMarca(mapearAcoesVisuais(apontar?.visual, (id) => ids.has(id) ? id : null), alvos, estado.conversa.length);
+    const pediuOlhar = /\b(olh\w*|confere|veja)\b.*\b(desenho|quadro)\b/i.test(entrada.texto);
+    const visual = o.concluiu || pediuOlhar ? olharODesenho(entrada.grafo ?? "")
+      : garantirMarca(mapearAcoesVisuais(apontar?.visual, (id) => ids.has(id) ? id : null), alvos, estado.conversa.length, conexoesDoGrafo(entrada.grafo ?? ""));
     return {
       responder: true, texto, requisito: null, concluiu: o.concluiu, desfecho: o.desfecho, estado: final,
       ...(perguntou ? { perguntou } : {}), ...encerrar, ...(visual !== undefined ? { visual } : {}),
     };
   };
   /** A leitura do turno pelo modelo. Lança se ele falhar; `prazoMs` encurta a espera (fechamento). */
-  const gerar = async (prazoMs?: number) => {
+  const gerar = async (prazoMs?: number, avisoExtra?: string) => {
     const blocos = v2
       ? blocosDoSistemaDinamicoPerguntarV2(estado, deps.kit, entrada.fase, entrada.requisitosAtuais ?? [], entrada.grafo, perguntaAberta, entrada.gestosRecentes, agora, entrada.conversaDoQuadro, entrada.mudancas, !!entrada.imagemBase64, blocoDoBriefing(deps.kit, estado, agora), FALAS_NO_PROMPT_V2, contextoDoFim)
       : [{ bloco: "resto" as const, texto: `${montarSistemaDinamicoPerguntar(estado, entrada.fase, entrada.requisitosAtuais ?? [], entrada.grafo, perguntaAberta, entrada.gestosRecentes, agora, entrada.conversaDoQuadro, entrada.mudancas, !!entrada.imagemBase64, blocoDoBriefing(deps.kit, estado, agora))}\n${linhaDoFechamento(contextoDoFim)}` }];
     const pedido = {
       sistema: {
         estatico: `${v2 ? montarSistemaEstaticoPerguntarV2(deps.kit, deps.problema) : montarSistemaEstaticoPerguntar(deps.kit, deps.problema)}\n\n${REGRA_DADOS}`,
-        dinamico: blocos.map((b) => b.texto).join(""),
+        dinamico: `${blocos.map((b) => b.texto).join("")}${avisoExtra ? `\n\n${avisoExtra}` : ""}`,
       },
       // A fala vai como está (é o que o modelo responde), só sem etiqueta falsa.
       mensagens: [{ role: "user" as const, content: neutralizar(entrada.texto) }],
@@ -363,12 +379,28 @@ async function responderFala(
     return comPasso(passo, { inicio: false, antes: nucleo, base: comFala, concluiu: false, desfecho: null });
   }
 
-  let saida;
+  let saida: Awaited<ReturnType<typeof gerar>>;
+  let prometeuOlhar = false;
+  let regenerouPromessa = false;
   try {
     saida = await gerar();
+    prometeuOlhar = promessaVazia(saida.texto);
+    if (prometeuOlhar) {
+      regenerouPromessa = true;
+      const segunda = await gerar(PRAZO_SEGUNDA_GERACAO_MS, avisoDePromessaVazia("quadro")).catch(() => null);
+      if (segunda) saida = segunda;
+    }
+    const pediuOlhar = fasesDeDesenho && (pediuParaOlhar(entrada.texto) || sinalDeConclusao(situacao) || saida.concluiu === true || prometeuOlhar);
+    if (pediuOlhar && !falaComObservacaoEPergunta(saida.texto, nomeObservado ?? "peças")) {
+      if (!regenerouPromessa) {
+        regenerouPromessa = true;
+        try { saida = await gerar(PRAZO_SEGUNDA_GERACAO_MS, avisoDePromessaVazia("quadro")); } catch { /* reserva abaixo */ }
+      }
+    }
   } catch (e) {
     registrarFalha(e);
-    return { ...mudo(), falhou: true };
+    if (!(fasesDeDesenho && (pediuParaOlhar(entrada.texto) || sinalDeConclusao(situacao)))) return { ...mudo(), falhou: true };
+    saida = { responder: true, texto: "", requisito: null, concluiu: true };
   }
 
   // Se o candidato terminou é o modelo quem interpreta. O código só serve de rede: "terminei" ou "acho que é isso"
@@ -408,7 +440,7 @@ async function responderFala(
     const final = transicionar(comPedido, { tipo: "AGENTE_FALOU", texto: fala }, agora).estado;
     return { responder: true, texto: fala, requisito: null, concluiu: false, desfecho: null, pediuTempo: { reagiu }, estado: final };
   }
-  const fasesDeDesenho = entrada.fase === "ALTO_NIVEL" || entrada.fase === "APROFUNDAMENTO" || entrada.fase === "FECHAMENTO";
+  const pediuComentario = fasesDeDesenho && (pediuParaOlhar(entrada.texto) || concluiu || prometeuOlhar);
   // As travas da fala são as do Totti único (lib/totti/guardas.ts), as mesmas do live coding: cumprimento fora da
   // abertura, validação, eco do que o candidato disse, reação vazia repetida e, no v2, pergunta que ele já ouviu
   // (do Totti na conversa, da análise do desenho ou da mudança no problema) ou que só devolve a condução.
@@ -481,9 +513,18 @@ async function responderFala(
     });
     const passo = proximoPasso(inicial, undefined, "", { tempoRestanteMs: restanteMs });
     // O tempo acabou no meio de uma pergunta dele: a resposta vem antes do anúncio, para ela não ficar no ar.
-    const antesDaFala = gatilho === "tempo" && saida.responder && perguntouComClareza(entrada.texto)
+    const respostaAntes = gatilho === "tempo" && saida.responder && perguntouComClareza(entrada.texto)
       ? frasesSemPergunta(semConviteDeSeguir(curto))
       : "";
+    const perguntaDoFechamento = passo.fala.includes("?")
+      ? ""
+      : estado.perguntaPendente?.pergunta?.trim()
+        || candidatasDoQuadro(deps.kit, deps.problema, estado, agora)[0]?.pergunta
+        || FALAS_DE_RESERVA_AO_OLHAR.pergunta(nomeObservado);
+    const comentarioAntes = pediuComentario
+      ? nomeObservado ? [observacaoDoGrafo(), perguntaDoFechamento].filter(Boolean).join(" ") : observacaoDoGrafo()
+      : "";
+    const antesDaFala = [respostaAntes, comentarioAntes].filter(Boolean).join(" ");
     return comPasso(passo, { inicio: true, antes: null, base: comConclusao(comFala), concluiu, desfecho, antesDaFala });
   }
   // Ele já disse que terminou o desenho (e não voltou a desenhar): nenhuma fala manda continuar o desenho. Numa
@@ -491,6 +532,14 @@ async function responderFala(
   // que terminou. Se ele respondia a uma pergunta e só sobrava o convite, fica uma reação curta: a pergunta seguinte
   // vem da análise.
   const desenhoJaConcluido = fasesDeDesenho && (!!estado.desenhoConcluido || concluiu);
+  const reservaComentario = (): string => {
+    if (!nomeObservado) return FALAS_DE_RESERVA_AO_OLHAR.quadroSemPecas;
+    const nome = nomeObservado;
+    const pergunta = estado.perguntaPendente?.pergunta?.trim()
+      || candidatasDoQuadro(deps.kit, deps.problema, estado, agora)[0]?.pergunta
+      || FALAS_DE_RESERVA_AO_OLHAR.pergunta(nome);
+    return `${observacaoDoGrafo()} ${pergunta}`;
+  };
   const semMandarSeguir = (fala: string): string => {
     if (!desenhoJaConcluido) return fala;
     const semConvite = semConviteDeSeguir(fala);
@@ -518,20 +567,19 @@ async function responderFala(
     if (porqueForcado) base = [semConviteDeSeguir(base), perguntaDePorque(jaDitas)].filter(Boolean).join(" ");
     // "Não sei" ou "pula" não ganham pergunta nova, e quem acabou de responder a uma pergunta do Totti não ouve só
     // um "Tá." ou um fato solto: sem pergunta nem próximo passo, entra um convite.
+    if (pediuComentario && estado.perguntaPendente?.pergunta?.trim()) {
+      base = reservaComentario();
+      saida = { ...saida, responder: true };
+    } else if (pediuComentario && !falaComObservacaoEPergunta(base, nomeObservado ?? "peças")) {
+      base = reservaComentario();
+      saida = { ...saida, responder: true };
+    }
     const decidido = decidirTurno(deSaidaDoQuadro({ ...saida, texto: base, concluiu }, situacao), situacao);
     if (decidido.regras.length) log("perguntar_turno", { sessao_id: entrada.sessao_id, fase: entrada.fase, regras: decidido.regras });
     texto = semMandarSeguir(decidido.leitura.texto);
     // A fala era só a pergunta que a trava barrou (repetida ou de condução): ele fica quieto.
     if (perguntaBarrada && !texto) return calar();
-    // Ele disse que terminou pela primeira vez e o caminho principal ainda não está no quadro (senão o fechamento
-    // teria começado acima): a pergunta seguinte é a da análise do desenho (concreta, com a peça marcada). Um convite
-    // vago aqui ("quer detalhar algo?") deixava ele sem saber o que fazer e ainda derrubava a pergunta pronta.
-    if (concluiu && !texto.trim().endsWith("?") && fasesDeDesenho && !haPerguntaAtiva) {
-      const aviso = AVISOS_DE_QUE_VAI_OLHAR[conclusoesAntes % AVISOS_DE_QUE_VAI_OLHAR.length];
-      // A pergunta da análise vem logo atrás deste aviso (a conclusão é um marco: ver `motivoBloqueioPlin`).
-      return { responder: true, texto: aviso, requisito: null, concluiu, desfecho,
-        estado: transicionar(comConclusao(comFala), { tipo: "AGENTE_FALOU", texto: aviso }, agora).estado };
-    }
+    if (pediuComentario && !falaComObservacaoEPergunta(texto, nomeObservado ?? "peças")) texto = reservaComentario();
     if (!texto || (!saida.responder && !porqueForcado)) return calar();
     // Pergunta de porquê: é continuação do mesmo fio, então a pergunta ativa segue aberta e o quadro espera a resposta.
     if (porque && texto.trim().endsWith("?")) seguimento = true;
@@ -559,8 +607,10 @@ async function responderFala(
   const perguntou = v2 && texto.trim().endsWith("?");
   const final = transicionar(comConclusao(comFala), { tipo: "AGENTE_FALOU", texto, ...(perguntou ? { perguntou } : {}) }, agora).estado;
   // A pergunta que cita uma peça pelo nome marca essa peça no quadro, mesmo que o modelo não tenha pedido gesto.
-  const citadas = perguntou ? pecasCitadas(texto, entrada.grafo ?? "").filter((id) => ids.has(id)) : [];
-  const visual = garantirMarca(mapearAcoesVisuais(saida.visual, (id) => ids.has(id) ? id : null), citadas, estado.conversa.length);
+  const citadas = pecasCitadas(texto, entrada.grafo ?? "").filter((id) => ids.has(id));
+  const pediuOlhar = /\b(olh\w*|confere|veja)\b.*\b(desenho|quadro)\b/i.test(entrada.texto);
+  const visual = concluiu || pediuOlhar ? olharODesenho(entrada.grafo ?? "")
+    : garantirMarca(mapearAcoesVisuais(saida.visual, (id) => ids.has(id) ? id : null), citadas, estado.conversa.length, conexoesDoGrafo(entrada.grafo ?? ""));
   return { responder: true, texto, requisito: repetido ? null : requisito, concluiu, desfecho, estado: final,
     ...(perguntou ? { perguntou } : {}),
     ...(seguimento ? { seguimento } : {}),

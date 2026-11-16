@@ -36,6 +36,7 @@ export type PlinPendente = RespostaAnalise & { criadoEm: number; pecas?: string[
 export type PerguntaFeita = {
   numero: number;
   status: RespostaAnalise["status"];
+  gancho?: RespostaAnalise["gancho"];
   pergunta: string;
   nota: string | null;
   /** Ids curtos do grafo que o agente circulou. */
@@ -262,6 +263,7 @@ function fazerPergunta(estado: EstadoSessao, pendente: PlinPendente, agora: numb
     // Número único: o convite de REQUISITOS não conta na cota, mas ocupa um número.
     numero: estado.perguntasFeitas + (estado.perguntas.some((p) => p.fase === "REQUISITOS") ? 1 : 0) + 1,
     status: pendente.status,
+    gancho: pendente.gancho ?? (pendente.parteFechada ? "parte_fechada" : null),
     pergunta: pendente.pergunta ?? "",
     nota: pendente.nota,
     elementos: pendente.elementos,

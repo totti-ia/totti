@@ -210,6 +210,13 @@ export function relatorioDaIde(
     adaptacao: a ? adaptacaoDaIde(a) : null,
     aprendizado: report.learning ? aprendizadoDaIde(report.learning) : null,
     acontecimentos: acontecimentosDaIde(report, gravacao),
+    serie: { eixo: "fração dos testes passando", pontos: (gravacao?.execucoes ?? []).map(e => ({ t: e.t, valor: e.total ? e.passed / e.total : 0 })) },
+    faixas: gravacao ? [
+      { nome: "Candidato", marcas: gravacao.falas.filter(f => f.role === "candidate").map(f => f.t) },
+      { nome: "Totti", marcas: gravacao.falas.filter(f => f.role === "agent").map(f => f.t) },
+      { nome: "Código", marcas: gravacao.codigo.map(c => c.t) },
+    ] : [],
+    fases: [],
     fatos: [
       { nome: "Testes escondidos", valor: `${s.testsPassed} de ${s.testsTotal}` },
       { nome: "Dicas", valor: s.hintsUsed === 0 ? "Nenhuma" : String(s.hintsUsed) },

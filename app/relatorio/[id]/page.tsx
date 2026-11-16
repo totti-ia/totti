@@ -19,7 +19,7 @@ import { gravacaoDaSessao } from "@/lib/session/gravacao";
 import { sessaoViva } from "@/lib/session/persistencia";
 import { exemploHabilitado, GRAVACAO_EXEMPLO, relatorioExemplo } from "@/lib/session/relatorio-exemplo";
 import { findReport } from "@/lib/session/reports";
-import { RELATORIO_EXEMPLO, RELATORIO_EXEMPLO_ENCERRADO, RELATORIO_EXEMPLO_NAO_AVANCAR } from "@/lib/agente/relatorio-exemplo";
+import { RELATORIO_EXEMPLO_ENCERRADO, RELATORIO_EXEMPLO_NAO_AVANCAR, RELATORIO_EXEMPLO_QUADRO } from "@/lib/agente/relatorio-exemplo";
 import { contexto } from "@/lib/agente/rotas/contexto";
 import { devHabilitado } from "@/lib/agente/rotas/scorecard";
 import { CABECALHO_AUTENTICADO } from "@/lib/painel/acesso";
@@ -32,7 +32,7 @@ export const metadata: Metadata = { title: "Relatório da entrevista", robots: {
  * O id "exemplo" é o de Live Coding (vale também em produção, é o da demo dos candidatos de demonstração).
  */
 const EXEMPLOS: Record<string, RelatorioVisto | undefined> = Object.assign(Object.create(null), {
-  "exemplo-quadro": RELATORIO_EXEMPLO,
+  "exemplo-quadro": RELATORIO_EXEMPLO_QUADRO,
   "exemplo-encerrado": RELATORIO_EXEMPLO_ENCERRADO,
   "exemplo-nao-avancar": RELATORIO_EXEMPLO_NAO_AVANCAR,
 });

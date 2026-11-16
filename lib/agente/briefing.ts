@@ -25,14 +25,14 @@ const AREA_DO_CRITERIO: Record<string, FocusArea> = {
 const CRITERIO_DE_REQUISITOS = "requisitos";
 
 /** Etapas em que o agente já procura evidência dos critérios: antes disso o objetivo é outro. */
-const ETAPAS_DE_COBERTURA: Fase[] = ["APROFUNDAMENTO", "FECHAMENTO"];
+const ETAPAS_DE_COBERTURA: Fase[] = ["ALTO_NIVEL", "APROFUNDAMENTO", "FECHAMENTO"];
 
 /** O que o entrevistador quer conseguir em cada etapa. Sem isso o alvo dos critérios não tem contexto. */
 const OBJETIVO_DA_ETAPA: Partial<Record<Fase, string>> = {
   REQUISITOS:
     "o candidato entende o problema. Responda as dúvidas dele e deixe-o perguntar; ainda não é hora de aprofundar nem de cobrar os critérios.",
   ALTO_NIVEL:
-    "ver a visão geral desenhada (as peças principais e como elas se ligam). Só pergunte se algo central ficou sem explicação; os critérios são cobrados no aprofundamento.",
+    "ver a visão geral e, a cada pergunta, preferir um critério ainda sem evidência que tenha gancho no que ele já desenhou.",
   APROFUNDAMENTO:
     "reunir evidência dos critérios que ainda faltam, com perguntas ligadas ao que ele desenhou, uma de cada vez.",
   FECHAMENTO:

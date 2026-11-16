@@ -75,8 +75,8 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --port ${PORTA}`,
     url: `http://localhost:${PORTA}/entrevista/system-design`,
-    // Modo de demonstração: sem servidor, análise de mentira e voz do navegador.
-    env: { NEXT_PUBLIC_USAR_SERVIDOR: "0" },
+    // Modo servidor com endpoints interceptados pelo spec: exercita análise e upload de imagens.
+    env: { NEXT_PUBLIC_USAR_SERVIDOR: "1" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     stdout: "ignore",

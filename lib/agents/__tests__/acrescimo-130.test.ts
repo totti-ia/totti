@@ -78,7 +78,7 @@ function falaDoTotti(s: SessionState, t: number, text = "E por que guardar o ín
   evento(s, { type: "speech", t, role: "agent", text });
 }
 
-function perguntaDaAnalise(s: SessionState, id: string, extra: Partial<QueuedQuestion> = {}): QueuedQuestion {
+function perguntaDaAnalise(s: SessionState, id: string, extra: Partial<QueuedQuestion> & { gancho?: "parte_fechada" | "decisao" | "raciocinio" | null } = {}): QueuedQuestion & { gancho?: "parte_fechada" | "decisao" | "raciocinio" | null } {
   const q: QueuedQuestion = { id, question: "Por que guardar o índice em vistos?", followUpTopic: "x", priority: 0.8, createdAt: 0, status: "queued", kind: "explicar", fase: "implementando", ...extra };
   s.queue.push(q);
   return q;
@@ -231,28 +231,43 @@ test("limiar do fechamento por tempo: 15% da duração, com o mínimo de uma per
 // ---------------------------------------------------------------------------------------------------------------
 
 describe("ritmo por conteúdo (item 11)", () => {
-  test("sem parte fechada, espera; com parte fechada, sai passado o piso; no teto, sai com código novo", () => {
+  test("#140: sem gancho espera até o teto; decisão passa depois do piso e em pausa real", () => {
     const { s } = sessao("conteudo");
     escrever(s, 30_000);
     evento(s, { type: "speech", t: 50_000, role: "candidate", text: "vou guardar cada número com o índice dele" });
     const solta = perguntaDaAnalise(s, "q-1");
-    assert.match(motivoDoConteudo(s, solta, 60_000) ?? "", /nenhum trecho pronto/);
+    assert.match(motivoDoConteudo(s, solta, 60_000) ?? "", /nenhum gancho/);
     const fechada = perguntaDaAnalise(s, "q-2", { parteFechada: true });
     assert.equal(motivoDoConteudo(s, fechada, 60_000), undefined, "primeira pergunta: sem piso");
 
     // Saiu uma pergunta da análise aos 60 s.
     s.blips.push({ id: "q-2", preview: "x", priority: 0.8, createdAt: 60_000 });
     fechada.status = "asked";
-    const proxima = perguntaDaAnalise(s, "q-3", { parteFechada: true });
-    escrever(s, 100_000, CODIGO + "    return []\n");
-    evento(s, { type: "speech", t: 110_000, role: "candidate", text: "agora o retorno quando não acha nada" });
-    assert.match(motivoDoConteudo(s, proxima, 120_000) ?? "", /piso entre perguntas/);
+    const proxima = perguntaDaAnalise(s, "q-3", { gancho: "decisao" });
+    escrever(s, 80_000, CODIGO + "    return []\n");
+    evento(s, { type: "speech", t: 90_000, role: "candidate", text: "agora o retorno quando não acha nada" });
+    assert.match(motivoDoConteudo(s, proxima, 60_000 + RITMO_IDE.pisoEntrePerguntasMs - 1) ?? "", /piso entre perguntas/);
     assert.equal(motivoDoConteudo(s, proxima, 60_000 + RITMO_IDE.pisoEntrePerguntasMs), undefined);
+    const { s: pausa } = sessao("pausa-real");
+    escrever(pausa, 68_000);
+    evento(pausa, { type: "speech", t: 69_000, role: "candidate", text: "vou continuar" });
+    const aguardando = perguntaDaAnalise(pausa, "q-pausa", { gancho: "decisao" });
+    assert.match(motivoDoConteudo(pausa, aguardando, 70_000) ?? "", /pausa real/);
 
     const semParte = perguntaDaAnalise(s, "q-4");
-    assert.equal(tetoDaPerguntaNaIde(s, 200_000), false);
+    assert.equal(tetoDaPerguntaNaIde(s, 100_000), false);
     assert.equal(tetoDaPerguntaNaIde(s, 60_000 + RITMO_IDE.tetoSemPerguntaMs), true);
     assert.equal(motivoDoConteudo(s, semParte, 60_000 + RITMO_IDE.tetoSemPerguntaMs), undefined);
+  });
+
+  test("#140: duas perguntas seguidas não repetem o mesmo gancho", () => {
+    const { s } = sessao("gancho-repetido");
+    const anterior = perguntaDaAnalise(s, "q-anterior", { gancho: "decisao" });
+    anterior.status = "blipped";
+    const atual = perguntaDaAnalise(s, "q-atual", { gancho: "decisao" });
+    escrever(s, 1_000);
+    evento(s, { type: "speech", t: 5_000, role: "candidate", text: "continuei" });
+    assert.match(motivoDoConteudo(s, atual, 10_000) ?? "", /gancho igual/);
   });
 
   test("momento-chave, conclusão recente e quebra de silêncio passam", () => {
@@ -265,6 +280,18 @@ describe("ritmo por conteúdo (item 11)", () => {
     assert.equal(motivoDoConteudo(s, solta, 40_000), undefined);
     s.ultimaConclusaoEm = undefined;
     assert.equal(motivoDoConteudo(s, solta, 35_000 + RITMO_IDE.quebraDeSilencioMs), undefined);
+  });
+
+  test("gancho repetido continua barrado na conclusão recente e na quebra de silêncio", () => {
+    const { s } = sessao("gancho-repetido-excecao");
+    const anterior = perguntaDaAnalise(s, "q-ant", { gancho: "decisao", status: "blipped", createdAt: 20_000 });
+    s.blips.push({ id: anterior.id, createdAt: 20_000, preview: "decisão", priority: 1 });
+    const atual = perguntaDaAnalise(s, "q-nova", { gancho: "decisao", keyMoment: "conclusão", createdAt: 40_000 });
+    s.ultimaConclusaoEm = 39_000;
+    assert.match(motivoDoConteudo(s, atual, 40_000) ?? "", /gancho igual/);
+    s.ultimaConclusaoEm = undefined;
+    falaDoTotti(s, 1_000);
+    assert.match(motivoDoConteudo(s, atual, 1_000 + RITMO_IDE.quebraDeSilencioMs) ?? "", /gancho igual/);
   });
 
   test("abertura, retorno e mudança não passam pelo ritmo por conteúdo", () => {

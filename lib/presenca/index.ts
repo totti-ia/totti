@@ -1,5 +1,5 @@
 export type { Caixa, Ponto } from "./tipos";
-export { cenaParaTela, telaParaCena, caixaDosElementos, estaVisivel, scrollParaCentralizar } from "./coordenadas";
+export { cenaParaTela, telaParaCena, caixaDosElementos, estaVisivel, scrollParaCentralizar, precisaReduzirZoom } from "./coordenadas";
 export type { Vista } from "./coordenadas";
 export { planejarMovimento, suavizar } from "./movimento";
 export type { Movimento } from "./movimento";

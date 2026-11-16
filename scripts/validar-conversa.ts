@@ -3,7 +3,7 @@
 import "./_gasto";
 import assert from "node:assert/strict";
 import { KIT_SYSTEM_DESIGN as kit } from "../lib/agente/kits/system-design";
-import type { LlmCliente } from "../lib/agente/llm/cliente";
+import { criarClienteFalso, type LlmCliente } from "../lib/agente/llm/cliente";
 import { criarClientePrincipal } from "../lib/agente/llm/principal";
 import { devolveAVez } from "../lib/agente/guardas";
 import { perguntar } from "../lib/agente/perguntar";
@@ -15,7 +15,7 @@ export const deixaABola = devolveAVez;
 export type ResultadoCaso = { caso: string; ms: number; ok: boolean; motivo?: string; texto: string };
 
 /** Roda os casos de conversa num cliente de LLM e devolve o tempo e o acerto de cada um. */
-export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean } = {}): Promise<ResultadoCaso[]> {
+export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean; apenas?: string } = {}): Promise<ResultadoCaso[]> {
   const problema = kit.problemas[0];
   const grafo = "COMPONENTES\n- [r1] API (retângulo)\n- [e1] Postgres (elipse)\n- [r2] Cache (retângulo)\nCONEXÕES\n- [s1] API → Cache\n- [s2] Cache → Postgres";
   const inicio0 = Date.now();
@@ -31,9 +31,10 @@ export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean
       seguimentos: ["E num pico de 40 mil leituras por segundo, o que muda?", "E se o Cache cair nesse pico, o que acontece com o Postgres?"] },
   };
   fioEsgotado.perguntas = [fioEsgotado.perguntaAtiva!];
-  const casos: { nome: string; texto: string; responder: boolean; concluiu: boolean; perguntaAtiva?: string; grafo?: string; estado?: EstadoSessao; encerrar?: boolean; seguimento?: boolean }[] = [
+  const casos: { nome: string; texto: string; responder: boolean; concluiu: boolean; perguntaAtiva?: string; grafo?: string; estado?: EstadoSessao; encerrar?: boolean; seguimento?: boolean; comentar?: string }[] = [
     { nome: "pensando", texto: "Deixa eu pensar, ainda estou organizando a explicação.", responder: false, concluiu: false },
     { nome: "feedback", texto: "Pode me dar um feedback sobre o desenho e destacar no quadro a parte que está comentando?", responder: true, concluiu: false },
+    { nome: "pediu para olhar", texto: "Terminei a visão geral, dá uma olhada no desenho.", responder: true, concluiu: true, comentar: "API" },
     { nome: "resposta ativa", texto: "A API consulta o Postgres pelo código curto e devolve o redirecionamento.", perguntaAtiva: "Como o link curto é resolvido?", responder: true, concluiu: false },
     { nome: "explicação solta", texto: "Coloquei o cache na frente do Postgres porque a leitura é cem vezes maior que a escrita.", responder: true, concluiu: false },
     { nome: "requisito", texto: "Por quanto tempo a gente precisa guardar os links?", responder: true, concluiu: false },
@@ -48,6 +49,7 @@ export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean
   ];
   const resultados: ResultadoCaso[] = [];
   for (const caso of casos) {
+    if (opcoes.apenas && caso.nome !== opcoes.apenas) continue;
     const inicio = Date.now();
     const r = await perguntar({ llm, kit, problema }, caso.estado ?? base, { fase: "ALTO_NIVEL", texto: caso.texto, grafo: caso.grafo ?? grafo, perguntaAtiva: caso.perguntaAtiva,
       requisitosAtuais: ["100 milhões de URLs novas por mês", "Leituras: 4 mil/s; picos de 40 mil/s"],
@@ -64,6 +66,10 @@ export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean
       if (r.responder) assert.doesNotMatch(r.texto, /faz (todo )?sentido|bem colocad|isso mesmo|ótim|perfeit|excelente|muito bo[ma]/i, `${caso.nome}: validou`);
       if (r.responder) assert.doesNotMatch(r.texto, /me conta o que (você|vc) (está|tá) pensando|^e aí\?|o que mais\?/i, `${caso.nome}: pergunta genérica`);
       if (caso.nome === "feedback") assert.ok(r.visual?.length, "pedido de destaque deve gerar um plano visual válido");
+      if (caso.comentar) {
+        assert.ok(r.texto.includes(caso.comentar), "o comentário cita uma peça do desenho");
+        assert.ok(r.texto.trim().endsWith("?"), "a fala termina com uma pergunta");
+      }
       if (caso.nome === "depois da mudança") assert.match(r.texto, /bilh|1\s?bi|mês/i, "a mudança anunciada vale como fato");
       resultados.push({ caso: caso.nome, ms, ok: true, texto: r.texto });
     } catch (erro) {
@@ -74,7 +80,11 @@ export async function rodarCasos(llm: LlmCliente, opcoes: { silencioso?: boolean
 }
 
 async function main() {
-  const resultados = await rodarCasos(criarClientePrincipal());
+  const offline = process.argv.includes("--offline");
+  const llm = offline
+    ? criarClienteFalso([{ responder: true, texto: "A API recebe as chamadas antes do Cache. Por que você escolheu essa ordem?", requisito: null, concluiu: true }])
+    : criarClientePrincipal();
+  const resultados = await rodarCasos(llm, offline ? { apenas: "pediu para olhar" } : {});
   const falhas = resultados.filter((r) => !r.ok).map((r) => r.motivo);
   assert.equal(falhas.length, 0, falhas.join("; "));
 }

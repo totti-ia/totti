@@ -14,6 +14,18 @@ import type {
   RelatorioComum,
 } from "./tipos";
 
+// #144: estimativa; o Lucas decidiu mostrar com 'aprox.'.
+export const MOSTRAR_TEMPO_DESENHANDO_FALANDO = true;
+
+export function estimativaTempoDesenhandoFalando(r: RelatorioVisto): { nome: string; valor: string } | null {
+  const desenhos = r.gravacao?.desenho ?? [];
+  const tempoDesenhando = desenhos.slice(1).reduce((soma, d, i) => soma + Math.min(30_000, Math.max(0, d.t - desenhos[i].t)), 0);
+  const tempoFalando = (r.gravacao?.falas ?? []).filter(f => f.role === "candidate").reduce((soma, f) => soma + f.text.split(/\s+/).filter(Boolean).length * 350, 0);
+  return tempoDesenhando > 0 && tempoFalando > 0
+    ? { nome: "tempo desenhando × falando", valor: `aprox. ${Math.round(tempoDesenhando / 60_000)} min × ${Math.round(tempoFalando / 60_000)} min` }
+    : null;
+}
+
 /**
  * Campos que a frente do scorecard está acrescentando a `RelatorioVisto` (regra de reprovação da vaga e a origem
  * das regras aprendidas). Opcionais: o adaptador lê com tolerância e funciona antes e depois da mudança.
@@ -83,14 +95,24 @@ function eliminatoriosDoQuadro(r: RelatorioVisto): EliminatorioComum[] {
 
 export function relatorioDoQuadro(r: RelatorioVisto, integridade: BlocoDeIntegridade | null = null): RelatorioComum {
   const adaptacao = r.adaptacao ? adaptacaoDoQuadro(r.adaptacao) : null;
-  const acontecimentos: AcontecimentoComum[] =
-    adaptacao && adaptacao.anunciadaEm !== null
-      ? [{ t: adaptacao.anunciadaEm, tipo: "mudanca", titulo: `Mudança: ${adaptacao.descricao}` }]
-      : [];
+  const acontecimentos: AcontecimentoComum[] = [
+    ...(r.gravacao?.acontecimentos ?? []),
+    ...(adaptacao && adaptacao.anunciadaEm !== null
+      ? [{ t: adaptacao.anunciadaEm, tipo: "mudanca" as const, titulo: `Mudança: ${adaptacao.descricao}` }]
+      : []),
+  ];
   const comNota = r.criterios.filter((c) => c.nota !== null).length;
+  const estimativaTempo = estimativaTempoDesenhandoFalando(r);
+  const fechamento = r.gravacao?.fases.find(f => f.nome === "Fechamento")?.t;
+  const naFaseDeDesenho = (t: number) => r.gravacao?.fases.filter(f => f.t <= t).at(-1)?.nome === "Alto nível" || r.gravacao?.fases.filter(f => f.t <= t).at(-1)?.nome === "Aprofundamento";
   const fatos: RelatorioComum["fatos"] = [
     { nome: "Critérios com prova", valor: `${comNota} de ${r.criterios.length}` },
     { nome: "Perguntas do Totti", valor: String(r.perguntas) },
+    ...(r.gravacao ? [
+      { nome: "Perguntas durante o desenho", valor: String(r.gravacao.acontecimentos.filter(a => a.tipo === "pergunta" && naFaseDeDesenho(a.t) && (fechamento === undefined || a.t < fechamento)).length) },
+      { nome: "Perguntas no fechamento", valor: String(r.gravacao.acontecimentos.filter(a => a.tipo === "pergunta" && fechamento !== undefined && a.t >= fechamento).length) },
+      ...(MOSTRAR_TEMPO_DESENHANDO_FALANDO && estimativaTempo ? [estimativaTempo] : []),
+    ] : []),
     ...(r.duracao ? [{ nome: "Duração", valor: r.duracao }] : []),
     { nome: "Provas conferidas", valor: String(r.provasConferidas) },
   ];
@@ -103,7 +125,7 @@ export function relatorioDoQuadro(r: RelatorioVisto, integridade: BlocoDeIntegri
     candidato: r.candidatoId || null,
     realizadaEm: r.realizadaEm,
     duracao: r.duracao,
-    duracaoMs: null,
+    duracaoMs: r.gravacao?.duracaoMs ?? null,
     recomendacao: r.recomendacao,
     notaGeral: r.notaGeral,
     resumo: limpo(r.resumoDaEntrevista),
@@ -119,7 +141,16 @@ export function relatorioDoQuadro(r: RelatorioVisto, integridade: BlocoDeIntegri
     adaptacao,
     aprendizado: null,
     acontecimentos,
+    gravacaoQuadro: r.gravacao ?? null,
+    serie: r.gravacao && r.gravacao.desenho.length ? { eixo: "crescimento do desenho", pontos: r.gravacao.desenho.map(d => ({ t: d.t, valor: (d.pecas + d.conexoes) / Math.max(1, ...r.gravacao!.desenho.map(x => x.pecas + x.conexoes)) })) } : { eixo: "crescimento do desenho", pontos: [] },
+    faixas: r.gravacao ? [
+      { nome: "Candidato", marcas: r.gravacao.falas.filter(f => f.role === "candidate").map(f => f.t) },
+      { nome: "Totti", marcas: r.gravacao.falas.filter(f => f.role === "agent").map(f => f.t) },
+      { nome: "Desenho", marcas: r.gravacao.desenho.map(d => d.t) },
+    ] : [],
+    fases: r.gravacao?.fases ?? [],
     fatos,
+    perguntasEsperadas: r.perguntas,
     provasConferidas: r.provasConferidas,
     ajustes: r.ajustes,
     demonstracao: r.demonstracao,

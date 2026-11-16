@@ -173,8 +173,8 @@ describe("motivoBloqueioPlin (política comum: orçamento, cota e intervalo)", (
   });
 
   it("cota proporcional ao tempo: não gasta o orçamento no começo", () => {
-    // Aos 4 de 35 min, a cota é 3.
-    assert.equal(motivoBloqueioPlin(estadoEm("ALTO_NIVEL", { iniciadaEm: AGORA - 4 * MIN, perguntasFeitas: 3 }), AGORA), "COTA_DO_TEMPO");
+    // Aos 4 de 35 min, a cota é 4 com a folga #140.
+    assert.equal(motivoBloqueioPlin(estadoEm("ALTO_NIVEL", { iniciadaEm: AGORA - 4 * MIN, perguntasFeitas: 4 }), AGORA), "COTA_DO_TEMPO");
   });
 
   it("começo do aprofundamento é marco: basta o respiro curto", () => {
@@ -405,41 +405,52 @@ describe("ritmo por conteúdo do quadro (#129, bloco B)", () => {
   const aberta = { status: "duvida" as const, parteFechada: false };
   const alto = (extra: Partial<EstadoSessao> = {}) => estadoEm("ALTO_NIVEL", extra);
 
-  it("piso: parte fechada só sai com 2 min desde a última pergunta", () => {
+  it("#140: decisão sai depois do piso e numa pausa real", () => {
     const e = alto({ ultimaPerguntaEm: AGORA });
-    assert.equal(motivoDoConteudo(e, fechada, AGORA + PISO - 1), "PISO_ENTRE_PERGUNTAS");
-    assert.equal(motivoDoConteudo(e, fechada, AGORA + PISO), null);
+    const decisao = { status: "duvida" as const, gancho: "decisao" as const, parteFechada: false };
+    assert.equal(motivoDoConteudo(e, decisao, AGORA + PISO - 1, { paradoHaS: 5 }), "PISO_ENTRE_PERGUNTAS");
+    assert.equal(motivoDoConteudo(e, decisao, AGORA + PISO, { paradoHaS: 5 }), null);
+    assert.equal(motivoDoConteudo(e, decisao, AGORA + PISO, { paradoHaS: 3 }), "PAUSA_REAL");
   });
 
   it("sem pergunta anterior, a parte fechada sai sem esperar o piso", () => {
-    assert.equal(motivoDoConteudo(alto(), fechada, AGORA), null);
+    assert.equal(motivoDoConteudo(alto(), { ...fechada, gancho: "parte_fechada" }, AGORA, { paradoHaS: 5 }), null);
   });
 
-  it("sem parte fechada e antes do teto, a pergunta vira SEM_PARTE_FECHADA", () => {
-    const e = alto({ ultimaPerguntaEm: AGORA - 2 * MIN });
-    assert.equal(motivoDoConteudo(e, aberta, AGORA, { pecas: ["r1", "e1"] }), "SEM_PARTE_FECHADA");
+  it("#140: sem gancho, aguarda até o teto de 90 s", () => {
+    const e = alto({ ultimaPerguntaEm: AGORA - MIN });
+    assert.equal(motivoDoConteudo(e, aberta, AGORA, { pecas: ["r1", "e1"] }), "SEM_GANCHO");
   });
 
-  it("teto: 3 min sem pergunta e com desenho novo sai mesmo sem parte fechada", () => {
+  it("#140: não repete o gancho da pergunta anterior", () => {
+    const e = alto({ ultimaPerguntaEm: AGORA - PISO, perguntas: [{
+      numero: 1, status: "duvida", gancho: "decisao", pergunta: "Por que escolheu Postgres?", nota: null,
+      elementos: ["e1"], degrau: null, fase: "ALTO_NIVEL", feitaEm: AGORA - PISO,
+    }] });
+    assert.equal(motivoDoConteudo(e, { status: "duvida", gancho: "decisao", parteFechada: false }, AGORA, { paradoHaS: 5 }), "GANCHO_REPETIDO");
+    assert.equal(motivoDoConteudo(e, { status: "duvida", gancho: "raciocinio", parteFechada: false }, AGORA, { paradoHaS: 3 }), "PAUSA_REAL");
+  });
+
+  it("teto: 90 s sem pergunta e com desenho novo sai mesmo sem parte fechada", () => {
     const e = alto({ ultimaPerguntaEm: AGORA, desenhoNaUltimaPergunta: ["r1"] });
     assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: ["r1", "e1"] }), null);
-    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO - 1, { pecas: ["r1", "e1"] }), "SEM_PARTE_FECHADA");
+    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO - 1, { pecas: ["r1", "e1"] }), "SEM_GANCHO");
   });
 
   it("teto sem desenho novo não libera: o mesmo desenho não gera pergunta sem parte fechada", () => {
     const e = alto({ ultimaPerguntaEm: AGORA, desenhoNaUltimaPergunta: ["r1", "e1"] });
-    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: ["r1", "e1"] }), "SEM_PARTE_FECHADA");
+    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: ["r1", "e1"] }), "SEM_GANCHO");
   });
 
   it("sem pergunta anterior, o teto conta desde o começo da fase", () => {
     const e = alto({ faseIniciadaEm: AGORA, ultimaPerguntaEm: null });
-    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO - 1, { pecas: ["r1"] }), "SEM_PARTE_FECHADA");
+    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO - 1, { pecas: ["r1"] }), "SEM_GANCHO");
     assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: ["r1"] }), null);
   });
 
   it("grafo cortado (peças desconhecidas) não conta como desenho novo", () => {
     const e = alto({ ultimaPerguntaEm: AGORA, desenhoNaUltimaPergunta: ["r1"] });
-    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: null }), "SEM_PARTE_FECHADA");
+    assert.equal(motivoDoConteudo(e, aberta, AGORA + TETO, { pecas: null }), "SEM_GANCHO");
   });
 
   it("quebra de silêncio fura o piso, com ou sem parte fechada", () => {
@@ -454,6 +465,17 @@ describe("ritmo por conteúdo do quadro (#129, bloco B)", () => {
     assert.equal(motivoDoConteudo(e, fechada, AGORA), null);
   });
 
+  it("gancho repetido continua barrado na quebra de silêncio e na conclusão recente", () => {
+    const e = alto({
+      ultimaPerguntaEm: AGORA - 1_000,
+      ultimaConclusaoEm: AGORA - 1_000,
+      perguntas: [{ numero: 1, status: "duvida", gancho: "decisao", pergunta: "Por quê?", nota: null, elementos: [], degrau: null, fase: "ALTO_NIVEL", feitaEm: AGORA - 2_000 }],
+    });
+    const repetida = { status: "duvida" as const, gancho: "decisao" as const, parteFechada: false };
+    assert.equal(motivoDoConteudo(e, repetida, AGORA, { paradoHaS: SILENCIO_SEM_ACAO_S }), "GANCHO_REPETIDO");
+    assert.equal(motivoDoConteudo(e, repetida, AGORA), "GANCHO_REPETIDO");
+  });
+
   it("só se aplica a duvida e dica em ALTO_NIVEL e APROFUNDAMENTO", () => {
     const e = alto({ ultimaPerguntaEm: AGORA - 1000 });
     assert.equal(motivoDoConteudo(estadoEm("REQUISITOS", { ultimaPerguntaEm: AGORA - 1000 }), aberta, AGORA), null);
@@ -461,7 +483,7 @@ describe("ritmo por conteúdo do quadro (#129, bloco B)", () => {
     assert.equal(motivoDoConteudo(e, { status: "ok", parteFechada: false }, AGORA), null);
     assert.equal(
       motivoDoConteudo(estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AGORA - 1000 }), { status: "dica", parteFechada: false }, AGORA),
-      "SEM_PARTE_FECHADA",
+      "SEM_GANCHO",
     );
   });
 
@@ -483,6 +505,7 @@ describe("ritmo por conteúdo do quadro (#129, bloco B)", () => {
     assert.equal(semPecas.desenhoNaUltimaPergunta, undefined, "sem peças na análise, o campo fica ausente");
   });
 });
+
 
 describe("quando o quadro pode oferecer o encerramento (#129, decisão F)", () => {
   const PLANO: PlanoDaSessao = {
@@ -611,8 +634,8 @@ describe("redirecionamento de escopo (#129, decisão I)", () => {
 
 describe("cota e escopo (#129, decisão I, revisado)", () => {
   it("a cota não barra o redirecionamento de escopo; o orçamento total continua barrando", () => {
-    // Início da entrevista (fração 0): a cota é 1, e uma pergunta já feita a esgota.
-    const cedo = estadoEm("ALTO_NIVEL", { iniciadaEm: AGORA, perguntasFeitas: 1 });
+    // Início da entrevista (fração 0): a cota é 2 com a folga #140.
+    const cedo = estadoEm("ALTO_NIVEL", { iniciadaEm: AGORA, perguntasFeitas: 2 });
     assert.equal(motivoBloqueioPlin(cedo, AGORA), "COTA_DO_TEMPO");
     assert.equal(motivoBloqueioPlin(cedo, AGORA, REGRAS_PADRAO, { escopo: true }), null);
     const cheio = estadoEm("ALTO_NIVEL", { iniciadaEm: AGORA, perguntasFeitas: LIMITE });
@@ -631,8 +654,9 @@ describe("pergunta obrigatória do teto (#129, bloco B)", () => {
     ultimaPerguntaEm: AGORA_OB - TETO - 1, desenhoNaUltimaPergunta: ["r1"], ...extra,
   });
 
-  it("o teto de RITMO_QUADRO é de 3 min", () => {
-    assert.equal(TETO, 180_000);
+  it("o teto de RITMO_QUADRO é de 90 s", () => {
+    // #140: teto de 90 s.
+    assert.equal(TETO, 90_000);
   });
 
   it("com o teto vencido, em fase de conteúdo e sem bloqueio, a pergunta é obrigatória", () => {
@@ -685,17 +709,17 @@ describe("teto por fase (decisão do dono): APROFUNDAMENTO vence só pelo tempo;
   const AG = 10_000_000;
   const pecas = ["r1", "e1"];
 
-  it("APROFUNDAMENTO com 3 min sem pergunta e sem desenho novo: o teto vence", () => {
+  it("APROFUNDAMENTO com 90 s sem pergunta e sem desenho novo: o teto vence", () => {
     const e = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AG - TETO_MS, desenhoNaUltimaPergunta: ["r1", "e1"] });
     assert.equal(tetoDaPergunta(e, AG, pecas), true);
   });
 
-  it("ALTO_NIVEL com 3 min sem pergunta e sem desenho novo: o teto não vence", () => {
+  it("ALTO_NIVEL com 90 s sem pergunta e sem desenho novo: o teto não vence", () => {
     const e = estadoEm("ALTO_NIVEL", { ultimaPerguntaEm: AG - TETO_MS, desenhoNaUltimaPergunta: ["r1", "e1"] });
     assert.equal(tetoDaPergunta(e, AG, pecas), false);
   });
 
-  it("antes dos 3 min, nem o APROFUNDAMENTO vence", () => {
+  it("antes dos 90 s, nem o APROFUNDAMENTO vence", () => {
     const e = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AG - TETO_MS + 1, desenhoNaUltimaPergunta: ["r1", "e1"] });
     assert.equal(tetoDaPergunta(e, AG, pecas), false);
   });
