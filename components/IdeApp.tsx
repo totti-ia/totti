@@ -343,7 +343,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
       dizer: (fala) => falarVoz(fala),
       registrarFala: async (fala) => { await sendEvent({ type: "speech", role: "agent", text: fala }); },
       endSession: async (razao) => {
-        // As saídas de foco que não pegaram carona num snapshot vão num lote só, antes do fim (#123).
+        // As saídas de foco que não pegaram carona num snapshot vão no evento de encerramento (#123).
         const agora = Date.now();
         const t = nowTDaSessao();
         const saidas = registroDeFoco.encerrar(agora).map((s) => ({ t: Math.max(0, t - (agora - s.inicioEm)), duracaoMs: s.duracaoMs, motivo: s.motivo }));
