@@ -14,7 +14,7 @@ import { candidatosPorSessao } from "@/lib/convites/store";
 import { relatorioDaIde } from "@/lib/relatorio/da-ide";
 import { relatorioDoQuadro } from "@/lib/relatorio/do-quadro";
 import { integridadeDoQuadro } from "@/lib/integridade/montar";
-import { INTEGRIDADE_QUADRO_EXEMPLO } from "@/lib/agente/relatorio-exemplo";
+import { INTEGRIDADE_QUADRO_CONVERGENCIA, INTEGRIDADE_QUADRO_EXEMPLO } from "@/lib/agente/relatorio-exemplo";
 import { gravacaoDaSessao } from "@/lib/session/gravacao";
 import { sessaoViva } from "@/lib/session/persistencia";
 import { exemploHabilitado, GRAVACAO_EXEMPLO, relatorioExemplo } from "@/lib/session/relatorio-exemplo";
@@ -63,7 +63,10 @@ async function Conteudo({ params, searchParams }: Props) {
     return <Relatorio r={relatorioDaIde(relatorioExemplo(), GRAVACAO_EXEMPLO, { demonstracao: true })} gravacao={GRAVACAO_EXEMPLO} />;
   }
   const exemploDoQuadro = devHabilitado() ? EXEMPLOS[id] : undefined;
-  if (exemploDoQuadro) return <Relatorio r={relatorioDoQuadro(exemploDoQuadro, INTEGRIDADE_QUADRO_EXEMPLO)} comDecisao={false} />;
+  if (exemploDoQuadro) {
+    const integridade = id === "exemplo-nao-avancar" ? INTEGRIDADE_QUADRO_CONVERGENCIA : INTEGRIDADE_QUADRO_EXEMPLO;
+    return <Relatorio r={relatorioDoQuadro(exemploDoQuadro, integridade)} comDecisao={false} />;
+  }
 
   return (await relatorioDoQuadroSalvo(id)) ?? (await relatorioDaIdeSalvo(id)) ?? <SessaoNaoEncontrada />;
 }

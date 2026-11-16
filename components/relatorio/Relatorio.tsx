@@ -16,6 +16,7 @@ import NotasDosCriterios, { type NotaCriterio } from "@/components/report/NotasD
 import AprendidoComOTime from "@/components/squad/AprendidoComOTime";
 import type { Gravacao } from "@/lib/contracts";
 import { formatMs } from "@/lib/format";
+import { duracao } from "@/lib/integridade/formato";
 import {
   NOME_DA_RECOMENDACAO,
   NOME_DO_STATUS_ELIMINATORIO,
@@ -40,6 +41,16 @@ const ROTULO_DO_BRIEFING: Record<RelatorioComum["recomendacao"], string> = {
   talvez: "Para a próxima conversa",
   evidencia_insuficiente: "Para a próxima conversa",
   nao_avancar: "O que sustenta a recomendação",
+};
+
+/**
+ * Colunas da faixa de números pela quantidade (a IDE tem 4 ou 5, o quadro 3 ou 4): sempre linhas cheias, sem célula
+ * vazia. No celular são 2 colunas e o último ímpar ocupa a linha toda; `ultimo` desfaz isso quando a grade alarga.
+ */
+const GRADE_DOS_FATOS: Record<number, { grade: string; ultimo: string }> = {
+  3: { grade: "sm:grid-cols-3", ultimo: "sm:odd:last:col-span-1" },
+  4: { grade: "md:grid-cols-4", ultimo: "" },
+  5: { grade: "lg:grid-cols-5", ultimo: "lg:odd:last:col-span-1" },
 };
 
 const nota1 = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -228,9 +239,14 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         </header>
 
         {r.fatos.length > 0 && (
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-padrao border border-borda bg-borda sm:grid-cols-3 lg:grid-cols-5">
+          <dl
+            className={`grid grid-cols-2 gap-px overflow-hidden rounded-padrao border border-borda bg-borda ${GRADE_DOS_FATOS[r.fatos.length]?.grade ?? ""}`}
+          >
             {r.fatos.map((f) => (
-              <div key={f.nome} className="flex flex-col gap-1 bg-superficie px-4 py-3.5 odd:last:col-span-2 lg:odd:last:col-span-1">
+              <div
+                key={f.nome}
+                className={`flex flex-col gap-1 bg-superficie px-4 py-3.5 odd:last:col-span-2 ${GRADE_DOS_FATOS[r.fatos.length]?.ultimo ?? ""}`}
+              >
                 <dt className="text-[12.5px] text-texto-suave">{f.nome}</dt>
                 <dd className="numero text-[16px] font-medium tabular-nums">{f.valor}</dd>
               </div>
@@ -402,6 +418,7 @@ const textoDoSinal = (s: BlocoDeIntegridade["sinais"][number]) => (s.detalhe ? `
  */
 function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar: (t: number, texto: string, chave: number) => ReactNode }) {
   const { destaques, sinais } = bloco;
+  const resumo = resumoDaIntegridade(sinais);
   return (
     <section aria-labelledby="integridade" className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
@@ -414,10 +431,22 @@ function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar:
         </p>
       </div>
 
+      {resumo.length > 0 && (
+        <dl className="flex flex-wrap gap-1.5">
+          {resumo.map(({ nome, valor }) => (
+            <div key={nome} className="flex h-8 items-center gap-1.5 rounded-full bg-superficie-2/70 px-3 text-[13px]">
+              <dt className="text-texto-suave">{nome}</dt>
+              <dd className="numero font-medium text-texto">{valor}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
       {destaques.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {destaques.map((d, i) => (
-            <li key={`${d.t}-${i}`} className="rounded-padrao border-l-2 border-texto bg-superficie py-2 pr-3 pl-4 shadow-cartao">
+            <li key={`${d.t}-${i}`} className="flex flex-col gap-0.5 rounded-padrao bg-superficie px-4 pt-3 pb-2 shadow-cartao">
+              <span className="text-[12.5px] text-texto-suave">{porQueDestaca(d, sinais)}</span>
               {desenhar(d.t, d.texto, i) ?? (
                 <p className="flex items-baseline gap-2 py-1 text-corpo">
                   <span className="numero shrink-0 font-medium">{formatMs(d.t)}</span>
@@ -428,7 +457,7 @@ function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar:
           ))}
         </ul>
       ) : (
-        <p className="text-[14.5px]">{sinais.length ? "Nenhum sinal se repetiu ou se juntou a outro." : "Nenhum sinal registrado nesta entrevista."}</p>
+        <p className="text-[14.5px]">{sinais.length ? "Nada a destacar: nenhum sinal se juntou a outro." : "Nenhum sinal registrado nesta entrevista."}</p>
       )}
 
       {sinais.length > 0 && (
@@ -457,6 +486,24 @@ function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar:
       )}
     </section>
   );
+}
+
+/** O rótulo do destaque: o canário vale sozinho; o resto, porque dois sinais independentes se encontraram. */
+function porQueDestaca(d: BlocoDeIntegridade["destaques"][number], sinais: BlocoDeIntegridade["sinais"]): string {
+  const tipos = d.sinais.map((id) => sinais.find((s) => s.id === id)?.tipo);
+  if (tipos.includes("canario")) return "O enunciado copiado voltou à sala";
+  return "Dois sinais no mesmo momento";
+}
+
+/** Os números do bloco em pílulas: quantas vezes saiu e por quanto tempo no total, quantas colagens de fora. */
+function resumoDaIntegridade(sinais: BlocoDeIntegridade["sinais"]): { nome: string; valor: string }[] {
+  const saidas = sinais.filter((s) => s.tipo === "saida_de_foco");
+  const fora = saidas.reduce((total, s) => total + Math.max(0, (s.fim ?? s.t) - s.t), 0);
+  const colagens = sinais.filter((s) => s.tipo === "colagem_de_fora").length;
+  return [
+    { nome: "Saiu da entrevista", valor: saidas.length ? `${saidas.length === 1 ? "1 vez" : `${saidas.length} vezes`} · ${duracao(fora)}` : "nenhuma vez" },
+    { nome: "Colagens", valor: colagens ? String(colagens) : "nenhuma" },
+  ];
 }
 
 /** Nota geral: o número grande e uma barra de 0 a 4 preenchida até ele. */

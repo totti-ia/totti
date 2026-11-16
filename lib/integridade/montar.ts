@@ -3,10 +3,15 @@ import type { EventoEntrada } from "@/lib/agente/armazenamento/repositorio";
 import { colagemDeFora } from "@/lib/agents/colagem";
 import { tentativasEmTextos } from "@/lib/seguranca/injecao";
 import { canarioApareceu, nomeDoCanario } from "./canario";
+import { duracao } from "./formato";
+
+export { duracao };
 import type { BlocoDeIntegridade, SinalDeIntegridade, TipoDeSinal } from "./tipos";
 
-const minuto = (t: number) => `no minuto ${Math.floor(t / 60_000)}`;
-const segundos = (ms: number) => `${Math.round(ms / 100) / 10} s`;
+// Os textos não repetem o minuto: a tela já mostra o momento ao lado de cada sinal (e ele abre a gravação ali).
+const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
+/** Linhas a partir das quais uma colagem de fora vira sinal: uma linha de sintaxe da documentação não é. */
+export const LINHAS_DA_COLAGEM_DE_FORA = 3;
 type Texto = { t: number; onde: string; texto: string };
 type Saida = SaidaDeFoco;
 
@@ -34,14 +39,18 @@ function saidasUnicas(saidas: Saida[]): Saida[] {
 }
 
 function registrarSaidas(c: ReturnType<typeof coletor>, saidas: Saida[]) {
-  for (const s of saidas) c.adicionar("saida_de_foco", s.t, `saiu da ${s.motivo === "aba" ? "aba" : "janela"} por ${segundos(s.duracaoMs)} ${minuto(s.t)}`, { fim: s.t + s.duracaoMs });
+  for (const s of saidas) c.adicionar("saida_de_foco", s.t, `Saiu da ${s.motivo === "aba" ? "aba" : "janela"} da entrevista por ${duracao(s.duracaoMs)}`, { fim: s.t + s.duracaoMs });
 }
 
 function registrarTextos(c: ReturnType<typeof coletor>, sessaoId: string, textos: Texto[]) {
   const nome = nomeDoCanario(sessaoId);
   const primeiro = [...textos].sort((a, b) => a.t - b.t).find((x) => x.onde !== "na fala" && canarioApareceu(nome, x.texto));
-  if (primeiro) c.adicionar("canario", primeiro.t, `o identificador do enunciado copiado apareceu ${primeiro.onde} ${minuto(primeiro.t)}`, { detalhe: nome });
-  for (const i of tentativasEmTextos(textos)) c.adicionar("injecao", i.t, `apareceu texto dirigido à IA ${i.onde} ${minuto(i.t)}`, { detalhe: i.trecho });
+  if (primeiro) {
+    c.adicionar("canario", primeiro.t, `Apareceu ${primeiro.onde} o nome ${nome}, que só existe no texto copiado do enunciado`, {
+      detalhe: "Esse nome não aparece na tela: vai escondido na cópia, como um pedido dirigido a ferramentas de IA",
+    });
+  }
+  for (const i of tentativasEmTextos(textos)) c.adicionar("injecao", i.t, `Apareceu ${i.onde} um texto dirigido à IA que avalia a entrevista`, { detalhe: i.trecho });
 }
 
 /** Só foco + atividade posterior são independentes aqui. Dois derivados da mesma escrita nunca convergem. */
@@ -49,11 +58,24 @@ function concluir(sinais: SinalDeIntegridade[], dadosPresentes: boolean): BlocoD
   if (!dadosPresentes && !sinais.length) return null;
   sinais.sort((a, b) => a.t - b.t);
   const destaques: BlocoDeIntegridade["destaques"] = sinais.filter((s) => s.tipo === "canario").map((s) => ({ texto: s.texto, t: s.t, sinais: [s.id] }));
+  // Cada atividade vira um destaque só: duas saídas antes da mesma colagem são uma história, não duas.
+  const porAtividade = new Map<string, { atividade: SinalDeIntegridade; focos: SinalDeIntegridade[] }>();
   for (const foco of sinais.filter((s) => s.tipo === "saida_de_foco")) {
     const fim = foco.fim!;
     const perto = sinais.filter((s) => ["colagem_de_fora", "escrita_linear", "bloco_apos_saida"].includes(s.tipo) && s.t >= fim && s.t - fim <= LIMITES.depoisDaSaidaMs);
     const atividade = perto.find((s) => s.tipo === "bloco_apos_saida") ?? perto[0];
-    if (atividade) destaques.push({ texto: `${foco.texto} e, ao voltar, ${atividade.texto}`, t: foco.t, sinais: [foco.id, atividade.id] });
+    if (!atividade) continue;
+    const grupo = porAtividade.get(atividade.id) ?? { atividade, focos: [] };
+    grupo.focos.push(foco);
+    porAtividade.set(atividade.id, grupo);
+  }
+  for (const { atividade, focos } of porAtividade.values()) {
+    const ultimo = focos[focos.length - 1];
+    const depois = atividade.t - ultimo.fim!;
+    const quando = depois < 2_000 ? "logo ao voltar" : `${duracao(depois)} depois de voltar`;
+    const total = focos.reduce((soma, f) => soma + (f.fim! - f.t), 0);
+    const saiu = focos.length === 1 ? focos[0].texto : `Saiu da entrevista ${focos.length} vezes (${duracao(total)} no total)`;
+    destaques.push({ texto: `${saiu} e, ${quando}, ${minuscula(atividade.texto)}`, t: focos[0].t, sinais: [...focos.map((f) => f.id), atividade.id] });
   }
   return { sinais, destaques: destaques.sort((a, b) => a.t - b.t) };
 }
@@ -74,7 +96,12 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
     if (e.type === "foco") dadosPresentes = true;
     if (e.type === "paste") {
       dadosPresentes ||= e.origem !== undefined;
-      if (colagemDeFora(e, codigo, anteriorDiferente)) c.adicionar("colagem_de_fora", e.t, `colou ${e.lines} ${e.lines === 1 ? "linha" : "linhas"} de fora ${minuto(e.t)}`);
+      // Colagem pequena sozinha é sintaxe da documentação; logo depois de sair da janela, é o que ele foi buscar lá fora.
+      const logoAposSair = saidas.some((s) => e.t >= s.t + s.duracaoMs && e.t - s.t - s.duracaoMs <= LIMITES.depoisDaSaidaMs);
+      if ((e.lines >= LINHAS_DA_COLAGEM_DE_FORA || logoAposSair) && colagemDeFora(e, codigo, anteriorDiferente)) {
+        const trecho = e.lines > 1 ? `${e.lines} linhas que não vieram` : `um trecho de ${e.chars} caracteres que não veio`;
+        c.adicionar("colagem_de_fora", e.t, `Colou ${trecho} do próprio editor`);
+      }
       janela = undefined;
     }
     if (e.type === "speech" && e.role === "candidate") textos.push({ t: e.t, onde: "na fala", texto: e.text });
@@ -96,10 +123,11 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
         janela.maior = Math.max(janela.maior, escrita.maiorTrechoSemPausa);
         janela.linhas += linhasNovas;
         if (janela.digitados >= LIMITES.digitados && janela.maior >= LIMITES.trechoSemPausa) {
-          c.adicionar("escrita_linear", janela.inicio, `entraram ${janela.digitados} caracteres digitados de cima a baixo, com ${janela.apagados} apagados e sem voltar a linhas anteriores ${minuto(janela.inicio)}`, { fim: e.t });
+          const apagou = janela.apagados ? `apagando ${janela.apagados}` : "sem apagar nada";
+          c.adicionar("escrita_linear", janela.inicio, `Digitou ${janela.digitados} caracteres de cima a baixo, ${apagou} e sem voltar a linhas anteriores`, { fim: e.t });
           const foco = saidas.findLast((s) => s.t + s.duracaoMs <= janela!.inicio && janela!.inicio - s.t - s.duracaoMs <= LIMITES.depoisDaSaidaMs);
           const volume = janela.linhas > 0 ? `${janela.linhas} linhas (${janela.digitados} caracteres digitados)` : `${janela.digitados} caracteres digitados`;
-          if (foco) c.adicionar("bloco_apos_saida", janela.inicio, `entraram ${volume} em ${segundos(e.t - janela.inicio)} ${minuto(janela.inicio)}`, { fim: e.t });
+          if (foco) c.adicionar("bloco_apos_saida", janela.inicio, `Entraram ${volume} em ${duracao(e.t - janela.inicio)}`, { fim: e.t });
           janela = undefined;
         }
       }
@@ -142,6 +170,11 @@ export function integridadeDoQuadro(sessaoId: string, eventos: readonly EventoEn
         const s = objeto(item);
         if (typeof s.inicio === "string" && typeof s.duracaoMs === "number" && (s.motivo === "aba" || s.motivo === "janela")) saidas.push({ t: Date.parse(s.inicio) - inicio, duracaoMs: s.duracaoMs, motivo: s.motivo });
       }
+    }
+    // Peças que entraram de uma vez (o "! COLAGEM" da análise): o equivalente da colagem de fora no quadro.
+    if (e.tipo === "colagem" && typeof d.pecas === "number" && d.pecas > 0) {
+      dadosPresentes = true;
+      c.adicionar("colagem_de_fora", t, `Entraram ${d.pecas} peças no quadro de uma só vez`);
     }
     // O conversor do Excalidraw guarda textos das caixas e anotações em dados.grafo.
     if (e.tipo === "desenho" && typeof d.grafo === "string") textos.push({ t, onde: "numa caixa do quadro", texto: d.grafo });
