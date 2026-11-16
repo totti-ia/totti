@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { integridadeDoQuadro } from "../lib/integridade/montar";
+import type { EventoEntrada } from "../lib/agente/armazenamento/repositorio";
 
 type Controle = {
   reter: boolean; tocando: boolean; ouvindo: boolean; falas: string[]; fila: string[];
@@ -28,6 +30,7 @@ async function desenharPeca(page: Page, indice: number) {
 }
 
 async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean; enunciado?: string } = {}) {
+  const eventosDaSessao: EventoEntrada[] = [];
   const pedidos: { finalizar: number; falas: string[]; fotosFinais: number; fotosIntermediarias: number; analises: number; eventos: string[]; grafos: string[]; corpoFinal?: string; imagemFinal: Buffer | null; imagemIntermediaria: Buffer | null } = { finalizar: 0, falas: [], fotosFinais: 0, fotosIntermediarias: 0, analises: 0, eventos: [], grafos: [], imagemFinal: null, imagemIntermediaria: null };
   const erros: string[] = [];
   page.on("pageerror", (e) => erros.push(e.message));
@@ -107,7 +110,8 @@ async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean; enuncia
     tempos: { REQUISITOS: 600, ALTO_NIVEL: 600, APROFUNDAMENTO: 600, FECHAMENTO: 180 },
   } }));
   await page.route("**/api/sessoes/*/eventos", (r) => {
-    const corpo = r.request().postDataJSON() as { eventos: { tipo: string; dados: { quem?: string; texto?: string; grafo?: string } }[] };
+    const corpo = r.request().postDataJSON() as { eventos: (EventoEntrada & { dados: { quem?: string; texto?: string; grafo?: string } })[] };
+    eventosDaSessao.push(...corpo.eventos);
     pedidos.eventos.push(...corpo.eventos.map((e) => e.tipo));
     for (const e of corpo.eventos) if (e.tipo === "fala" && e.dados.quem === "agente" && e.dados.texto) pedidos.falas.push(e.dados.texto);
     for (const e of corpo.eventos) if (e.tipo === "desenho" && e.dados.grafo) pedidos.grafos.push(e.dados.grafo);
@@ -151,7 +155,7 @@ async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean; enuncia
   }
   await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 40000 });
   await page.evaluate(() => { (window as unknown as JanelaTeste).fechamentoTeste.reter = false; });
-  return { pedidos, erros };
+  return { pedidos, erros, eventosDaSessao };
 }
 
 async function botaoEncerrar(page: Page) {
@@ -189,7 +193,7 @@ test("integridade: canário só na cópia selecionada do enunciado, fora da cena
 });
 
 test("botão: quadro visível e bloqueado até áudio terminar, finalizar uma vez e depois obrigado", async ({ page }) => {
-  const { pedidos, erros } = await preparar(page);
+  const { pedidos, erros, eventosDaSessao } = await preparar(page);
   await page.getByRole("radio", { name: "Retângulo", exact: true }).locator("..").click();
   await expect(page.getByRole("radio", { name: "Retângulo", exact: true })).toBeChecked();
   await page.mouse.move(650, 340); await page.mouse.down();
@@ -220,7 +224,26 @@ test("botão: quadro visível e bloqueado até áudio terminar, finalizar uma ve
   await expect(page.getByRole("heading", { name: "Obrigado pela conversa." })).toBeVisible();
   expect(pedidos.finalizar).toBe(1);
   expect(pedidos.falas.filter((f) => f === DESPEDIDA)).toHaveLength(1);
+  // Os eventos de uma sessão honesta, do início ao encerramento, não produzem destaque no relatório.
+  const criadaEm = Date.parse(eventosDaSessao[0].horario);
+  const bloco = integridadeDoQuadro("teste-fechamento", eventosDaSessao, criadaEm);
+  expect(bloco?.destaques ?? []).toEqual([]);
   expect(erros).toEqual([]);
+});
+
+test("pré-checagem informa regras e registros antes de começar nas duas salas", async ({ page }) => {
+  await page.goto("/?config=integridade-e2e");
+  await expect(page.getByText(/Pode consultar documentação de sintaxe/)).toBeVisible();
+  await expect(page.getByText(/Não gravamos câmera, tela nem teclas/)).toBeVisible();
+  await page.route("**/api/sessoes", (r) => r.fulfill({ json: {
+    sessao_id: "teste-regras", area: "system design", apresentacao: "Vamos começar.",
+    problema: { titulo: "API", enunciado: "Desenhe uma API.", fala_do_desafio: "Desenhe uma API." },
+    tempos: { REQUISITOS: 600, ALTO_NIVEL: 600, APROFUNDAMENTO: 600, FECHAMENTO: 180 },
+  } }));
+  await page.goto("/entrevista/system-design");
+  await expect(page.getByRole("button", { name: "Começar", exact: true })).toBeEnabled();
+  await expect(page.getByText(/Pode consultar documentação de sintaxe/)).toBeVisible();
+  await expect(page.getByText(/Não gravamos câmera, tela nem teclas/)).toBeVisible();
 });
 
 test("voz: despedida devolvida pelo fechamento é falada e só então navega", async ({ page }) => {
