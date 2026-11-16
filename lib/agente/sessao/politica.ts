@@ -3,7 +3,7 @@
 // como defesa barata (evita gastar uma chamada ao LLM que o quadro ia descartar de qualquer jeito).
 import { SILENCIO_INICIAL_S, SILENCIO_REQUISITOS_S, SILENCIO_SEM_ACAO_S } from "../../contracts";
 import { motivoDoRitmo, orcamentoDeInterrupcoes, RITMO, RITMO_QUADRO, type Ritmo } from "../../interrupcao/politica";
-import { garantirMarca, mapearAcoesVisuais } from "../../presenca/acoesVisuais";
+import { garantirMarca, mapearAcoesVisuais, conexoesDoGrafo } from "../../presenca/acoesVisuais";
 import { limiarDoFechamentoNoQuadro } from "../../totti/fechamento";
 import { emGarantiaDoEmpecilho } from "../../sessao/empecilho";
 import type { Kit, Problema } from "../kits/tipos";
@@ -163,9 +163,11 @@ export type ContextoDoConteudo = {
   paradoHaS?: number;
   /** Ids das peças do desenho agora (`pecasDoGrafo`); null quando o grafo veio cortado. */
   pecas?: string[] | null;
+  /** Ações do candidato depois da última fala solta do agente devolvem a vez ao candidato. */
+  agiuDepoisDaFala?: boolean;
 };
 
-export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_PARTE_FECHADA";
+export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_GANCHO" | "PAUSA_REAL" | "GANCHO_REPETIDO";
 
 /**
  * Ritmo por conteúdo (#129, bloco B): por que uma resposta "duvida" ou "dica" de ALTO_NIVEL/APROFUNDAMENTO NÃO vira
@@ -177,18 +179,25 @@ export type MotivoConteudo = "PISO_ENTRE_PERGUNTAS" | "SEM_PARTE_FECHADA";
  */
 export function motivoDoConteudo(
   estado: EstadoSessao,
-  resposta: Pick<RespostaAnalise, "status" | "parteFechada">,
+  resposta: Pick<RespostaAnalise, "status" | "parteFechada" | "gancho">,
   agora: number,
   contexto: ContextoDoConteudo = {},
 ): MotivoConteudo | null {
   if (!FASES_DO_CONTEUDO.includes(estado.fase) || !STATUS_DO_CONTEUDO.includes(resposta.status)) return null;
+  const gancho = resposta.gancho ?? (resposta.parteFechada ? "parte_fechada" : null);
+  const ultimo = estado.perguntas.at(-1);
+  const ultimoGancho = ultimo?.gancho ?? (ultimo && ultimo.status !== "ok" ? "parte_fechada" : undefined);
+  if (gancho && ultimoGancho === gancho) return "GANCHO_REPETIDO";
   const quebraDeSilencio = contexto.paradoHaS !== undefined && contexto.paradoHaS >= LIMITE_SILENCIO_S;
   const marco = estado.ultimaConclusaoEm != null && agora - estado.ultimaConclusaoEm < RITMO.marcoDeConclusaoMs;
   if (quebraDeSilencio || marco) return null;
   const pisoPassou = estado.ultimaPerguntaEm == null || agora - estado.ultimaPerguntaEm >= RITMO_QUADRO.pisoEntrePerguntasMs;
-  if (resposta.parteFechada && pisoPassou) return null;
+  if (gancho && pisoPassou) {
+    if ((contexto.paradoHaS !== undefined && contexto.paradoHaS * 1000 >= RITMO.pausaRealMs) || contexto.agiuDepoisDaFala) return null;
+    return "PAUSA_REAL";
+  }
   if (tetoDaPergunta(estado, agora, contexto.pecas)) return null;
-  return resposta.parteFechada ? "PISO_ENTRE_PERGUNTAS" : "SEM_PARTE_FECHADA";
+  return gancho ? "PISO_ENTRE_PERGUNTAS" : "SEM_GANCHO";
 }
 
 /**
@@ -487,8 +496,9 @@ export function filtrarResposta(
   agora: number,
   regras: Regras = REGRAS_PADRAO,
   candidato: ContextoDoCandidato = {},
+  grafo = "",
 ): RespostaAnalise {
-  const filtrada = filtrarPlin(estado, resposta, idsDoGrafo, agora, regras, {
+  const filtrada = filtrarPlin(estado, resposta, idsDoGrafo, agora, regras, grafo, {
     ...candidato,
     temDesenho: candidato.temDesenho || idsDoGrafo.size > 0,
     escopo: resposta.status === "redirecionar" && resposta.escopo === true,
@@ -503,6 +513,7 @@ function filtrarPlin(
   idsDoGrafo: ReadonlySet<string>,
   agora: number,
   regras: Regras,
+  grafo: string,
   candidato: ContextoDoCandidato,
 ): RespostaAnalise {
   if (resposta.status === "ok") return silenciar(resposta);
@@ -515,6 +526,6 @@ function filtrarPlin(
   // A pergunta que fala de uma peça sempre a marca (o modelo às vezes manda `visual: []` com elementos citados).
   const visual = garantirMarca(
     resposta.visual ? mapearAcoesVisuais(resposta.visual, (id) => idsDoGrafo.has(id) ? id : null) : undefined,
-    elementos, estado.perguntasFeitas);
+    elementos, estado.perguntasFeitas, conexoesDoGrafo(grafo));
   return { ...resposta, pergunta, nota, elementos, ...(visual ? { visual } : {}) };
 }

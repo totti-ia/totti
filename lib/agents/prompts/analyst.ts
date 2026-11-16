@@ -90,7 +90,7 @@ O topicLabel tem 2 a 5 palavras e vai no balão que avisa o candidato ("Quero en
 O followUpTopic é o assunto para aprofundar, sempre o mesmo tema da pergunta (ex.: pergunta sobre complexidade de tempo → "por que dá esse custo e quanto de memória usa"). Ele segue as MESMAS regras da pergunta: nunca cita o erro, o caso que quebra ou a solução. Errado: "o que acontece quando i e j caem no mesmo elemento". Certo: "o raciocínio por trás de onde o loop começa".
 
 # Agenda
-A mensagem traz os critérios AINDA NÃO EXPLORADOS e o tempo restante. Todos os critérios precisam ser explorados até o fim da entrevista. Quando o código permitir, prefira perguntas para critérios não explorados, e aumente a priority deles conforme o tempo acaba. Critério que não depende do código (ex.: comunicação) se explora junto com os outros.
+A mensagem traz os critérios AINDA NÃO EXPLORADOS e o tempo restante. Todos os critérios precisam ser provocados pelo menos uma vez até 70% do tempo. Quando o código permitir, prefira perguntas para critérios não explorados, e aumente a priority deles conforme o tempo acaba. Critério que não depende do código (ex.: comunicação) se explora junto com os outros.
 
 # Regras
 - No máximo 2 perguntas. Devolva "questions": [] SÓ se o código ainda não tem nenhuma ideia escrita (assinatura vazia), ou se nada mudou desde a última pergunta E todos os critérios já foram explorados. Código parado com critério ainda não explorado merece pergunta sobre esse critério, no código que já está ali. Código incompleto ou estranho, mas com uma ideia (um loop, uma condição, um return), já merece pergunta sobre o trecho.
@@ -98,7 +98,9 @@ A mensagem traz os critérios AINDA NÃO EXPLORADOS e o tempo restante. Todos os
 - Se numa conversa anterior ele disse que não sabe, não conhece ou não lembra de um assunto (com quaisquer palavras), esse assunto está fechado: não volte a ele, nem reformulado, nem pelo mesmo trecho do código. Escolha outro critério ou outro trecho; insistir só trava a entrevista.
 - Não pergunte se ou onde ele faria algo que já está escrito no código: pergunte o porquê do que está lá.
 - Trecho já perguntado duas vezes (lista "Trechos do código já perguntados") está explorado: não volte a ele, nem com outras palavras. Escolha outro trecho ou outro critério. A exceção é o "desafio" depois de um run verde, que é outro assunto.
-- parteFechada: true quando o código tem um trecho coerente pronto para conversar (uma função terminada, uma primeira versão completa, um bloco que ele acabou de fechar); false quando ele está no meio de uma linha ou de um bloco aberto. Pergunta sobre trecho pela metade espera ele fechar.
+- gancho por pergunta: "parte_fechada" para trecho coerente pronto; "decisao" para escolha nova visível (estrutura de dados, laço, condição de saída), perguntando o porquê; "raciocinio" para caminho em andamento, citando a última linha e perguntando o que pesou, descartou ou fará em seguida. Não pergunte no meio de uma fala. Evite perguntar no meio de uma linha em execução.
+- parteFechada: deriva de gancho === "parte_fechada".
+- Ganchos das últimas perguntas: use tipo diferente do mais recente; a política também barra repetição consecutiva. Todo critério do plano deve ser provocado pelo menos uma vez até 70% do tempo da entrevista; priorize os critérios ainda sem evidência quando houver gancho no código.
 - priority de 0 a 1: 0.9+ para abordagem fechada e nunca justificada, ou desafio logo depois do primeiro run verde; 0.6–0.8 para perguntas boas; abaixo disso, não vale interromper.
 - startLine/endLine apontam a região sobre a qual a pergunta fala (para grifar), usando os números de linha do código.
 - evidence: observações para o relatório, cada uma com o criterionId. spontaneous = true só quando o candidato mostrou aquilo POR CONTA PRÓPRIA, sem o entrevistador perguntar (no código, ou numa fala que NÃO responde a uma pergunta do entrevistador). Resposta a pergunta é spontaneous = false: o entrevistador já registra como ele se saiu.
@@ -115,7 +117,7 @@ Mesmas regras de estilo das outras: natural, em português do Brasil, curta, uma
 Sem FOCO PENDENTE na mensagem, "focusQuestion" = null.
 
 Responda SOMENTE com um objeto JSON, sem markdown, neste formato:
-{"candidateThinking": string, "approach": string, "timeComplexity": string, "spaceComplexity": string, "progress": "nao_comecou" | "em_andamento" | "funcional" | "otimizado", "parteFechada": boolean, "suspiciousLines": [{"startLine": number, "endLine": number, "reason": string}], "evidence": [{"criterionId": string, "note": string, "spontaneous": boolean}], "questions": [{"question": string, "kind": "explicar" | "sondar" | "desafio", "criterionId": string, "followUpTopic": string, "topicLabel": string, "priority": number, "startLine": number, "endLine": number}], "focusQuestion": {"question": string, "followUpTopic": string, "topicLabel": string, "startLine": number | null, "endLine": number | null} | null}`;
+{"candidateThinking": string, "approach": string, "timeComplexity": string, "spaceComplexity": string, "progress": "nao_comecou" | "em_andamento" | "funcional" | "otimizado", "parteFechada": boolean, "suspiciousLines": [{"startLine": number, "endLine": number, "reason": string}], "evidence": [{"criterionId": string, "note": string, "spontaneous": boolean}], "questions": [{"question": string, "gancho": "parte_fechada" | "decisao" | "raciocinio", "kind": "explicar" | "sondar" | "desafio", "criterionId": string, "followUpTopic": string, "topicLabel": string, "priority": number, "startLine": number, "endLine": number}], "focusQuestion": {"question": string, "followUpTopic": string, "topicLabel": string, "startLine": number | null, "endLine": number | null} | null}`;
 }
 
 export interface AnalystTurnInput {
@@ -151,6 +153,7 @@ export interface AnalystTurnInput {
   semPerguntaHa?: string;
   /** Trechos do código já perguntados, com quantas vezes ("linhas 4–7 (o loop interno): 2 vezes"). */
   trechosPerguntados?: string[];
+  ganchosRecentes?: string[];
 }
 
 export function buildAnalystUser(input: AnalystTurnInput): string {
@@ -189,5 +192,5 @@ Perguntas já no balão, esperando ele abrir:
 ${input.pendingQuestions.length ? input.pendingQuestions.map((q) => `- ${q}`).join("\n") : "(nenhuma)"}
 
 Trechos do código já perguntados:
-${input.trechosPerguntados?.length ? input.trechosPerguntados.map((t) => `- ${t}`).join("\n") : "(nenhum)"}`;
+${input.trechosPerguntados?.length ? input.trechosPerguntados.map((t) => `- ${t}`).join("\n") : "(nenhum)"}\n\nTipos das últimas perguntas (use um tipo diferente do mais recente):\n${input.ganchosRecentes?.join(" → ") || "(nenhum)"}`;
 }

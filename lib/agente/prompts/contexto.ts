@@ -7,6 +7,18 @@ import { normalizar } from "../guardas";
 import { avisoDeFalaCortada, foiInterrompida, MARCA_INTERROMPIDA } from "../../totti/interrupcao";
 import { conversaSemRepeticao, tempoDaEntrevista, type EstadoSessao, type PerguntaFeita } from "../sessao/estado";
 import type { FalaRecente, Fase } from "../sessao/tipos";
+import { promessaVazia } from "../../totti/guardas";
+
+/** Última promessa sem conteúdo posterior: o Totti deve cumpri-la agora. */
+export function promessaPendente(falas: FalaRecente[]): string | null {
+  let pendente: string | null = null;
+  for (const fala of falas) {
+    if (fala.quem !== "agente") continue;
+    if (promessaVazia(fala.texto)) pendente = fala.texto;
+    else if (pendente) pendente = null;
+  }
+  return pendente;
+}
 
 /** Quantas falas da conversa vão ao prompt. Uma entrevista de 45 min raramente passa disso. */
 export const MAX_FALAS_NO_PROMPT = 40;

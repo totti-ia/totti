@@ -35,7 +35,13 @@ function llmVariado(): LlmCliente {
     async completarJson(args) {
       const r = await base.completarJson(args);
       const d = r.dados as { status?: string; pergunta?: string | null };
-      if (d && d.status === "duvida") return { ...r, dados: { ...d, pergunta: PERGUNTAS[n++ % PERGUNTAS.length] } as typeof r.dados };
+      if (d && d.status === "duvida") {
+        // #140: varia os três ganchos; chamadas rebaixadas também consomem uma variação.
+        const indice = n++;
+        const gancho = (["decisao", "raciocinio", "parte_fechada"] as const)[indice % 3];
+        const elementos = ["e1", "e1", "r1", "r2", "s1", "s2", "t1"];
+        return { ...r, dados: { ...d, pergunta: PERGUNTAS[indice % PERGUNTAS.length], elementos: [elementos[indice % elementos.length]], gancho, parteFechada: gancho === "parte_fechada" } as typeof r.dados };
+      }
       return r;
     },
   };
@@ -104,7 +110,8 @@ async function analisar(
         conversa_recente: [{ quem: "agente", texto: "Projete um serviço." }, ...(falaExtra ? (Array.isArray(falaExtra) ? falaExtra : [falaExtra]) : [])],
         perguntas_feitas: perguntas,
         imagem_url: null,
-        ...(paradoHaS !== undefined ? { parado_ha_s: paradoHaS } : {}),
+        // #140: a pausa real permite medir o gancho sem depender do relógio de digitação.
+        parado_ha_s: paradoHaS ?? 4,
       }),
       params(id),
     ),
@@ -200,7 +207,8 @@ describe("entrevista completa por texto (handlers + LLM falso)", () => {
     await eventos(id, [{ tipo: "fase", dados: { fase: "ALTO_NIVEL" } }, { tipo: "desenho", dados: { grafo: GRAFO_RUIM, mudancas: d1.texto, ids: d1.ids } }]);
     // A análise vem depois do evento do desenho (o segundo do lote, 1 ms à frente): a observação dela é a que fica
     // (as repetições seguintes não entram de novo no livro) e precisa da âncora desse desenho.
-    relogio += 10;
+    // #140: respeita o respiro comum após a fase e deixa a pausa real vir do fixture da análise.
+    relogio += 31_000;
     const alto = await analisar(id, "ALTO_NIVEL", GRAFO_RUIM, d1.texto, 0);
     respostas.push(alto);
     assert.equal(alto.status, "duvida");

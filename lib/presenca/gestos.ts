@@ -12,7 +12,7 @@ export type Gesto = { tipo: "traco"; traco: Traco; destaque?: boolean } | { tipo
 /** Forma da peça no quadro (o tipo do elemento do Excalidraw): o gesto de marcar depende dela. */
 export type FormaDoAlvo = "retangulo" | "elipse" | "losango" | "seta" | "linha" | "texto" | "outra";
 /** Caixa de um elemento; setas e linhas podem trazer a polilinha (pontos relativos a x,y) em `pontos`. */
-export type CaixaComPontos = Caixa & { pontos?: readonly (readonly [number, number])[]; forma?: FormaDoAlvo };
+export type CaixaComPontos = Caixa & { pontos?: readonly (readonly [number, number])[]; forma?: FormaDoAlvo; containerId?: string | null };
 
 /** Tipo do elemento do Excalidraw → forma do alvo. */
 export function formaDoElemento(tipo: string): FormaDoAlvo {
@@ -181,7 +181,7 @@ export function lugarDaAnotacao(texto: string, alvo: Caixa | undefined, ocupados
 }
 
 /** Converte o plano relativo em gestos na cena, sem modificar os elementos do candidato. */
-export function comporGestos(acao: AcaoVisual, caixas: ReadonlyMap<string, CaixaComPontos>, area: Caixa, semente: number): Gesto[] {
+export function comporGestos(acao: AcaoVisual, caixas: ReadonlyMap<string, CaixaComPontos>, area: Caixa, semente: number, conexoes: readonly (readonly [string, string])[] = []): Gesto[] {
   if (acao.tipo === "anotar") {
     const alvo = acao.alvo ? caixas.get(acao.alvo) : undefined;
     if (acao.alvo && !alvo) return [];
@@ -195,17 +195,59 @@ export function comporGestos(acao: AcaoVisual, caixas: ReadonlyMap<string, Caixa
       ? [{ tipo: "apontar", ponto: meio(c!) }]
       : [marcar(c!, semente + i), { tipo: "texto", texto: String.fromCharCode(65 + i), ponto: { x: c!.x - 22, y: c!.y } }]);
   }
+  if (acao.tipo === "agrupar" || acao.tipo === "numerar") {
+    const alvos = acao.alvos.map((id) => caixas.get(id));
+    if (alvos.some((c) => !c)) return [];
+    if (acao.tipo === "numerar") {
+      if (!acao.alvos.slice(1).every((id, i) => conexoes.some(([de, ate]) => de === acao.alvos[i] && ate === id))) return [];
+      return alvos.map((c, i) => ({ tipo: "texto", texto: String(i + 1), ponto: { x: c!.x - 12, y: c!.y - 18 } }));
+    }
+    const x = Math.min(...alvos.map((c) => c!.x)) - 12;
+    const y = Math.min(...alvos.map((c) => c!.y)) - 12;
+    const direita = Math.max(...alvos.map((c) => c!.x + c!.largura)) + 12;
+    const baixo = Math.max(...alvos.map((c) => c!.y + c!.altura)) + 12;
+    const largura = direita - x;
+    const altura = baixo - y;
+    const dashes: Gesto[] = [];
+    const pontilhar = (ax: number, ay: number, bx: number, by: number) => {
+      const comprimento = Math.hypot(bx - ax, by - ay);
+      for (let inicio = 0; inicio < comprimento; inicio += 20) {
+        const fim = Math.min(inicio + 12, comprimento);
+        const p1 = { x: ax + (bx - ax) * inicio / comprimento, y: ay + (by - ay) * inicio / comprimento };
+        const p2 = { x: ax + (bx - ax) * fim / comprimento, y: ay + (by - ay) * fim / comprimento };
+        dashes.push(traco({ x: p1.x, y: p1.y, largura: 0, altura: 0 }, [[0, 0], [p2.x - p1.x, p2.y - p1.y]], true));
+      }
+    };
+    pontilhar(x, y, x + largura, y);
+    pontilhar(x + largura, y, x + largura, y + altura);
+    pontilhar(x + largura, y + altura, x, y + altura);
+    pontilhar(x, y + altura, x, y);
+    return dashes;
+  }
+  if (acao.tipo === "interrogar") {
+    const c = caixas.get(acao.alvo);
+    return c ? [{ tipo: "texto", texto: "?", ponto: { x: c.x + c.largura + 8, y: c.y - 8 } }] : [];
+  }
   const original = caixas.get(acao.alvo);
   if (!original) return [];
   switch (acao.tipo) {
     case "apontar": return apontar(original, semente);
     // A intenção é marcar; a forma do alvo decide o desenho (os tipos antigos chegam aqui pelo mesmo caminho).
     case "marcar":
-    case "sublinhar":
-    case "circular":
     case "enquadrar":
     case "colchetes":
       return [marcar(original, semente)];
+    case "sublinhar": {
+      const rotulo = [...caixas.values()].find((c) => c.containerId === acao.alvo && c.forma === "texto");
+      return [rotulo ? sublinharTexto(rotulo) : original.forma === "texto" ? sublinharTexto(original) : marcar(original, semente)];
+    }
+    case "circular": {
+      if (ehLinear(original)) return [marcar(original, semente)];
+      const raio = Math.hypot(original.largura / 2, original.altura / 2) + FOLGA_DA_MARCA;
+      const circulo = original.forma === "elipse" ? contornoAMao(original, semente, FOLGA_DA_MARCA)
+        : contornoAMao({ x: original.x + original.largura / 2 - raio, y: original.y + original.altura / 2 - raio, largura: raio * 2, altura: raio * 2 }, semente, 0);
+      return [{ tipo: "traco", traco: circulo, destaque: true }];
+    }
     case "traco": {
       const c = focoDe(original);
       return [traco(c, acao.pontos.map(([x, y]) => [-10 + x * (c.largura + 20), -10 + y * (c.altura + 20)]))];

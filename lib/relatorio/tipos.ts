@@ -91,7 +91,7 @@ export interface AprendizadoComum {
   provas: ProvaComum[];
 }
 
-export type TipoDeAcontecimento = "travou" | "dica" | "mudanca" | "adaptou" | "colagem";
+export type TipoDeAcontecimento = "travou" | "dica" | "mudanca" | "adaptou" | "colagem" | "pergunta";
 
 /** Um ponto da linha do tempo (travou, dica, mudança...). */
 export interface AcontecimentoComum {
@@ -101,6 +101,18 @@ export interface AcontecimentoComum {
   tipo: TipoDeAcontecimento;
   titulo: string;
   detalhe?: string;
+}
+
+export const SECOES_DO_RELATORIO = ["cabeçalho", "decisão", "pontos fortes/atenção", "notas por critério", "história da entrevista", "momentos"] as const;
+// Adaptação é condicional nos dois formatos; torná-la obrigatória mudaria o relatório de live coding.
+export const SECOES_CONDICIONAIS_DO_RELATORIO = ["adaptação"] as const;
+
+export interface GravacaoDoQuadro {
+  duracaoMs: number;
+  falas: { t: number; role: "candidate" | "agent"; text: string }[];
+  desenho: { t: number; pecas: number; conexoes: number; imagem: string | null }[];
+  fases: { t: number; nome: string }[];
+  acontecimentos: AcontecimentoComum[];
 }
 
 export interface RelatorioComum {
@@ -135,8 +147,14 @@ export interface RelatorioComum {
   adaptacao: AdaptacaoComum | null;
   aprendizado: AprendizadoComum | null;
   acontecimentos: AcontecimentoComum[];
+  gravacaoQuadro?: GravacaoDoQuadro | null;
+  serie?: { eixo: string; pontos: { t: number; valor: number }[] };
+  faixas?: { nome: string; marcas: number[] }[];
+  fases?: { t: number; nome: string }[];
   /** Os números que importam, cada um com o nome em cima. */
   fatos: { nome: string; valor: string }[];
+  /** Total independente de perguntas, obtido do estado da sessão para conferir a gravação. */
+  perguntasEsperadas?: number;
   /** Quantas provas o servidor conferiu na gravação; null quando o formato não conta. */
   provasConferidas: number | null;
   ajustes: string[];

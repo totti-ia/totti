@@ -13,6 +13,7 @@ import { dado, dadoEmLinha, REGRA_DADOS } from "@/lib/seguranca/injecao";
 import { blocoDaPersona } from "@/lib/totti/persona";
 import { avisoDeFalaCortada } from "@/lib/totti/interrupcao";
 import { candidatoPerguntou as perguntouNaFala } from "@/lib/totti/turno";
+import { promessaVazia } from "@/lib/totti/guardas";
 import type { EtapaDoFechamento } from "@/lib/totti/fechamento";
 
 export function buildInterviewerSystem(config: InterviewConfig, problem: Problem): string {
@@ -49,7 +50,7 @@ Decida pela INTENÇÃO, pelo contexto da conversa e do código, nunca por palavr
 - ELE TE PERGUNTOU ALGO (mesmo sem ponto de interrogação, mesmo no fim de uma explicação: "o que você achou", "tá certo assim?", "posso usar uma lista?", "quanto tempo falta?", "vou ser penalizado?", "não entendi o que é um par") → respond = true e candidatoPerguntou = true, e a sua fala RESPONDE a pergunta dele primeiro, de forma direta. Nunca ignore uma pergunta dele para fazer a sua. Opinião ou "tá certo?": responda com franqueza que você não avalia agora e devolva para ele seguir e testar (ex. de forma: "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram.").
 - Respondeu uma pergunta sua → respond = true sempre: ele está esperando você, nunca fique calado. Reconheça curto, sem repetir a pergunta nem o que ele disse, e siga as regras do tipo de conversa (aprofundar ou fechar).
 - Pensando em voz alta, narrando o que está fazendo enquanto programa ("agora vou montar o loop..."), dizendo que ainda está pensando ou que vai continuar explicando, confirmação solta ou frase cortada no meio → respond = false, reply = "", highlight = null, end = false. Você só continua ouvindo. Nunca na primeira fala de uma pergunta sua.
-- Pediu feedback ou um comentário sobre o código → respond = true. Comente UMA coisa observável no código dele (o que ele fez e como, nunca se está certo, bom ou errado), com highlight do trecho, e, se ajudar, faça UMA pergunta curta sobre uma escolha que está ali. Não aponte bug, não diga o que mudar, não sugira caminho. Sem código além do inicial, diga com naturalidade que ainda não há o que comentar e peça para ele contar o plano.
+- Pediu feedback ou um comentário sobre o código → respond = true. Comente UMA coisa observável no código dele pelo nome do trecho (o que ele fez e como, nunca se está certo, bom ou errado), com highlight do trecho, e faça UMA pergunta de raciocínio sobre uma decisão (o que pesou, o que descartou, o que muda se X), no máximo uma por decisão. Critério sem sinal pode ser puxado quando se liga ao que ele acabou de dizer ou desenhar; nunca do nada, cite o critério ou dê dica. Não aponte bug, não diga o que mudar, não sugira caminho. Sem código além do inicial, diga com naturalidade que ainda não há o que comentar e peça para ele contar o plano.
 - Contando o que o código faz ou o que vai fazer enquanto programa, sem te perguntar nada ("então aqui eu percorro o array e pra cada número eu olho os outros") é narrar o próprio raciocínio → respond = false; registre o plano em evidence. Sua pergunta sobre isso, se valer, vem depois, numa pausa.
 - Exceção: na fase "entendendo" (quase nada de código ainda), contar o plano para resolver é falar COM você (a sua apresentação pediu isso) → respond = true: reaja curto e faça UMA pergunta concreta sobre o plano que ele contou (o porquê da escolha ou o custo dela), sem sugerir outro caminho. Registre o plano em evidence. Nunca responda só "pode começar" ou "beleza, vai lá": a pergunta sobre o plano é o que faz a entrevista andar. Mas é UMA: se você já perguntou sobre o plano (está na conversa), reconheça a resposta e libere para codar (end = true); custo, bordas e o resto ficam para quando houver código. Ex. de forma: ele conta que vai começar pela solução mais direta e melhorar depois → "Saquei. Por que começar por aí?" (end = false).
 - Pediu tempo para pensar ("calma, tô pensando", "deixa eu pensar", "peraí, um segundo") → pediuTempo = true, respond = false, reply = "", end = false. Não é resposta nem sinal de que ele não sabe: o sistema decide se diz alguma coisa. Nunca convide ele a seguir nem faça pergunta.
@@ -244,6 +245,19 @@ export function buildInterviewerUser(input: InterviewerTurnInput): string {
   const transcript = input.messages.length
     ? input.messages.map((m) => `${m.role === "agent" ? "Você" : "Candidato"}: ${m.text}`).join("\n")
     : "(a conversa ainda não começou: esta é sua primeira fala)";
+  const falasDoAgente = [
+    ...input.previousConversations.matchAll(/^Você: (.*)$/gm),
+    ...input.previousConversations.matchAll(/^\s*agente: (.*)$/gm),
+  ].map((m) => m[1]).concat(input.messages.filter((m) => m.role === "agent").map((m) => m.text));
+  let promessa: string | null = null;
+  for (const fala of falasDoAgente) {
+    if (promessaVazia(fala)) promessa = fala;
+    else if (promessa) promessa = null;
+  }
+  const ultimas = falasDoAgente.slice(-2);
+  const ritmo = ultimas.length === 2 && ultimas.every((fala) => fala.trim().endsWith("?"))
+    ? "\nRitmo: as duas últimas falas terminaram em pergunta. Nesta, não pergunte de novo; ouça ou devolva a vez com uma reação curta. Só pergunte se ele pediu uma pergunta ou fechou uma parte e passou a vez."
+    : "";
   const blip =
     input.mode === "blip"
       ? `Tipo: ${input.kickoff ? "abertura (não aprofunde, só ouça e libere)" : (input.kind ?? "explicar")}${input.cola ? `\nColagem: ${input.cola.linhas} linhas de uma vez (veja as linhas da pergunta).${input.cola.substituiu ? " O trecho tomou o lugar do que ele vinha escrevendo." : ""}\nO que ele tinha escrito antes de colar:\n${dado("versoes_do_codigo", input.cola.antes, "(nada além do código inicial)")}` : ""}
@@ -267,12 +281,13 @@ Critérios ainda não explorados: ${input.uncovered.length ? input.uncovered.joi
     ? `\nATENÇÃO: a última fala do candidato tem uma PERGUNTA PARA VOCÊ: respond = true, e a sua fala começa respondendo a ela, de forma direta (sem avaliar o código dele). Dúvida sobre o enunciado ou sobre o que uma linha dele faz (o que a linha faz, não se está certa) se responde. Só depois, se couber, uma pergunta sua.`
     : "";
   return `Modo: ${input.mode}. Fase: ${input.fase}. Tempo de sessão: ${input.elapsedLabel} (faltam ${input.remainingLabel}). Linguagem: ${input.language}.
-${blip}${mudanca}${linhaDoFechamentoNaIde(input.fechamento)}
+${blip}${mudanca}${linhaDoFechamentoNaIde(input.fechamento)}${ritmo}
 Dica leve disponível: ${input.availableHint ?? dicaSemValor(input.hintsPolicy)}
 Notas internas do analista: ${dadoEmLinha("leitura_do_analista", input.analystNotes ?? "", "(nenhuma)")}
 Hipótese interna sobre o que ele está tentando fazer agora (contexto seu, o candidato não vê; use só para escolher a pergunta certa, NUNCA a dê como resposta pronta, não a recite nem a confirme): ${dadoEmLinha("hipotese", input.hypothesis ?? "", "(nenhuma)")}
 Conversas anteriores:
 ${dado("conversas_anteriores", input.previousConversations, "(nenhuma)")}
+O que você disse que ia fazer e ainda não fez: ${JSON.stringify(promessa ?? "(nada pendente)")}. Se houver promessa, cumpra-a nesta fala antes de qualquer outra coisa.
 
 Código atual:
 ${dado("codigo_do_candidato", input.numberedCode)}

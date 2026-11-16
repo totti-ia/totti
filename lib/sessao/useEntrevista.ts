@@ -15,7 +15,7 @@ import { limparTextoDigitado } from "@/lib/sessao/textoDigitado";
 import { montarFalaDoDesafio } from "@/lib/sessao/falaDoDesafio";
 import { comoFuncionaQuadro } from "@/lib/conversa/instrucoes";
 import { deveAguardarParaFalar, deveAnalisarLogoAposResposta, podeTomarTurno, respostaTerminouPorSilencio } from "@/lib/conversa/turnos";
-import { alvosDaAcao, criarMemoriaVisual, mapearAcoesVisuais, resumirGestosRecentes } from "@/lib/presenca/acoesVisuais";
+import { alvosDaAcao, criarMemoriaVisual, mapearAcoesVisuais, resumirGestosRecentes, pecasCitadas, olharODesenho, conexoesDoGrafo, deveCoreografarResposta } from "@/lib/presenca/acoesVisuais";
 import { deveForcarAnalise } from "@/lib/sessao/silencio";
 import { definirSessaoDaVoz } from "@/lib/voz/cliente";
 import { juntarReacao, slugDaReacao } from "@/lib/voz/reacao";
@@ -78,6 +78,8 @@ interface OpcoesDeFala {
   numeroPergunta?: number | null;
   /** Chamado logo depois que a fala saiu da fila e foi para o ar (a versão da fala já é a dela). */
   aoTocar?: () => void;
+  /** Chamado quando a fala termina ou é descartada/interrompida. */
+  aoTerminar?: () => void;
   /** Já passou pela espera da reação (vencida ou saída da fila): não espera nem se junta de novo. */
   semRetencao?: boolean;
 }
@@ -98,7 +100,7 @@ const FALAS_DE_REPETICAO = [
 ];
 /** Entre um pedido de mudança recusado pelo servidor e o próximo. */
 const INTERVALO_PEDIDO_EMPECILHO_MS = 15_000;
-/** Quanto o encerramento espera pela foto final do quadro antes de gerar o relatório sem ela. */
+/** Prazo de cada tentativa de foto final do quadro. */
 const PRAZO_FOTO_FINAL_MS = 8_000;
 /** Respostas do servidor que encerram as tentativas nesta sessão. */
 const MOTIVOS_DEFINITIVOS_EMPECILHO = ["problema sem mudança prevista", "já anunciado"];
@@ -245,7 +247,8 @@ export function useEntrevista(
   const [preparandoVoz, setPreparandoVoz] = useState(false);
   const preparandoVozRef = useRef(false);
   const memoriaVisual = useRef(criarMemoriaVisual());
-  const visualDaConversa = useRef<{ quadro: Quadro; grupo: string; controle: AbortController; tarefa?: Promise<void> } | null>(null);
+  const visualDaConversa = useRef<{ quadro: Quadro; grupo: string; controle: AbortController; resposta: AbortController; tarefa?: Promise<void> } | null>(null);
+  const respostaDestaque = useRef<AbortController | null>(null);
   const limparVisualDaConversa = useCallback(() => {
     const atual = visualDaConversa.current;
     visualDaConversa.current = null;
@@ -261,7 +264,7 @@ export function useEntrevista(
    * `foiParaAFila` diz, logo depois de `void dizer(...)`, se aquela chamada ficou esperando (então `versaoDaFala`
    * ainda é a da fala que toca, não a dela).
    */
-  const filaDoAgente = useRef(new FilaDoAgente<{ texto: string; marcas?: MarcaDeFala[]; aoTocar?: () => void }>());
+  const filaDoAgente = useRef(new FilaDoAgente<{ texto: string; marcas?: MarcaDeFala[]; aoTocar?: () => void; aoTerminar?: () => void }>());
   const foiParaAFila = useRef(false);
   const dizerRef = useRef<(texto: string, marcas?: MarcaDeFala[], opcoes?: OpcoesDeFala) => Promise<void>>(async () => {});
   /**
@@ -275,11 +278,11 @@ export function useEntrevista(
     console.warn("[fala] descartada", { motivo, origem, texto });
     linhaDoTempo.current?.registrar("fala", { quem: "agente", texto, falaDescartada: motivo, origem });
   }, []);
-  const registrarDescartes = useCallback((lista: Descartado<{ texto: string }>[]) => {
-    lista.forEach((d) => registrarDescarte(d.item.carga.texto, d.item.origem, d.motivo));
+  const registrarDescartes = useCallback((lista: Descartado<{ texto: string; aoTerminar?: () => void }>[]) => {
+    lista.forEach((d) => { d.item.carga.aoTerminar?.(); registrarDescarte(d.item.carga.texto, d.item.origem, d.motivo); });
   }, [registrarDescarte]);
   const dizer = useCallback(async (texto: string, marcas?: MarcaDeFala[], opcoes: OpcoesDeFala = {}) => {
-    if (encerrandoRef.current && !opcoes.despedida) return;
+    if (encerrandoRef.current && !opcoes.despedida) { opcoes.aoTerminar?.(); return; }
     const { origem = "sempre", numeroPergunta = null, aoTocar } = opcoes;
     foiParaAFila.current = false;
     if (vozHabilitadaRef.current && !opcoes.despedida && !opcoes.semRetencao) {
@@ -287,16 +290,17 @@ export function useEntrevista(
       if (retida) {
         // A reação e a seguinte saem como uma fala: as duas marcas de "foi para o ar" são chamadas.
         const aoTocarDuas = () => { retida.carga.aoTocar?.(); opcoes.aoTocar?.(); };
-        return dizerRef.current(juntarReacao(retida.texto, texto), marcas, { ...opcoes, aoTocar: aoTocarDuas });
+        const aoTerminarDuas = () => { retida.carga.aoTerminar?.(); opcoes.aoTerminar?.(); };
+        return dizerRef.current(juntarReacao(retida.texto, texto), marcas, { ...opcoes, aoTocar: aoTocarDuas, aoTerminar: aoTerminarDuas });
       }
       if (!marcas && reacaoRetida.current.reter(texto, opcoes)) return;
     }
     if (vozHabilitadaRef.current) {
       const admissao = filaDoAgente.current.admitir(
-        { origem, carga: { texto, marcas, aoTocar }, fase: estadoAtual.current.fase, numeroPergunta },
+        { origem, carga: { texto, marcas, aoTocar, aoTerminar: opcoes.aoTerminar }, fase: estadoAtual.current.fase, numeroPergunta },
         agenteFalandoRef.current, Date.now(),
       );
-      if (admissao.resultado === "descartar") return registrarDescarte(texto, origem, admissao.motivo);
+      if (admissao.resultado === "descartar") { opcoes.aoTerminar?.(); return registrarDescarte(texto, origem, admissao.motivo); }
       if (admissao.resultado === "esperar") {
         foiParaAFila.current = true;
         console.log("[fala] espera a fala atual terminar", { origem, texto });
@@ -323,6 +327,7 @@ export function useEntrevista(
       agenteFalandoRef.current = false;
       setFalaAtual({ quem: "agente", texto, ate: texto.length });
       fimDaLegenda.current = setTimeout(() => setFalaAtual(null), 8000);
+      opcoes.aoTerminar?.();
       return;
     }
     setPreparandoVoz(true);
@@ -350,7 +355,8 @@ export function useEntrevista(
     if (marcas) await falarComMarcas(texto, marcas, aoProgresso, antesDeTocar);
     else if (reacao) await falarReacao(reacao, texto, aoProgresso, antesDeTocar);
     else await falar(texto, aoProgresso, antesDeTocar);
-    if (versao !== versaoDaFala.current) return;
+    if (versao !== versaoDaFala.current) { opcoes.aoTerminar?.(); return; }
+    opcoes.aoTerminar?.();
     ultimaFalaDoAgenteEm.current = Date.now();
     setAgenteFalando(false);
     setPreparandoVoz(false);
@@ -366,7 +372,7 @@ export function useEntrevista(
     });
     registrarDescartes(descartados);
     if (item) {
-      void dizerRef.current(item.carga.texto, item.carga.marcas, { origem: item.origem, numeroPergunta: item.numeroPergunta, semRetencao: true });
+      void dizerRef.current(item.carga.texto, item.carga.marcas, { origem: item.origem, numeroPergunta: item.numeroPergunta, semRetencao: true, aoTerminar: item.carga.aoTerminar });
       item.carga.aoTocar?.();
     }
   }, [registrarDescarte, registrarDescartes]);
@@ -514,7 +520,7 @@ export function useEntrevista(
     const final = capturaFinal.current;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      if (final) await Promise.race([final().catch(() => {}), new Promise<void>((resolver) => { timer = setTimeout(resolver, PRAZO_FOTO_FINAL_MS); })]);
+      if (final) await Promise.race([final().catch(() => false), new Promise<boolean>((resolver) => { timer = setTimeout(() => resolver(false), PRAZO_FOTO_FINAL_MS * 2); })]);
     } finally {
       if (timer) clearTimeout(timer);
     }
@@ -543,11 +549,15 @@ export function useEntrevista(
     const miniaturas = new WeakMap<PedidoAnalise, Promise<string | null>>();
     let falaAoAnalisar = 0;
     let conversaAoAnalisar = 0;
+    let limiteIntermediarioAvisado = false;
+    // #143: tipos novos da linha do tempo; o contrato TipoEvento ainda não os inclui.
+    const tipoEventoNovo = (tipo: "imagem_recusada" | "imagem_falhou" | "foto_final_falhou") =>
+      tipo as unknown as Parameters<ReturnType<typeof criarLinhaDoTempo>["registrar"]>[0];
     /**
      * Foto do quadro (estes elementos) que vai ao servidor e entra na linha do tempo como "desenho" com
      * `imagem_url`. É a foto que o relatório usa como prova e como desenho final.
      */
-    const fotografar = (elementos: ReturnType<typeof quadro.api.getSceneElements>, grafo: string, mudancas: string, horario: string) => {
+    const fotografar = (elementos: ReturnType<typeof quadro.api.getSceneElements>, grafo: string, mudancas: string, horario: string, final = false, registrarDesenho = true) => {
       const linha = linhaDoTempo.current;
       return (async () => {
         const estadoDaCaptura = quadro.api.getAppState();
@@ -566,17 +576,24 @@ export function useEntrevista(
           return null;
         }
         const { enviarImagem } = await import("@/lib/sessao/servidor");
-        const url = await enviarImagem(sessao.sessao_id, png, horario);
+        const url = await enviarImagem(sessao.sessao_id, png, horario, { final });
         const dados = { grafo, mudancas, imagem_url: url, horario };
-        if (ativo && linha) {
-          linha.registrar("desenho", dados);
-          if (estadoAtual.current.fase === "ENCERRADA") void linha.descarregar().catch(() => {});
-        } else {
-          await enviarEventos(sessao.sessao_id, [{ horario, tipo: "desenho", dados }]);
+        if (registrarDesenho) {
+          if (ativo && linha) {
+            linha.registrar("desenho", dados);
+            if (estadoAtual.current.fase === "ENCERRADA") void linha.descarregar().catch(() => {});
+          } else {
+            await enviarEventos(sessao.sessao_id, [{ horario, tipo: "desenho", dados }]);
+          }
         }
         return url;
       })().catch((erro) => {
         console.warn("[desenho] imagem indisponível:", erro);
+        const limite = erro instanceof Error && erro.message.includes("limite de imagens da sessão");
+        if (!final && limite) {
+          if (!limiteIntermediarioAvisado) registrar(tipoEventoNovo("imagem_recusada"), { motivo: "limite de imagens da sessão" });
+          limiteIntermediarioAvisado = true;
+        } else if (!final) registrar(tipoEventoNovo("imagem_falhou"), { motivo: erro instanceof Error ? erro.message.slice(0, 200) : "desconhecido" });
         return null;
       });
     };
@@ -587,10 +604,22 @@ export function useEntrevista(
       const elementos = quadro.api.getSceneElements();
       const r = conversor.current.converter(elementos);
       const mudancas = descreverMudancas(ultimoInstantaneo.current, r.instantaneo);
-      if (!mudancas && !houveMudancaRelevante(ultimoInstantaneo.current, r.instantaneo)) return;
+      const mudou = Boolean(mudancas || houveMudancaRelevante(ultimoInstantaneo.current, r.instantaneo));
       ultimoInstantaneo.current = r.instantaneo;
-      registrar("desenho", { grafo: r.texto, mudancas });
-      await fotografar(elementos, r.texto, mudancas, new Date().toISOString());
+      let url: string | null = null;
+      for (let tentativa = 0; tentativa < 2 && !url; tentativa++) {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          url = await Promise.race([
+            fotografar(elementos, r.texto, mudancas, new Date().toISOString(), true, mudou),
+            new Promise<null>((resolver) => { timer = setTimeout(() => resolver(null), PRAZO_FOTO_FINAL_MS); }),
+          ]);
+        } finally { if (timer) clearTimeout(timer); }
+      }
+      if (!url) {
+        registrar(tipoEventoNovo("foto_final_falhou"), { motivo: "duas tentativas sem sucesso" });
+        return;
+      }
     };
     const g = criarGatilho({
       podeAnalisar: () => !encerrandoRef.current && podeAnalisar(estadoAtual.current) && !falaParcial.current
@@ -623,7 +652,9 @@ export function useEntrevista(
         console.log("[análise] pedido", pedido);
         if (mudancas) {
           registrar("desenho", { grafo: r.texto, mudancas });
-          const imagem = fotografar(elementos, r.texto, mudancas, new Date().toISOString());
+          const imagem = limiteIntermediarioAvisado
+            ? Promise.resolve(null)
+            : fotografar(elementos, r.texto, mudancas, new Date().toISOString());
           imagens.set(pedido, imagem);
           if (usarServidor()) {
             miniaturas.set(pedido, (async () => {
@@ -748,7 +779,11 @@ export function useEntrevista(
     registrar("pergunta", { numero: numeroPergunta, pergunta: p.pergunta, nota: p.nota, elementos: p.elementos, status: p.status, escopo: p.escopo === true });
     void descarregarJa();
     const controle = new AbortController();
+    const podeApagar = new AbortController();
+    respostaDestaque.current = podeApagar;
     let coreografia: Promise<void> | null = null;
+    let resolverFimDaFala!: () => void;
+    const fimDaFala = new Promise<void>((resolver) => { resolverFimDaFala = resolver; });
     let versaoDestaPergunta = versaoDaFala.current;
     const desenhar = () => {
       if (controle.signal.aborted || coreografia) return;
@@ -758,7 +793,12 @@ export function useEntrevista(
         grupo,
         alvos,
         nota: p.nota ?? p.pergunta ?? "?",
+        fala: p.pergunta ?? undefined,
+        fimDaFala,
+        sinalPodeApagar: podeApagar.signal,
+        semPergunta: !p.pergunta?.trim().endsWith("?"),
         visual: mapearAcoesVisuais(p.visual, (id) => conversor.current.idReal(id)),
+        conexoes: conexoesDoGrafo(conversor.current.converter(quadro.api.getSceneElements()).texto),
         memoria: memoriaVisual.current,
         semente: numeroPergunta * 7919,
         sinal: controle.signal,
@@ -769,15 +809,17 @@ export function useEntrevista(
       const alvo = ultimoInstantaneo.current?.componentes.find((c) => c.id === p.elementos[0]);
       void dizer(p.pergunta, [{ trecho: alvo?.nome ?? "", aoChegar: desenhar }], {
         origem: "pergunta", numeroPergunta,
+        aoTerminar: resolverFimDaFala,
         // Se esperou na fila, a versão da fala só é desta pergunta quando ela começa a tocar.
         aoTocar: () => { versaoDestaPergunta = versaoDaFala.current; },
       });
       versaoDestaPergunta = foiParaAFila.current ? -1 : versaoDaFala.current;
-    } else desenhar();
+    } else { resolverFimDaFala(); desenhar(); }
 
     return () => {
       silenciarSeAtual(versaoDestaPergunta);
       controle.abort();
+      if (respostaDestaque.current === podeApagar) respostaDestaque.current = null;
       void (coreografia ?? Promise.resolve()).then(() => quadro.agente.apagarGrupo(grupo));
     };
   }, [numeroPergunta, quadro, cursor, dizer, silenciarSeAtual, registrar, descarregarJa, limparVisualDaConversa]);
@@ -994,6 +1036,9 @@ export function useEntrevista(
     enviar({ tipo: "PLIN_DEMO", resposta: duvidaDeDemonstracao(texto) });
   }, [enviar, quadro]);
   const terminarResposta = useCallback((texto?: unknown, reanalisar = true) => {
+    respostaDestaque.current?.abort();
+    respostaDestaque.current = null;
+    visualDaConversa.current?.resposta.abort();
     registrar("resposta", { numero: estadoAtual.current.perguntaAtiva?.numero, quem: "candidato", ...(typeof texto === "string" && texto.trim() ? { texto: texto.trim() } : {}) });
     enviar({ tipo: "RESPOSTA_TERMINOU" });
     // A resposta pode mudar a avaliação: analisa de novo logo depois que o servidor souber dela.
@@ -1187,17 +1232,37 @@ export function useEntrevista(
         conversa.current.push({ quem: "agente", texto: r.texto });
         const alvos = [...new Set((mapearAcoesVisuais(r.visual, (id) => conversor.current.idReal(id)) ?? []).flatMap(alvosDaAcao))];
         novas.push({ ...nova("agente", r.texto), ...(alvos.length ? { alvos } : {}), ...(r.requisito ? { requisito: r.requisito } : {}) });
-        if (quadro && r.visual?.length) {
-          const atual = { quadro, grupo: `conversa:${contadorDeMensagens.current}`, controle: new AbortController(), tarefa: undefined as Promise<void> | undefined };
+        const grafo = quadro ? conversor.current.converter(quadro.api.getSceneElements()).texto : "";
+        const citadasNaFala = pecasCitadas(r.texto, grafo)
+          .map((id) => conversor.current.idReal(id)).filter((id): id is string => !!id);
+        const querOlhar = /\b(olh\w*|confere|veja)\b.*\b(desenho|quadro)\b/i.test(texto);
+        if (quadro && deveCoreografarResposta(!!r.visual?.length, citadasNaFala.length, !!r.concluiu, querOlhar)) {
+          const atual = { quadro, grupo: `conversa:${contadorDeMensagens.current}`, controle: new AbortController(), resposta: new AbortController(), tarefa: undefined as Promise<void> | undefined };
           visualDaConversa.current = atual;
+          const alvos = [...new Set([
+            ...citadasNaFala,
+            ...(mapearAcoesVisuais(r.visual, (id) => conversor.current.idReal(id)) ?? []).flatMap(alvosDaAcao),
+          ])];
+          const usaOlhar = r.concluiu || querOlhar;
+          const visual = usaOlhar
+            ? mapearAcoesVisuais(olharODesenho(grafo), (id) => conversor.current.idReal(id))
+            : mapearAcoesVisuais(r.visual, (id) => conversor.current.idReal(id));
+          const conexoes = conexoesDoGrafo(grafo).flatMap(([de, para]) => {
+            const origem = conversor.current.idReal(de);
+            const destino = conversor.current.idReal(para);
+            return origem && destino ? [[origem, destino] as const] : [];
+          });
+          let resolverFimDaFala!: () => void;
+          const fimDaFala = new Promise<void>((resolver) => { resolverFimDaFala = resolver; });
           const desenhar = () => {
             if (atual.controle.signal.aborted || atual.tarefa) return;
-            atual.tarefa = apontarEAnotar({ quadro, cursor: cursor.current, grupo: atual.grupo, alvos: [], nota: "",
-              visual: mapearAcoesVisuais(r.visual, (id) => conversor.current.idReal(id)), memoria: memoriaVisual.current,
+            atual.tarefa = apontarEAnotar({ quadro, cursor: cursor.current, grupo: atual.grupo, alvos, nota: "", fala: r.texto, fimDaFala,
+              sinalPodeApagar: atual.resposta.signal, semPergunta: !r.texto.trim().endsWith("?"), visual, memoria: memoriaVisual.current,
+              conexoes,
               semente: contadorDeMensagens.current * 7919, sinal: atual.controle.signal,
             }).catch((erro) => console.warn("[gesto da conversa]", erro));
           };
-          void dizer(r.texto, [{ trecho: "", aoChegar: desenhar }], { origem: "resposta", aoTocar: marcarRespostaComoAtual });
+          void dizer(r.texto, [{ trecho: "", aoChegar: desenhar }], { origem: "resposta", aoTocar: marcarRespostaComoAtual, aoTerminar: resolverFimDaFala });
         } else void dizer(r.texto, undefined, { origem: "resposta", aoTocar: marcarRespostaComoAtual });
         // Até começar a tocar, uma fala nova do candidato pode substituir esta resposta (lib/audio/filaFalas.ts).
         // Se ela esperou na fila, a versão só é dela quando começa a tocar (aoTocar); até lá a fila é que a retira.

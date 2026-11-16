@@ -213,7 +213,7 @@ describe("criarClienteFalso", () => {
 describe("paraJsonSchema", () => {
   it("converte o schema da análise (defaults viram obrigatórios, nullable vira anyOf)", () => {
     const s = paraJsonSchema(EsquemaRespostaAnalise) as { required: string[]; properties: Record<string, unknown>; additionalProperties: boolean };
-    assert.deepEqual(s.required, ["status", "pergunta", "nota", "elementos", "visual", "degrau", "observacoes", "avancar_fase", "parteFechada", "escopo"]);
+    assert.deepEqual(s.required, ["gancho", "status", "pergunta", "nota", "elementos", "visual", "degrau", "observacoes", "avancar_fase", "parteFechada", "escopo"]);
     assert.equal(s.additionalProperties, false);
     assert.deepEqual(s.properties.status, { type: "string", enum: ["ok", "duvida", "redirecionar", "dica"] });
     assert.deepEqual(s.properties.pergunta, { anyOf: [{ type: "string" }, { type: "null" }] });

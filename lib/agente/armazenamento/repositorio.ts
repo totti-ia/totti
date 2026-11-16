@@ -17,7 +17,7 @@ export type SessaoArmazenada = {
 export type EventoEntrada = { horario: string; tipo: string; dados: unknown };
 export type EventoArmazenado = EventoEntrada & { recebidoEm: number };
 
-export type ImagemArmazenada = { bytes: Uint8Array; horario: string };
+export type ImagemArmazenada = { bytes: Uint8Array; horario: string; final?: boolean };
 
 /** Erro de limite (sessão cheia de imagens etc.). A rota traduz para 429. */
 export class ErroLimite extends Error {
@@ -37,7 +37,7 @@ export interface RepositorioSessoes {
   anexarEventos(id: string, eventos: EventoEntrada[]): Promise<EventoArmazenado[]>;
   listarEventos(id: string): Promise<EventoArmazenado[]>;
   /** Devolve o número da imagem (1, 2, 3...). Pode lançar ErroLimite. */
-  salvarImagem(id: string, imagem: ImagemArmazenada): Promise<number>;
+  salvarImagem(id: string, imagem: ImagemArmazenada, opcoes?: { final?: boolean }): Promise<number>;
   obterImagem(id: string, numero: number): Promise<ImagemArmazenada | null>;
   /** Número e horário das imagens da sessão (sem os bytes). */
   listarImagens(id: string): Promise<{ numero: number; horario: string }[]>;

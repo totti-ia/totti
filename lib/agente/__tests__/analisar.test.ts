@@ -16,6 +16,7 @@ import { eQuaseDuplicada, limitarFrases } from "../guardas";
 import type { PlanoDaSessao } from "../plano";
 import { KIT_SYSTEM_DESIGN as kitDemo } from "../kits/system-design";
 import { criarClienteFalso, ErroLlm } from "../llm/cliente";
+import { motivoBloqueioPlin } from "../sessao/politica";
 import { duracaoTotalS, estadoInicial, transicionar, type EstadoSessao, type PerguntaFeita } from "../sessao/estado";
 import type { Fase, PedidoAnalise, RespostaAnalise } from "../sessao/tipos";
 
@@ -43,6 +44,8 @@ function pedido(fase: Fase = "APROFUNDAMENTO"): PedidoAnalise {
     conversa_recente: [],
     perguntas_feitas: 0,
     imagem_url: null,
+    // #140: as perguntas de conteúdo só saem numa pausa real.
+    parado_ha_s: 5,
   };
 }
 
@@ -101,7 +104,8 @@ describe("analisar", () => {
     const json = JSON.stringify(r.resposta);
     for (const f of problema.ficha) assert.ok(!json.includes(f.resposta));
     for (const c of kitDemo.criterios) for (const n of [1, 2, 3, 4] as const) assert.ok(!json.includes(c.niveis[n]));
-    assert.deepEqual(Object.keys(r.resposta).sort(), ["avancar_fase", "degrau", "elementos", "escopo", "nota", "observacoes", "parteFechada", "pergunta", "status", "visual"]);
+    // #140: gancho é usado pelo estado, mas não atravessa a serialização até o quadro.
+    assert.deepEqual(Object.keys(JSON.parse(json)).sort(), ["avancar_fase", "degrau", "elementos", "escopo", "nota", "observacoes", "parteFechada", "pergunta", "status", "visual"]);
   });
 
   it("ok cancela a dúvida pendente", async () => {
@@ -126,7 +130,7 @@ describe("analisar", () => {
 
   it("REQUISITOS: o convite (duvida) vira plin e não gasta a cota de perguntas", async () => {
     const r = await analisar(deps(criarClienteFalso([duvida({ elementos: [] })])),
-      estadoEm("REQUISITOS", { faseIniciadaEm: AGORA - 120_000 }), { ...pedido("REQUISITOS"), grafo: "" }, AGORA);
+      estadoEm("REQUISITOS", { faseIniciadaEm: AGORA - 120_000 }), { ...pedido("REQUISITOS"), parado_ha_s: 120, grafo: "" }, AGORA);
     assert.equal(r.resposta.status, "duvida");
     assert.equal(r.estado.plin, "PLIN_PENDENTE");
     const clicado = transicionar(r.estado, { tipo: "PLIN_CLICADO" }, AGORA + 1).estado;
@@ -313,7 +317,8 @@ describe("refiltrarComEstadoAtual", () => {
 
   it("sem parado_ha_s a regra não se aplica", () => {
     const fresco = falou(estadoEm("APROFUNDAMENTO"), AGORA + 1000);
-    assert.equal(refiltrarComEstadoAtual(fresco, duvida(), ped(), AGORA, AGORA + 2000).status, "duvida");
+    assert.equal(motivoBloqueioPlin(fresco, AGORA + 2000, undefined, { paradoHaS: undefined }), null, "sem relógio, a regra da bola não presume falta de ação");
+    assert.equal(refiltrarComEstadoAtual(fresco, duvida({ gancho: "decisao" }), ped(), AGORA, AGORA + 2000).status, "ok", "sem dados não se presume uma pausa real de 4 s");
   });
 
   it("é idempotente para resposta já silenciada e para resposta já filtrada", () => {
@@ -328,19 +333,19 @@ describe("refiltrarComEstadoAtual", () => {
 describe("analisar: ritmo por conteúdo do quadro (#129, bloco B)", () => {
   const MIN = 60_000;
 
-  it("parte não fechada vira ok (sem_parte_fechada) e as observações ficam", async () => {
+  it("#140: sem gancho, continua ok antes do teto e as observações ficam", async () => {
     const llm = criarClienteFalso([duvida({ parteFechada: false })]);
     const r = await analisar(deps(llm), estadoEm("APROFUNDAMENTO"), pedido(), AGORA);
     assert.equal(r.resposta.status, "ok");
     assert.equal(r.resposta.pergunta, null);
     assert.equal(r.estado.plin, "LIVRE");
-    assert.ok(r.diagnostico.ajustes.includes("sem_parte_fechada"));
+    assert.ok(r.diagnostico.ajustes.includes("sem_gancho"));
     assert.equal(r.resposta.observacoes.length, 1);
     assert.equal(r.estado.cobertura.escalabilidade.negativo, 1);
   });
 
-  it("parte fechada dentro do piso (2 min) vira ok (piso_entre_perguntas) e as observações ficam", async () => {
-    const estado = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AGORA - MIN });
+  it("#140: parte fechada dentro do piso de 45 s vira ok (piso_entre_perguntas) e as observações ficam", async () => {
+    const estado = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AGORA - 30_000 });
     const r = await analisar(deps(criarClienteFalso([duvida()])), estado, pedido(), AGORA);
     assert.equal(r.resposta.status, "ok");
     assert.equal(r.estado.plin, "LIVRE");
@@ -547,7 +552,7 @@ describe("analisar: pergunta obrigatória no teto (#129, bloco B)", () => {
 
   it("sem teto vencido, o \"ok\" é o da primeira chamada (nenhuma segunda)", async () => {
     const llm = criarClienteFalso([respostaSilencio()]);
-    const estado = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AGORA - 2 * MIN, desenhoNaUltimaPergunta: ["r1"] });
+    const estado = estadoEm("APROFUNDAMENTO", { ultimaPerguntaEm: AGORA - 60_000, desenhoNaUltimaPergunta: ["r1"] });
     await analisar(deps(llm), estado, pedido(), AGORA);
     assert.equal(llm.chamadas.length, 1);
   });
@@ -555,7 +560,7 @@ describe("analisar: pergunta obrigatória no teto (#129, bloco B)", () => {
 
 /** Uma pergunta já feita que citou estas peças (ids do grafo de `pedido()`: r1 Cliente, e1 Postgres). */
 function feita(numero: number, elementos: string[]): PerguntaFeita {
-  return { numero, status: "duvida", pergunta: `Pergunta feita ${numero}?`, nota: null, elementos, degrau: null, fase: "APROFUNDAMENTO", feitaEm: AGORA - 600_000 };
+  return { numero, status: "duvida", gancho: "raciocinio", pergunta: `Pergunta feita ${numero}?`, nota: null, elementos, degrau: null, fase: "APROFUNDAMENTO", feitaEm: AGORA - 600_000 };
 }
 
 describe("analisar: abertura de molde da pergunta (#129, bloco J)", () => {

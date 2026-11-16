@@ -93,9 +93,9 @@ describe("as mesmas travas nas duas salas (casos reais de 11/11)", () => {
     // No live coding o "terminei" solto já abre o fechamento antes do modelo (#130, item 9): aqui ele diz de quê.
     const noCodigo = await falaNoLiveCoding("Terminou.", "Eu acho que é isso, terminei a explicação.");
     for (const fala of [noQuadro, noCodigo]) assert.doesNotMatch(fala, /terminou/i, fala);
-    // Ele respondia a uma pergunta do Totti: no lugar do eco entra a mesma reação neutra nas duas salas.
-    assert.match(noQuadro, /^Certo\./);
-    assert.match(noCodigo, /^Certo\./);
+    // Sem peça/trecho disponível, o eco some e fica uma reação que devolve a vez.
+    assert.match(noQuadro, /^(Certo|Tá|Saquei)\./, noQuadro);
+    assert.match(noCodigo, /^(Certo|Tá|Saquei)\./, noCodigo);
   });
 
   it("fala que era só validação vira a mesma reação neutra nas duas", async () => {

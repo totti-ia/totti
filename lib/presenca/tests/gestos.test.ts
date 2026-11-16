@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { EsquemaVisualOpcional, criarMemoriaVisual, escolherAcoesVisuais, mapearAcoesVisuais, type AcaoVisual } from "../acoesVisuais";
+import { EsquemaVisualOpcional, INSTRUCOES_VISUAIS, atualizarRastro, criarMemoriaVisual, escolherAcoesVisuais, mapearAcoesVisuais, olharODesenho, deveCoreografarResposta, type AcaoVisual } from "../acoesVisuais";
 import { comporGestos, FOLGA_DA_MARCA, formaDoElemento, lugarDaAnotacao, type CaixaComPontos, type Gesto } from "../gestos";
 import { garantirMarca } from "../acoesVisuais";
+import { agendarRemocaoDestaque, incluirAnotacoesComLimite, DESTAQUE_DURA_MS, DESTAQUE_TETO_MS, notaCurtaDaFala } from "../coreografia";
 
 const area = { x: 0, y: 0, largura: 1000, altura: 700 };
 const caixa = { x: 100, y: 200, largura: 160, altura: 80 };
@@ -144,10 +145,169 @@ test("anotar e as letras do comparar ficam; o contorno do comparar é destaque",
   assert.equal(nota.tipo, "texto");
 });
 
-test("garantirMarca pede marcar (a forma decide) e apontar já conta como marca", () => {
+test("garantirMarca escolhe gesto por quantidade e conexões; mantém compatibilidade sem conexões", () => {
   assert.deepEqual(garantirMarca(undefined, ["e1"], 3), [{ tipo: "marcar", alvo: "e1" }]);
   assert.deepEqual(garantirMarca([{ tipo: "apontar", alvo: "e1" }], ["e1"]), [{ tipo: "apontar", alvo: "e1" }]);
   assert.deepEqual(garantirMarca([{ tipo: "anotar", texto: "?" }], ["e1"]), [{ tipo: "marcar", alvo: "e1" }, { tipo: "anotar", texto: "?" }]);
+  assert.deepEqual(garantirMarca(undefined, ["r1", "e1"], 0, [["r1", "e1"]]), [{ tipo: "percorrer", alvos: ["r1", "e1"] }]);
+  assert.deepEqual(garantirMarca(undefined, ["r1", "e1", "r2"], 0, [["r1", "e1"], ["e1", "r2"]]), [{ tipo: "percorrer", alvos: ["r1", "e1", "r2"] }]);
+  assert.deepEqual(garantirMarca(undefined, ["r2", "r1", "e1"], 0, [["r1", "e1"], ["e1", "r2"]]), [{ tipo: "percorrer", alvos: ["r1", "e1", "r2"] }]);
+  assert.deepEqual(garantirMarca(undefined, ["r1", "e1", "r2", "e2", "r3"], 0, [["r1", "e1"], ["e1", "r2"], ["r2", "e2"], ["e2", "r3"]]), [
+    { tipo: "percorrer", alvos: ["r1", "e1", "r2", "e2"] }, { tipo: "percorrer", alvos: ["e2", "r3"] },
+  ]);
+  assert.deepEqual(garantirMarca(undefined, ["r1", "e1"], 0, []), [{ tipo: "comparar", alvos: ["r1", "e1"] }]);
+  assert.deepEqual(garantirMarca(undefined, ["r1", "e1"]), [{ tipo: "marcar", alvo: "r1" }]);
+  assert.deepEqual(garantirMarca([{ tipo: "enquadrar", alvo: "r4" }], ["r3"]), [{ tipo: "enquadrar", alvo: "r4" }]);
+  assert.deepEqual(olharODesenho("CONEXÕES\n- [r1] → [e1]\n- [e1] → [r2]"), [{ tipo: "percorrer", alvos: ["r1", "e1", "r2"] }]);
+  assert.deepEqual(olharODesenho("CONEXÕES\n- [e1] → [r2]\n- [r1] → [e1]"), [{ tipo: "percorrer", alvos: ["r1", "e1", "r2"] }]);
+  const grafoReal = "COMPONENTES\n- [r1] Cliente (retângulo)\n- [r2] API (retângulo)\n- [e1] Banco (elipse)\nCONEXÕES\n- [s1] Cliente → API\n- [s2] API → Banco";
+  assert.deepEqual(olharODesenho(grafoReal), [{ tipo: "percorrer", alvos: ["r1", "r2", "e1"] }]);
+  assert.deepEqual(garantirMarca([{ tipo: "apontar", alvo: "r1" }], ["r1", "e1"]), [{ tipo: "apontar", alvo: "r1" }]);
+  assert.deepEqual(garantirMarca([{ tipo: "marcar", alvo: "r1" }], ["r1", "e1"], 0, [["r1", "e1"]]), [
+    { tipo: "percorrer", alvos: ["r1", "e1"] }, { tipo: "marcar", alvo: "r1" },
+  ]);
+  const longo = "CONEXÕES\n" + Array.from({ length: 6 }, (_, i) => `- [r${i + 1}] → [r${i + 2}]`).join("\n");
+  assert.deepEqual(olharODesenho(longo), [
+    { tipo: "percorrer", alvos: ["r1", "r2", "r3", "r4"] },
+    { tipo: "percorrer", alvos: ["r4", "r5", "r6", "r7"] },
+  ]);
+  const ramificado = "CONEXÕES\n- [r1] → [r2]\n- [r1] → [e1]\n- [e1] → [r3]";
+  assert.deepEqual(olharODesenho(ramificado), [{ tipo: "percorrer", alvos: ["r1", "e1", "r3"] }], "escolhe o ramo mais longo");
+});
+
+test("rastro de uma fala respeita cinco ações e prioriza a primeira peça", () => {
+  const cinco: AcaoVisual[] = [
+    { tipo: "marcar", alvo: "r1" }, { tipo: "apontar", alvo: "r2" }, { tipo: "circular", alvo: "r3" },
+    { tipo: "sublinhar", alvo: "r4" }, { tipo: "comparar", alvos: ["r1", "r2"] },
+  ];
+  const comRastro = incluirAnotacoesComLimite(cinco, ["r1", "r2", "r3"], "Qual é o caminho?");
+  assert.equal(comRastro.length, 5);
+  assert.deepEqual(comRastro[4], { tipo: "anotar", alvo: "r1", texto: "Qual é o caminho?" });
+  const comEspaco = incluirAnotacoesComLimite(cinco.slice(0, 3), ["r1", "r2", "r3"], "Qual é o caminho?");
+  assert.equal(comEspaco.length, 5);
+  assert.deepEqual(comEspaco.slice(-2).map((a) => a.tipo === "anotar" ? a.alvo : null), ["r1", "r2"]);
+});
+
+test("resposta citando peça coreografa mesmo sem visual explícito", () => {
+  assert.equal(deveCoreografarResposta(false, 1, false, false), true);
+  assert.equal(deveCoreografarResposta(false, 0, false, false), false);
+  assert.equal(deveCoreografarResposta(true, 0, false, false), true);
+});
+
+test("instruções visuais não ultrapassam o tamanho do prompt da main", () => {
+  assert.ok(INSTRUCOES_VISUAIS.length <= 1740, `comprimento atual: ${INSTRUCOES_VISUAIS.length}`);
+});
+
+test("ações novas são aceitas; numerar só segue setas existentes", () => {
+  const plano = EsquemaVisualOpcional.parse([
+    { tipo: "agrupar", alvos: ["r1", "e1"] },
+    { tipo: "numerar", alvos: ["r1", "e1"] },
+    { tipo: "interrogar", alvo: "r1" },
+  ])!;
+  const mapa = new Map([
+    ["r1", { ...caixa, forma: "retangulo" as const }], ["e1", { x: 500, y: 200, largura: 100, altura: 100, forma: "elipse" as const }],
+  ]);
+  const desenhos = plano.flatMap((acao) => comporGestos(acao, mapa, area, 7, [["r1", "e1"]]));
+  assert.ok(desenhos.filter((g) => g.tipo === "traco" && g.destaque).length >= 8, "agrupar desenha contorno tracejado temporário");
+  assert.deepEqual(desenhos.filter((g) => g.tipo === "texto").map((g) => g.tipo === "texto" ? g.texto : ""), ["1", "2", "?"]);
+  assert.deepEqual(comporGestos({ tipo: "numerar", alvos: ["r1", "e1"] }, mapa, area, 7), [], "sem aresta validada não numera como fluxo");
+});
+
+test("sublinhar encontra o rótulo ligado à peça e traça sob o texto", () => {
+  const comRotulo = new Map<string, CaixaComPontos>([
+    ["r1", { ...RETANGULO }], ["t1", { ...TEXTO, x: 420, y: 120, containerId: "r1" }],
+  ]);
+  const [g] = comporGestos({ tipo: "sublinhar", alvo: "r1" }, comRotulo, area, 1);
+  assert.equal(g.tipo, "traco");
+  if (g.tipo === "traco") assert.equal(g.traco.origem.x, 420);
+});
+
+test("destaque aguarda fim da fala e resposta; teto de 45 s começa no fim da fala", async () => {
+  let agora = 0;
+  let id = 0;
+  const pendentes = new Map<number, { em: number; cb: () => void }>();
+  const relogio = {
+    set(cb: () => void, ms: number) { const chave = ++id; pendentes.set(chave, { em: agora + ms, cb }); return chave as unknown as ReturnType<typeof setTimeout>; },
+    clear(chave?: ReturnType<typeof setTimeout>) { if (chave !== undefined) pendentes.delete(chave as unknown as number); },
+  };
+  const avancar = (ms: number) => {
+    const fim = agora + ms;
+    for (;;) {
+      const proximo = [...pendentes.entries()].filter(([, p]) => p.em <= fim).sort((a, b) => a[1].em - b[1].em)[0];
+      if (!proximo) break;
+      agora = proximo[1].em;
+      pendentes.delete(proximo[0]);
+      proximo[1].cb();
+    }
+    agora = fim;
+  };
+  let apagamentos = 0;
+  const controller = new AbortController();
+  let encerrarFala!: () => void;
+  const fimDaFala = new Promise<void>((resolve) => { encerrarFala = resolve; });
+  agendarRemocaoDestaque(() => apagamentos++, controller.signal, false, relogio, fimDaFala);
+  avancar(DESTAQUE_DURA_MS + 1);
+  controller.abort();
+  assert.equal(apagamentos, 0, "não apaga no meio da fala, mesmo se a resposta já terminou");
+  encerrarFala();
+  await Promise.resolve();
+  assert.equal(apagamentos, 1, "apaga ao terminar a fala quando a resposta já terminou");
+
+  apagamentos = 0;
+  let encerrarFalaLonga!: () => void;
+  const falaLonga = new Promise<void>((resolve) => { encerrarFalaLonga = resolve; });
+  const resposta = new AbortController();
+  agendarRemocaoDestaque(() => apagamentos++, resposta.signal, false, relogio, falaLonga);
+  avancar(DESTAQUE_TETO_MS * 2);
+  assert.equal(apagamentos, 0, "fala longa não inicia nem consome o teto antes de terminar");
+  encerrarFalaLonga();
+  await Promise.resolve();
+  avancar(DESTAQUE_TETO_MS - 1);
+  assert.equal(apagamentos, 0, "permanece durante a resposta até o teto");
+  avancar(1);
+  assert.equal(apagamentos, 1, "o teto remove mesmo sem sinal de fim da resposta");
+
+  apagamentos = 0;
+  const respostaCurta = new AbortController();
+  agendarRemocaoDestaque(() => apagamentos++, respostaCurta.signal, false, relogio);
+  avancar(DESTAQUE_DURA_MS + 1);
+  assert.equal(apagamentos, 0, "não apaga enquanto a resposta segue aberta");
+  respostaCurta.abort();
+  assert.equal(apagamentos, 1, "apaga no fim da resposta");
+
+  apagamentos = 0;
+  agendarRemocaoDestaque(() => apagamentos++, new AbortController().signal, false, relogio);
+  avancar(DESTAQUE_TETO_MS);
+  assert.equal(apagamentos, 1, "o teto remove mesmo sem sinal");
+
+  apagamentos = 0;
+  const semPergunta = new AbortController();
+  agendarRemocaoDestaque(() => apagamentos++, semPergunta.signal, true, relogio, Promise.resolve());
+  await Promise.resolve();
+  avancar(DESTAQUE_DURA_MS - 1);
+  assert.equal(apagamentos, 0, "não remove antes de terminar a fala e passar 9 s");
+  semPergunta.abort();
+  assert.equal(apagamentos, 0, "o fim da resposta não apaga gesto de fala sem pergunta");
+  avancar(1);
+  assert.equal(apagamentos, 1);
+});
+
+test("rastro substitui nota por peça e mantém no máximo oito peças recentes", () => {
+  let rastro = new Map<string, string>();
+  for (let i = 0; i < 8; i++) rastro = atualizarRastro(rastro, `p${i}`, `nota ${i}`).rastro;
+  const substituida = atualizarRastro(rastro, "p3", "nova nota");
+  assert.equal(substituida.rastro.size, 8);
+  assert.deepEqual(substituida.removidos, ["nota 3"]);
+  const nona = atualizarRastro(substituida.rastro, "p8", "nota 8");
+  assert.equal(nona.rastro.size, 8);
+  assert.deepEqual(nona.removidos, ["nota 0"]);
+  assert.equal(nona.rastro.get("p3"), "nova nota");
+  assert.equal(nona.rastro.has("p8"), true);
+});
+
+test("nota curta do rastro vem das quatro primeiras palavras da fala", () => {
+  assert.equal(notaCurtaDaFala("  Como   escala essa peça muda com tráfego?"), "Como escala essa peça");
+  assert.equal(notaCurtaDaFala("  "), "");
 });
 
 test("tipos do Excalidraw viram a forma do alvo", () => {

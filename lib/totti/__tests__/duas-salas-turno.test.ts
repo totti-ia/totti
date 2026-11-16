@@ -11,7 +11,17 @@ import { runInterviewerTurn } from "@/lib/agents/interviewer";
 import { SISTEMA_DO_FILTRO } from "@/lib/agents/spoilerFilter";
 import type { ChatMessage } from "@/lib/contracts";
 import { getOrCreateSession } from "@/lib/session/store";
-import { PEDIDOS_DE_REPETIR_A_PERGUNTA } from "../turno";
+import { falaComObservacaoEPergunta, PEDIDOS_DE_REPETIR_A_PERGUNTA } from "../turno";
+
+describe("fala com observação e pergunta ao olhar", () => {
+  it("aceita comentário factual antes de uma pergunta e recusa pergunta genérica com o nome citado", () => {
+    assert.equal(falaComObservacaoEPergunta("A função solve recebe a lista toda. Como decidiu percorrê-la?", "solve"), true);
+    assert.equal(falaComObservacaoEPergunta("Como você pensou na função solve?", "solve"), false);
+    assert.equal(falaComObservacaoEPergunta("Olhei a linha 1: solve(nums). Como você pensou isso?", "solve"), false);
+    assert.equal(falaComObservacaoEPergunta("Olhei a linha 1: def solve(nums):. Como você pensou isso?", "solve", "def solve(nums):"), true);
+    assert.equal(falaComObservacaoEPergunta("A função solve recebe a lista toda? Como decidiu percorrê-la?", "solve"), false);
+  });
+});
 
 const AGORA = 1_800_000_000_000;
 const PERGUNTA_DO_TOTTI = "Como os dois lados ficam sabendo que o dado mudou?";
@@ -171,9 +181,10 @@ describe("o que cada regra comum faz com a fala, nas duas salas", () => {
     assert.doesNotMatch(r.quadro.texto, /código/);
   });
 
-  it("\"terminei\" sem fala do modelo: no quadro o Totti avisa que vai olhar; no live coding o fechamento começa", async () => {
+  it("\"terminei\" sem fala do modelo: no quadro comenta e pergunta; no live coding o fechamento começa", async () => {
     const r = await nasDuas("Eu acho que é isso, terminei.", [{ quieto: true }], { paradoHaS: 10 });
-    assert.match(r.quadro.texto, /olhada no desenho|olho o que você fez/);
+    assert.match(r.quadro.texto, /Ainda não vejo peças/);
+    assert.ok(r.quadro.texto.trim().endsWith("?"));
     // #130, item 9: o "terminei" solto encerra a entrevista no live coding, passando antes pelas perguntas finais.
     assert.match(r.codigo.texto, /antes de terminar.*\?$/);
   });

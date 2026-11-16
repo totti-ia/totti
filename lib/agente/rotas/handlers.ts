@@ -759,6 +759,8 @@ export async function imagemPostHandler(req: Request, { params }: ParamsId): Pro
   if (typeof horario !== "string" || Number.isNaN(Date.parse(horario)) || horario.length > 40) {
     return erro(400, "campo `horario` inválido");
   }
+  const finalCampo = form.get("final");
+  if (finalCampo !== null && finalCampo !== "1") return erro(400, "campo `final` inválido");
   if (arquivo.size > MAX_IMAGEM) return erro(413, "imagem grande demais");
   const bytes = new Uint8Array(await arquivo.arrayBuffer());
   if (bytes.byteLength > MAX_IMAGEM) return erro(413, "imagem grande demais");
@@ -767,7 +769,7 @@ export async function imagemPostHandler(req: Request, { params }: ParamsId): Pro
   }
   let n: number;
   try {
-    n = await ctx.repositorio.salvarImagem(id, { bytes, horario });
+    n = await ctx.repositorio.salvarImagem(id, { bytes, horario }, { final: finalCampo === "1" });
   } catch (e) {
     if (e instanceof ErroLimite) return erro(429, e.message);
     throw e;
@@ -780,7 +782,8 @@ export async function imagemGetHandler(
   { params }: { params: Promise<{ id: string; n: string }> },
 ): Promise<Response> {
   const { id, n } = await params;
-  if (!eIdPlausivel(id) || !/^[1-9]\d{0,3}$/.test(n)) return notFound();
+  // Até 16 dígitos: a foto final tem número próprio (o maior inteiro seguro) para não colidir com as intermediárias.
+  if (!eIdPlausivel(id) || !/^[1-9]\d{0,15}$/.test(n) || !Number.isSafeInteger(Number(n))) return notFound();
   const img = await contexto().repositorio.obterImagem(id, Number(n));
   if (!img) return erro(404, "imagem não encontrada");
   return new Response(img.bytes as BodyInit, {

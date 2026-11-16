@@ -71,6 +71,14 @@ export function estaVisivel(c: Caixa, v: Vista, margem = 24): boolean {
     && fim.x <= v.offsetLeft + v.largura - m && fim.y <= v.offsetTop + v.altura - m;
 }
 
+/** A união dos alvos só precisa reduzir o zoom quando não cabe na área interna do quadro. */
+export function precisaReduzirZoom(c: Caixa, v: Vista, margemPx = 60): boolean {
+  validarZoom(v);
+  const disponivelLargura = Math.max(0, v.largura - 2 * margemPx);
+  const disponivelAltura = Math.max(0, v.altura - 2 * margemPx);
+  return c.largura * v.zoom > disponivelLargura || c.altura * v.zoom > disponivelAltura;
+}
+
 /** Mantém o zoom; caixas maiores que a vista continuam parcialmente cortadas. */
 export function scrollParaCentralizar(c: Caixa, v: Vista): { scrollX: number; scrollY: number } {
   validarZoom(v);

@@ -31,6 +31,8 @@ import { interrupcaoAtrasada, motivoDoMomento, RITMO } from "../lib/interrupcao/
 import { aceitaPlin, estadoInicial, marcoDeFase, podeAnalisar, ritmoDoCliente, transicionar, type EstadoEntrevista, type EventoEntrevista } from "../lib/sessao/estados";
 import { LIMITE_PADRAO_MS, PAUSA_PADRAO_MS } from "../lib/sessao/gatilho";
 import { deveForcarAnalise } from "../lib/sessao/silencio";
+import { motivoBloqueioPlin, motivoDoConteudo as motivoDoConteudoDoQuadro } from "../lib/agente/sessao/politica";
+import { montarPromptAvaliador } from "../lib/agente/prompts/avaliador";
 import { instantaneo, resumoDoCusto } from "./custo";
 
 const TICK_MS = 500;
@@ -135,6 +137,139 @@ export interface Interrupcao {
   motivo: string;
   desenhando: boolean;
   texto: string;
+}
+
+export interface ResultadoMedicao140 {
+  sala: string;
+  perguntas: number[];
+  ganchos: string[];
+  criterios: string[];
+  feitasAntesDoTerminei: number;
+  maiorIntervaloComLacunaS: number;
+  percentualAntesDoFechamento: number;
+  criteriosAte70: number;
+  totalCriterios: number;
+  naoExploradosNoFim: number;
+  menorIntervaloS: number;
+  duranteFalaOuTraco: number;
+  ganchosIguaisSeguidos: number;
+  motivosDaEspera?: string[];
+}
+
+/** Percurso offline com o filtro de conteúdo e os portões de ritmo de produção do quadro. */
+export function medirOfflineQuadro(): ResultadoMedicao140 {
+  const duracao = 30 * 60_000;
+  const criterios = ["escala", "consistencia", "latencia", "falhas"];
+  const estado = estadoServidorInicial({
+    tempos: { REQUISITOS: 300, ALTO_NIVEL: 600, APROFUNDAMENTO: 900, FECHAMENTO: 300 },
+    criterios,
+    plano: { cargo: "Desenvolvedor Backend", senioridade: "pleno", tom: "amigavel", dicas: "leves", foco: [{ area: "tecnico", peso: 1 }], notas: "", duracaoMin: 30 },
+  });
+  estado.fase = "ALTO_NIVEL";
+  estado.faseIniciadaEm = 0;
+  estado.iniciadaEm = 0;
+  const tempos: number[] = [];
+  const ganchos: string[] = [];
+  const criteriosPerguntados: string[] = [];
+  const motivosDaEspera: string[] = [];
+  const contagemDeBloqueios = new Map<string, number>();
+  const provocados = new Set<string>();
+  let falaAte = -1;
+  let maiorIntervaloComLacunaS = 0;
+  let duranteFalaOuTraco = 0;
+  // Cada análise acompanha uma escolha visível do desenho contínuo; os testes de política cobrem o caso sem gancho.
+  const opcoes = ["decisao", "raciocinio", "parte_fechada"] as const;
+  let analisesDoModelo = 0;
+  let motivoAnterior = "a análise ainda não pediu uma pergunta";
+  // Candidato desenha em sequência, age depois de cada fala e faz pausas reais de 4 s. Diz "terminei" aos 80%.
+  for (let t = 1_000, passo = 0; t < duracao * 0.8; t += 1_000, passo++) {
+    const ciclo = t % 14_000;
+    const desenhando = ciclo < 9_000;
+    const paradoHaS = desenhando ? 0 : Math.floor((ciclo - 9_000) / 1_000);
+    const falandoCandidato = t % 71_000 >= 30_000 && t % 71_000 < 36_000;
+    const deveAnalisar = paradoHaS >= 3 || (desenhando && t % RITMO.analiseMaximaSemPausaMs === 0);
+    if (!deveAnalisar) continue;
+    const gancho = opcoes[analisesDoModelo++ % opcoes.length];
+    const pedido: PedidoAnalise = {
+      sessao_id: "medicao-140-quadro", fase: estado.fase,
+      grafo: `COMPONENTES E CONEXÕES\n${LINHAS.slice(0, Math.min(LINHAS.length, passo + 1)).join("\n")}`,
+      mudancas: `Novo: ${LINHAS[passo % LINHAS.length]}`, conversa_recente: [], perguntas_feitas: tempos.length,
+      imagem_url: null, parado_ha_s: paradoHaS,
+    };
+    const prompt = montarPromptAvaliador(kit, kit.problemas[0], estado, pedido, t);
+    const agenda = `${prompt.sistema.estatico}\n${prompt.sistema.dinamico}`;
+    const pendentes = criterios.filter((c) => !provocados.has(c));
+    const criterio = pendentes.find((c) => agenda.includes(c)) ?? pendentes[0] ?? criterios[passo % criterios.length];
+    if (gancho === null) {
+      // A política ainda é consultada nos passos sem gancho, como ocorre quando o Analyst devolve uma análise vazia.
+      motivoAnterior = motivoDoConteudoDoQuadro(estado, { status: "duvida", gancho: null, parteFechada: false }, t, { paradoHaS, pecas: [`p${passo}`] }) ?? "sem bloqueio de conteúdo; modelo falso não escolheu gancho";
+      contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1);
+      continue;
+    }
+    const resposta = { status: "duvida" as const, gancho, parteFechada: gancho === "parte_fechada" };
+    const bloqueioConteudo = motivoDoConteudoDoQuadro(estado, resposta, t, { paradoHaS, pecas: [`p${passo}`] });
+    if (bloqueioConteudo) { motivoAnterior = bloqueioConteudo; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    const bloqueioRitmo = motivoBloqueioPlin(estado, t, undefined, { paradoHaS, temDesenho: true });
+    if (bloqueioRitmo) { motivoAnterior = bloqueioRitmo; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    if (passo % 11 === 0) falaAte = t + 2_000; // fala ocasional com duração explícita.
+    if (falandoCandidato || t < falaAte) { motivoAnterior = "fala do candidato em andamento"; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    if (ganchos.at(-1) === gancho) { motivoAnterior = "gancho igual ao da pergunta anterior"; contagemDeBloqueios.set(motivoAnterior, (contagemDeBloqueios.get(motivoAnterior) ?? 0) + 1); continue; }
+    if (desenhando || falandoCandidato) duranteFalaOuTraco++;
+    motivosDaEspera.push(`${mmss(t)} · intervalo ${tempos.length ? Math.round((t - tempos.at(-1)!) / 1000) : Math.round(t / 1000)} s; bloqueios desde a anterior: ${[...contagemDeBloqueios].map(([m, n]) => `${m} × ${n}`).join(", ") || "nenhum"}`);
+    contagemDeBloqueios.clear();
+    motivoAnterior = "sem bloqueio anterior";
+    tempos.push(t);
+    ganchos.push(gancho);
+    criteriosPerguntados.push(criterio);
+    provocados.add(criterio);
+    estado.ultimaPerguntaEm = t;
+    estado.ultimaFalaDoAgenteEm = t;
+    estado.perguntasFeitas = tempos.length;
+    estado.perguntas.push({ numero: tempos.length, status: "duvida", gancho, pergunta: "Por que escolheu isso?", nota: null, elementos: [], degrau: null, fase: "ALTO_NIVEL", feitaEm: t });
+  }
+  const fechamento = duracao * 0.8;
+  const ate70 = new Set(criteriosPerguntados.filter((_, i) => tempos[i] <= duracao * 0.7));
+  const intervals = tempos.slice(1).map((t, i) => (t - tempos[i]) / 1000);
+  maiorIntervaloComLacunaS = intervals.length ? Math.max(...intervals) : (tempos[0] ?? 0) / 1000;
+  // O fim da cobertura é modelado pelo conjunto de critérios que o modelo falso provocou.
+  const finalizados = new Set(criteriosPerguntados);
+  return {
+    sala: "quadro", perguntas: tempos, ganchos, criterios, feitasAntesDoTerminei: tempos.filter((t) => t < duracao * 0.8).length,
+    maiorIntervaloComLacunaS, percentualAntesDoFechamento: tempos.length ? Math.round(100 * tempos.filter((t) => t < fechamento).length / tempos.length) : 0,
+    criteriosAte70: ate70.size, totalCriterios: criterios.length, naoExploradosNoFim: criterios.length - finalizados.size,
+    menorIntervaloS: intervals.length ? Math.min(...intervals) : 0, duranteFalaOuTraco,
+    ganchosIguaisSeguidos: ganchos.slice(1).filter((g, i) => g === ganchos[i]).length,
+    motivosDaEspera,
+  };
+}
+
+export function imprimirMedicao140(r: ResultadoMedicao140): boolean {
+  const checks: [string, number, string, boolean][] = [
+    ["perguntas da análise antes de terminei", r.feitasAntesDoTerminei, "≥ 6", r.feitasAntesDoTerminei >= 6],
+    ["maior intervalo com critério/decisão pendente (s)", r.maiorIntervaloComLacunaS, "≤ 120", r.maiorIntervaloComLacunaS <= 120],
+    ["perguntas antes do fechamento (%)", r.percentualAntesDoFechamento, "≥ 70", r.percentualAntesDoFechamento >= 70],
+    ["critérios provocados até 70%", r.criteriosAte70, `= ${r.totalCriterios}`, r.criteriosAte70 === r.totalCriterios],
+    ["critérios não explorados no fim", r.naoExploradosNoFim, "≤ 1", r.naoExploradosNoFim <= 1],
+    ["menor intervalo entre perguntas (s)", r.menorIntervaloS, "≥ 45", r.menorIntervaloS >= 45],
+    ["perguntas durante fala ou traço", r.duranteFalaOuTraco, "= 0", r.duranteFalaOuTraco === 0],
+    ["ganchos iguais consecutivos", r.ganchosIguaisSeguidos, "= 0", r.ganchosIguaisSeguidos === 0],
+  ];
+  console.log(`# Medição determinística #140 — ${r.sala} (30 min, sem rede)`);
+  console.log(`Perguntas: ${r.perguntas.length} · ganchos: ${r.ganchos.join(", ")}`);
+  for (const motivo of r.motivosDaEspera ?? []) console.log(`  ${motivo}`);
+  for (const [nome, valor, limite, ok] of checks) console.log(`${ok ? "OK" : "FALHA"} ${nome}: ${valor} (limite ${limite})`);
+  return checks.every(([, , , ok]) => ok);
+}
+
+export function medicao140Passou(r: ResultadoMedicao140): boolean {
+  return r.feitasAntesDoTerminei >= 6
+    && r.maiorIntervaloComLacunaS <= 120
+    && r.percentualAntesDoFechamento >= 70
+    && r.criteriosAte70 === r.totalCriterios
+    && r.naoExploradosNoFim <= 1
+    && r.menorIntervaloS >= 45
+    && r.duranteFalaOuTraco === 0
+    && r.ganchosIguaisSeguidos === 0;
 }
 
 export async function simularQuadro(persona: Persona, opcoes: { llm: LlmCliente; duracaoMin: number; silencioso?: boolean }) {
@@ -457,6 +592,10 @@ export function resumo(r: Awaited<ReturnType<typeof simularQuadro>>): string {
 
 async function main() {
   const args = process.argv.slice(2);
+  if (args.includes("--offline")) {
+    if (!imprimirMedicao140(medirOfflineQuadro())) process.exitCode = 1;
+    return;
+  }
   const valor = (k: string) => (args.includes(k) ? args[args.indexOf(k) + 1] : undefined);
   const modo = valor("--llm") ?? "real";
   const duracaoMin = Number(valor("--duracao")) || 35;
