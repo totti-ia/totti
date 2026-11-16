@@ -4,6 +4,8 @@ import Editor, { loader } from "@monaco-editor/react";
 import type { editor as MonacoEditor } from "monaco-editor";
 import { useRef } from "react";
 import { mesmoTrecho, type MudancaDoEditor } from "@/components/ide/contadorDeEscrita";
+import type { OrigemDaColagem } from "@/lib/contracts";
+import { trechoDaFrase } from "@/lib/integridade/canario";
 
 // Monaco servido de /public (copiado por scripts/copy-vendor.mjs): funciona sem internet.
 loader.config({ paths: { vs: "/monaco/vs" } });
@@ -17,22 +19,26 @@ type Props = {
   onChange: (value: string) => void;
   /**
    * Colagem: texto colado, a linha onde começou e de onde veio (#123): "editor" quando é o que ele mesmo copiou ou
-   * recortou aqui dentro (código mudando de lugar), "fora" quando não.
+   * recortou aqui dentro (código mudando de lugar), "enunciado" quando é o texto do problema, "fora" quando não.
    */
-  onPaste: (text: string, startLine: number, origem: "editor" | "fora") => void;
+  onPaste: (text: string, startLine: number, origem: OrigemDaColagem) => void;
+  /** Nome do canário desta sessão: a frase dele, se vier numa colagem do enunciado, sai do editor na hora. */
+  canario?: string | null;
   /** Cada leva de mudanças digitadas ou apagadas (jeito de escrever, #123); `colando` = a leva é de uma colagem. */
   onEscrever?: (mudancas: MudancaDoEditor[], colando: boolean) => void;
   onReady: (editor: MonacoEditor.IStandaloneCodeEditor, monaco: Monaco) => void;
 };
 
 /** Monaco; a linguagem vem por prop (python, cpp ou c). `glyphMargin` fica ligado para os ícones do agente. */
-export default function CodeEditor({ value, language, readOnly, onChange, onPaste, onEscrever, onReady }: Props) {
+export default function CodeEditor({ value, language, readOnly, onChange, onPaste, onEscrever, canario, onReady }: Props) {
   /** O último trecho que ele copiou ou recortou dentro do editor (só em memória, nunca enviado). */
   const copiadoRef = useRef<string | null>(null);
   /** Entre o `paste` do navegador e o onDidPaste do Monaco: as mudanças dessa janela são da colagem. */
   const colandoRef = useRef(false);
   const onEscreverRef = useRef(onEscrever);
   onEscreverRef.current = onEscrever;
+  const canarioRef = useRef(canario);
+  canarioRef.current = canario;
 
   return (
     <Editor
@@ -99,7 +105,23 @@ export default function CodeEditor({ value, language, readOnly, onChange, onPast
         });
         editor.onDidPaste((e) => {
           colandoRef.current = false;
-          const text = editor.getModel()?.getValueInRange(e.range) ?? "";
+          const model = editor.getModel();
+          let text = model?.getValueInRange(e.range) ?? "";
+          // Colou o enunciado no editor para ler (#123): a frase escondida do canário sai antes de ele ver, e a
+          // colagem não pesa (não vira pergunta nem sinal).
+          const nome = canarioRef.current;
+          const frase = model && nome ? trechoDaFrase(text, nome) : null;
+          if (model && frase) {
+            const base = model.getOffsetAt(e.range.getStartPosition());
+            const inicio = model.getPositionAt(base + frase.inicio);
+            const fim = model.getPositionAt(base + frase.fim);
+            editor.executeEdits("canario", [
+              { range: { startLineNumber: inicio.lineNumber, startColumn: inicio.column, endLineNumber: fim.lineNumber, endColumn: fim.column }, text: "" },
+            ]);
+            text = text.slice(0, frase.inicio) + text.slice(frase.fim);
+            onPaste(text, e.range.startLineNumber, "enunciado");
+            return;
+          }
           const copiado = copiadoRef.current;
           onPaste(text, e.range.startLineNumber, copiado !== null && mesmoTrecho(text, copiado) ? "editor" : "fora");
         });

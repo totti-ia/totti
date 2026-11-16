@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { RunResult } from "@/lib/contracts";
+import type { OrigemDaColagem, RunResult } from "@/lib/contracts";
 import { INITIAL_LANGUAGE } from "@/lib/ide-constants";
 import type { EventInput } from "./useSession";
 import { ContadorDeEscrita, type MudancaDoEditor } from "./contadorDeEscrita";
@@ -135,7 +135,7 @@ export function useCodeCapture({ sendEvent, nowT, endedRef, starters: STARTERS, 
    * vai antes, senão o agente analisaria a colagem olhando o código antigo.
    */
   const onPaste = useCallback(
-    (text: string, startLine: number, origem?: "editor" | "fora") => {
+    (text: string, startLine: number, origem?: OrigemDaColagem) => {
       if (endedRef.current) return;
       const lines = text.split("\n").length;
       if (lines < 2 && text.length < PASTE_MIN_CHARS) return;

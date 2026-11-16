@@ -647,7 +647,7 @@ const linhasComConteudo = (texto: string) => texto.split("\n").map((l) => l.trim
  * Devolve true se a colagem virou pergunta. Código dele mesmo movido de lugar não conta.
  */
 export function enqueueCola(session: SessionState, event: PasteEvent): boolean {
-  if (session.ended || event.origem === "editor" || event.lines < COLA_MIN_LINES) return false;
+  if (session.ended || (event.origem && event.origem !== "fora") || event.lines < COLA_MIN_LINES) return false;
   // Já na conversa de encerramento: não cabe assunto novo.
   if (session.queue.some((q) => q.kind === "encerramento")) return false;
   const code = latestCode(session);

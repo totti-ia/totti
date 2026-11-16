@@ -979,6 +979,8 @@ export function useEntrevista(
       // A primeira contagem é a base (o desenho salvo que volta ao recarregar a página não é colagem).
       if (pecasDoCandidato.current !== null && pecas - pecasDoCandidato.current >= PECAS_DE_UMA_COLAGEM) {
         colagem.current = { pecas: pecas - pecasDoCandidato.current, em: Date.now() };
+        // Só registro, para o bloco Integridade do relatório (#123): a máquina do servidor ignora este tipo.
+        registrar("colagem", { pecas: colagem.current.pecas });
       }
       pecasDoCandidato.current = pecas;
     }
@@ -997,7 +999,7 @@ export function useEntrevista(
         // Sem espaço ou armazenamento bloqueado: não salvar não atrapalha a entrevista.
       }
     }, 800);
-  }, [enviar, quadro, chaveDoDesenho]);
+  }, [enviar, quadro, chaveDoDesenho, registrar]);
 
   const [iniciadaEm, setIniciadaEm] = useState<number | null>(null);
   const comecar = useCallback(() => {

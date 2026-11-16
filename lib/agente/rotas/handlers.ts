@@ -674,7 +674,8 @@ export function eventosDaMaquina(tipo: string, dados: unknown): EventoSessao[] {
   const d = (dados ?? {}) as Record<string, unknown>;
   switch (tipo) {
     case "foco":
-      return []; // Só registro: nenhuma transição, análise ou fala.
+    case "colagem":
+      return []; // Só registro (#123): nenhuma transição, análise ou fala.
     case "fase": {
       const fase = EsquemaFase.safeParse(d.fase);
       return fase.success ? [{ tipo: "SINCRONIZAR_FASE", fase: fase.data }] : [];

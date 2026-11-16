@@ -540,6 +540,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
               }}
               onPaste={capture.onPaste}
               onEscrever={capture.onEscrever}
+              canario={session.sessionId ? nomeDoCanario(session.sessionId) : null}
               onReady={(editor: MonacoEditor.IStandaloneCodeEditor, monaco) => {
                 editorRef.current = editor;
                 executorRef.current = createAnimatedExecutor(editor, createExecutor(editor, monaco));

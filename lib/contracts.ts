@@ -179,6 +179,13 @@ export const SaidaDeFoco = z.object({
 });
 export type SaidaDeFoco = z.infer<typeof SaidaDeFoco>;
 
+/**
+ * De onde veio a colagem (#123): "editor" = o que ele mesmo copiou ou recortou no editor (código mudando de lugar);
+ * "enunciado" = o texto do problema, copiado do painel; "fora" = qualquer outra coisa. Só "fora" pesa.
+ */
+export const OrigemDaColagem = z.enum(["editor", "fora", "enunciado"]);
+export type OrigemDaColagem = z.infer<typeof OrigemDaColagem>;
+
 export const SessionEvent = z.discriminatedUnion("type", [
   /** Gravado pelo servidor para contabilizar o uso de LLM. */
   z.object({ ...base, type: z.literal("llm_uso"), papel: z.enum(["fala", "filtro", "analise", "relatorio"]), modelo: z.string(), provedor: z.string(), reserva_disparada: z.boolean(), ms: z.number(), tokens_entrada: z.number(), tokens_saida: z.number(), tokens_cache: z.number().optional(), custo_usd: z.number() }),
@@ -196,7 +203,7 @@ export const SessionEvent = z.discriminatedUnion("type", [
   /** Sem digitar há `idleMs` (a IDE manda a partir de 8 s). */
   z.object({ ...base, type: z.literal("pause"), idleMs: z.number() }),
   z.object({ ...base, type: z.literal("run"), result: RunResult }),
-  z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int(), origem: z.enum(["editor", "fora"]).optional() }),
+  z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int(), origem: OrigemDaColagem.optional() }),
   /** Só registro: envia no fim as saídas que sobraram sem snapshot. */
   z.object({ ...base, type: z.literal("foco"), saidas: z.array(SaidaDeFoco).max(200) }),
   z.object({ ...base, type: z.literal("speech"), role: z.enum(["candidate", "agent"]), text: z.string(), blipId: z.string().optional() }),
