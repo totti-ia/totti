@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   // O quadro usa o tema claro (o resto do app é escuro); ver app/globals.css.
   return (
     <div className="tema-quadro-pagina contents">
-      <SalaEntrevista configId={plano?.id} convite={conviteValido} />
+      <SalaEntrevista configId={plano?.id} convite={conviteValido} regraDeIa={plano?.regraDeIa} />
     </div>
   );
 }

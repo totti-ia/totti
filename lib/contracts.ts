@@ -68,6 +68,8 @@ export const InterviewConfig = z.object({
   tone: z.enum(["amigavel", "desafiador"]).optional(),
   /** Política de dicas: livres = todas as do problema; leves = no máximo 1; nenhuma = nenhuma. Sem valor = livres. */
   hints: z.enum(["livres", "leves", "nenhuma"]).optional(),
+  /** Regra exibida antes de começar; só informativa, não entra em prompts nem na nota. */
+  regraDeIa: z.enum(["sem_ia", "permitida"]).optional(),
   criteria: z.array(Criterion).min(1),
   /** Nível das questões, definido pelo agente conforme a vaga (ver `lib/problems.ts`). */
   difficulty: z.enum(["facil", "medio"]).optional(),

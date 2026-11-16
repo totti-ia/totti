@@ -12,6 +12,7 @@ import { LANGUAGE_LABELS } from "@/lib/ide-constants";
 import { DIFFICULTIES, difficultyForSeniority } from "@/lib/problems";
 import { curvaSuave } from "@/lib/design/motion";
 import Perola from "@/components/totti/Perola";
+import RegrasDeIntegridade from "@/components/RegrasDeIntegridade";
 
 type Passo = { titulo: string; texto: string };
 
@@ -100,6 +101,8 @@ export default function PreInterview({ vaga = DEFAULT_CONFIG, convite }: { vaga?
             </motion.li>
           ))}
         </ol>
+
+        <RegrasDeIntegridade regraDeIa={vaga.regraDeIa} />
 
         <motion.div
           initial={{ opacity: 0 }}

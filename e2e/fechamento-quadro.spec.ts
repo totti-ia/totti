@@ -27,7 +27,7 @@ async function desenharPeca(page: Page, indice: number) {
   await page.mouse.up();
 }
 
-async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean } = {}) {
+async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean; enunciado?: string } = {}) {
   const pedidos: { finalizar: number; falas: string[]; fotosFinais: number; fotosIntermediarias: number; analises: number; eventos: string[]; grafos: string[]; corpoFinal?: string; imagemFinal: Buffer | null; imagemIntermediaria: Buffer | null } = { finalizar: 0, falas: [], fotosFinais: 0, fotosIntermediarias: 0, analises: 0, eventos: [], grafos: [], imagemFinal: null, imagemIntermediaria: null };
   const erros: string[] = [];
   page.on("pageerror", (e) => erros.push(e.message));
@@ -103,7 +103,7 @@ async function preparar(page: Page, opcoes: { falharFotoFinal?: boolean } = {}) 
   });
   await page.route("**/api/sessoes", (r) => r.fulfill({ json: {
     sessao_id: "teste-fechamento", area: "system design", apresentacao: "Vamos começar.",
-    problema: { titulo: "API", enunciado: "Desenhe uma API.", fala_do_desafio: "Desenhe uma API." },
+    problema: { titulo: "API", enunciado: opcoes.enunciado ?? "Desenhe uma API.", fala_do_desafio: "Desenhe uma API." },
     tempos: { REQUISITOS: 600, ALTO_NIVEL: 600, APROFUNDAMENTO: 600, FECHAMENTO: 180 },
   } }));
   await page.route("**/api/sessoes/*/eventos", (r) => {
@@ -158,6 +158,35 @@ async function botaoEncerrar(page: Page) {
   await page.getByRole("button", { name: "Encerrar entrevista" }).click();
   await page.getByRole("button", { name: "Encerrar", exact: true }).click();
 }
+
+test("integridade: canário só na cópia selecionada do enunciado, fora da cena e das falas", async ({ page }) => {
+  const texto = "Desenhe uma API de encurtamento de URLs para milhões de leituras diárias e explique suas decisões.";
+  const { pedidos, erros } = await preparar(page, { enunciado: texto });
+  const painel = page.locator("details").filter({ has: page.locator("summary", { hasText: /^Enunciado$/ }) });
+  await painel.locator("summary").click();
+  const copia = await painel.locator("p").evaluate((p) => {
+    const range = document.createRange();
+    range.selectNodeContents(p);
+    const selecao = window.getSelection()!;
+    selecao.removeAllRanges();
+    selecao.addRange(range);
+    const clipboardData = new DataTransfer();
+    p.dispatchEvent(new ClipboardEvent("copy", { bubbles: true, cancelable: true, clipboardData }));
+    return clipboardData.getData("text/plain");
+  });
+  expect(copia).toContain(texto);
+  expect(copia).toMatch(/aux_qv\w+/);
+  await expect(page.locator("body")).not.toContainText(/aux_qv\w+/);
+  const cena = await page.evaluate(() => {
+    const q = (window as unknown as { quadro: { api: { getSceneElements(): unknown[] } } }).quadro;
+    return JSON.stringify(q.api.getSceneElements());
+  });
+  expect(cena).not.toMatch(/aux_qv\w+/);
+  expect(pedidos.falas.join(" ")).not.toMatch(/aux_qv\w+/);
+  expect(pedidos.grafos.join(" ")).not.toMatch(/aux_qv\w+/);
+  await page.screenshot({ path: "test-results/integridade-enunciado-quadro.png" });
+  expect(erros).toEqual([]);
+});
 
 test("botão: quadro visível e bloqueado até áudio terminar, finalizar uma vez e depois obrigado", async ({ page }) => {
   const { pedidos, erros } = await preparar(page);

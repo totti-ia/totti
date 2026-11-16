@@ -1,7 +1,7 @@
 "use client";
 
 // Sala da entrevista no quadro: o quadro em tela cheia, a janela de chamada no canto e a legenda embaixo.
-// O enunciado não fica num painel: o agente escreve no próprio quadro.
+// O agente escreve o enunciado no quadro; a versão selecionável fica no painel recolhido.
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,9 @@ import Legenda from "@/components/quadro/Legenda";
 import type { MensagemConversa } from "@/components/quadro/PainelConversa";
 import CursorAgente, { type ControleCursor } from "@/components/CursorAgente";
 import ConfirmarEncerrar from "@/components/quadro/ConfirmarEncerrar";
+import Enunciado from "@/components/quadro/Enunciado";
+import RegrasDeIntegridade from "@/components/RegrasDeIntegridade";
+import type { InterviewConfig } from "@/lib/contracts";
 import type { Quadro } from "@/components/Canvas";
 import { useEntrevista } from "@/lib/sessao/useEntrevista";
 import { usarServidor, type Fase } from "@/lib/sessao/cliente";
@@ -113,7 +116,7 @@ const Canvas = dynamic(() => import("@/components/Canvas"), {
 });
 
 /** `configId`: plano de entrevista da vaga; `convite`: id do link do e-mail (liga a sessão ao candidato no painel). */
-export default function SalaEntrevista({ configId, convite }: { configId?: string; convite?: string } = {}) {
+export default function SalaEntrevista({ configId, convite, regraDeIa }: { configId?: string; convite?: string; regraDeIa?: InterviewConfig["regraDeIa"] } = {}) {
   const router = useRouter();
   const [quadro, setQuadro] = useState<Quadro | null>(null);
   const cursor = useRef<ControleCursor | null>(null);
@@ -320,6 +323,9 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
   return (
     <main data-despedindo={entrevista.despedindo || undefined} className="relative h-dvh w-full overflow-hidden bg-superficie">
       <Canvas onDesenhoMudou={aoMudarDesenho} onPronto={aoQuadroPronto} bloqueado={entrevista.despedindo || estado.fase === "ENCERRADA"} />
+      {sessao && estado.fase !== "AGUARDANDO" && !entrevista.despedindo && (
+        <Enunciado sessaoId={sessao.sessao_id} titulo={sessao.problema.titulo} texto={sessao.problema.enunciado} />
+      )}
 
       {estado.fase !== "AGUARDANDO" && (
         <div inert={entrevista.despedindo}>
@@ -451,6 +457,7 @@ export default function SalaEntrevista({ configId, convite }: { configId?: strin
                     Vamos pedir acesso à câmera e ao microfone. A câmera aparece só para você: não é gravada nem
                     analisada.
                   </p>
+                  <RegrasDeIntegridade regraDeIa={regraDeIa} />
                   <button
                     onClick={comecar}
                     disabled={!pronto}

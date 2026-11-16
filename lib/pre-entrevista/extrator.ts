@@ -353,7 +353,7 @@ function formatarTranscricao(turnos: Turno[]): string {
 /** Mensagens enviadas ao modelo: prompt de sistema + rascunho, catálogo do modo e transcrição. */
 export function montarMensagens(r: Rascunho, transcricao: Turno[]): Mensagem[] {
   // A vaga fica de fora: o extrator só registra o que foi dito na conversa.
-  const semVaga = { ...r, jobDescription: undefined, conducaoVista: undefined };
+  const semVaga = { ...r, jobDescription: undefined, conducaoVista: undefined, regraDeIa: undefined, fixados: r.fixados.filter((c) => c !== "regraDeIa") };
   const entrada = [
     `RASCUNHO ATUAL:\n${JSON.stringify(semVaga, null, 2)}`,
     `CRITÉRIOS DO CATÁLOGO PARA O MODO ATUAL (${r.mode}):\n${JSON.stringify(CATALOGO[r.mode], null, 2)}`,
