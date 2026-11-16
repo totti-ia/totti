@@ -84,6 +84,15 @@ describe("foco dentro do snapshot da IDE", () => {
     assert.equal(bloco.sinais[0].tipo, "saida_de_foco");
     assert.match(bloco.sinais[0].texto, /janela da entrevista por 30 s/);
   });
+  it("leva as saídas finais no evento de encerramento já existente", () => {
+    const fim = { type: "session_ended" as const, sessionId, t: 160_000, reason: "button" as const, foco: [saida] };
+    assert.deepEqual(SessionEvent.parse(fim), fim);
+    assert.equal(SessionEvent.safeParse({ ...fim, foco: Array(201).fill(saida) }).success, false);
+    const s = getOrCreateSession("integridade-foco-encerramento");
+    appendEvent(s, { ...fim, sessionId: s.sessionId });
+    const bloco = Gravacao.parse(gravacaoDaSessao(s)).integridade!;
+    assert.equal(bloco.sinais.filter((sinal) => sinal.tipo === "saida_de_foco").length, 1);
+  });
 });
 
 describe("origem da colagem", () => {

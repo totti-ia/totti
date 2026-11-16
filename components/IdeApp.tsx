@@ -347,8 +347,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
         const agora = Date.now();
         const t = nowTDaSessao();
         const saidas = registroDeFoco.encerrar(agora).map((s) => ({ t: Math.max(0, t - (agora - s.inicioEm)), duracaoMs: s.duracaoMs, motivo: s.motivo }));
-        if (saidas.length) void sendEvent({ type: "foco", saidas });
-        await endSession(razao);
+        await endSession(razao, saidas);
       },
       navegar: () => router.push("/obrigado"),
       pedirEncerramento: async () => sessionId ? (await postEncerramento(sessionId, "pediu_encerrar")).despedida : undefined,

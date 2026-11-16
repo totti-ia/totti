@@ -230,7 +230,7 @@ export const SessionEvent = z.discriminatedUnion("type", [
     /** Nomes dos testes da mudança, como aparecem em RunResult.cases. */
     testNames: z.array(z.string()),
   }),
-  z.object({ ...base, type: z.literal("session_ended"), reason: z.enum(["timeout", "button"]) }),
+  z.object({ ...base, type: z.literal("session_ended"), reason: z.enum(["timeout", "button"]), foco: z.array(SaidaDeFoco).max(200).optional() }),
 ]);
 export type SessionEvent = z.infer<typeof SessionEvent>;
 export type SessionEventType = SessionEvent["type"];

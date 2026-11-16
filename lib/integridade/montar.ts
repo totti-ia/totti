@@ -83,7 +83,7 @@ function concluir(sinais: SinalDeIntegridade[], dadosPresentes: boolean): BlocoD
 export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEvent[], starter = ""): BlocoDeIntegridade | null {
   const c = coletor();
   const ordenados = [...eventos].sort((a, b) => a.t - b.t);
-  const saidas = saidasUnicas(ordenados.flatMap((e) => e.type === "foco" ? e.saidas : e.type === "snapshot" ? e.foco ?? [] : []));
+  const saidas = saidasUnicas(ordenados.flatMap((e) => e.type === "foco" ? e.saidas : e.type === "snapshot" || e.type === "session_ended" ? e.foco ?? [] : []));
   registrarSaidas(c, saidas);
   const textos: Texto[] = [];
   const colagens = ordenados.filter((e) => e.type === "paste");
@@ -93,7 +93,7 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
   let janela: { inicio: number; digitados: number; apagados: number; maior: number; linhas: number } | undefined;
   let dadosPresentes = false;
   for (const e of ordenados) {
-    if (e.type === "foco") dadosPresentes = true;
+    if (e.type === "foco" || (e.type === "session_ended" && e.foco !== undefined)) dadosPresentes = true;
     if (e.type === "paste") {
       dadosPresentes ||= e.origem !== undefined;
       // Colagem pequena sozinha é sintaxe da documentação; logo depois de sair da janela, é o que ele foi buscar lá fora.

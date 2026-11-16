@@ -123,7 +123,7 @@ export function useSession(
   );
 
   const endSession = useCallback(
-    async (reason: "timeout" | "button") => {
+    async (reason: "timeout" | "button", foco?: Extract<SessionEvent, { type: "session_ended" }>["foco"]) => {
       if (endedRef.current) return;
       endedRef.current = true;
       setEnded(true);
@@ -131,7 +131,7 @@ export function useSession(
       // Nunca espera sem teto: com a rede caída, a despedida segue e os reenvios continuam em segundo plano.
       const esvaziou = await esperarEventos();
       if (!esvaziou) console.warn("[events] encerrando com eventos ainda na fila de reenvio");
-      void sendEvent({ type: "session_ended", reason });
+      void sendEvent({ type: "session_ended", reason, ...(foco?.length ? { foco } : {}) });
       await esperarEventos();
     },
     [sendEvent, esperarEventos],
