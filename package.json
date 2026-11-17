@@ -32,7 +32,7 @@
     "test:integridade": "tsx --test lib/integridade/__tests__/*.test.ts lib/integridade/__tests__/*.test.tsx lib/foco/__tests__/*.test.ts components/ide/__tests__/contadorDeEscrita.test.ts",
     "test:resultados": "tsx --test lib/vagas/__tests__/*.test.ts app/api/__tests__/resultados.test.ts",
     "test:execucao": "tsx --test lib/execution/__tests__/*.test.ts",
-    "test:email": "tsx --test lib/email/__tests__/*.test.ts",
+    "test:email": "tsx --test lib/email/__tests__/*.test.ts lib/contato/__tests__/*.test.ts",
     "test:convites": "tsx --test lib/convites/__tests__/*.test.ts",
     "test:pre-entrevista": "tsx --test lib/pre-entrevista/__tests__/*.test.ts scripts/pre-entrevista/__tests__/*.test.ts lib/problems/__tests__/*.test.ts lib/config/__tests__/*.test.ts",
     "test:e2e": "playwright test --config e2e/playwright.config.ts",
