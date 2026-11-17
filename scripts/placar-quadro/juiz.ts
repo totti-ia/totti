@@ -2,6 +2,7 @@
 // Mede o que as regex não pegam: se ele ouviu, se a pergunta valia a pena, se soou como gente.
 // Ainda não calibrado com notas humanas: use para comparar versões entre si, não como verdade absoluta.
 import "../_gasto";
+import { Agent, setGlobalDispatcher } from "undici";
 import { z } from "zod";
 import { chatJsonVia } from "../../lib/llm/openaiCompat";
 import { featherless } from "../../lib/llm/featherless";
@@ -32,6 +33,14 @@ export const MODELO_JUIZ =
  */
 export const TEMPO_JUIZ_MS = Number(process.env.PLACAR_TEMPO_JUIZ_MS) || 900_000;
 export const TOKENS_JUIZ = Number(process.env.PLACAR_TOKENS_JUIZ) || 24_000;
+
+/**
+ * O fetch do Node desiste aos 300 s sem cabeçalhos (UND_ERR_HEADERS_TIMEOUT, "fetch failed"), e a Featherless só responde
+ * quando o juiz termina: toda avaliação acima de 5 min caía como erro de rede e era refeita do zero. Só neste processo de
+ * medição o limite acompanha o tempo do juiz. As chamadas do Totti não mudam: os prazos delas (8 s, 15 s, 90 s) cortam
+ * antes, pelo AbortController do cliente.
+ */
+setGlobalDispatcher(new Agent({ headersTimeout: TEMPO_JUIZ_MS, bodyTimeout: TEMPO_JUIZ_MS }));
 
 export const VIOLACOES = [
   "validou",
