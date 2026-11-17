@@ -1,34 +1,21 @@
 "use client";
 
 // Landing do Totti: o que a raiz do site mostra para quem chega sem `?config=` (ver app/page.tsx).
-// Hierarquia: o que é (herói) → como funciona, da vaga ao feedback do candidato → por que → pedir demonstração.
+// Hierarquia: o que é (herói, tela cheia) → como funciona (rolagem guiada, passo a passo) → por que (o custo de
+// entrevistar à mão) → pedir demonstração.
 // Todo CTA abre o pop-up de demonstração (PedirDemonstracao); a landing não leva ao painel, que tem dados de exemplo.
 // As cenas no palco escuro são ilustração do produto, não dados ao vivo.
-import { useCallback, useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
-import Perola, { BarrasDeVoz } from "@/components/totti/Perola";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, Mail } from "lucide-react";
+import Perola from "@/components/totti/Perola";
 import Revelar from "@/components/totti/Revelar";
 import TituloRevelado from "@/components/totti/TituloRevelado";
 import Marca from "@/components/vagas/Marca";
+import { CONTATO_PADRAO } from "@/lib/contato/constantes";
 import PedirDemonstracao from "./PedirDemonstracao";
+import PesoDaEntrevista from "./PesoDaEntrevista";
+import QuadroAoVivo from "./QuadroAoVivo";
 
-const FONTE: [string, "forte" | "normal" | "claro"][] = [
-  ["export class LimitadorDeTaxa {", "forte"],
-  ["  private janelas = new Map<string, Janela>();", "normal"],
-  ["", "normal"],
-  ["  permitir(cliente: string, agora = Date.now()) {", "forte"],
-  ["    const j = this.janelas.get(cliente);", "normal"],
-  ["    if (!j || agora - j.inicio >= this.ms) {", "normal"],
-  ["      this.janelas.set(cliente, { inicio: agora, pedidos: 1 });", "normal"],
-  ["      return true;", "claro"],
-  ["    }", "normal"],
-  ["    j.pedidos++;", "forte"],
-];
-const COR = { forte: "#F5F0E8", normal: "#C9C2B6", claro: "#FFFFFF" } as const;
-const LINHA = 26;
-
-const PERGUNTA = "E se dois pedidos chegarem no mesmo milissegundo, na virada da janela?";
-const RESPOSTA = "Aí passa o dobro… dá pra trocar por janela deslizante.";
 
 /** O caminho completo, na ordem em que acontece. `quem` diz quem age em cada passo. */
 const PASSOS = [
@@ -59,25 +46,47 @@ const PASSOS = [
   },
 ];
 
-const PORQUES = [
-  { titulo: "A régua é a vaga", texto: "Os critérios saem da descrição e do que você aprovou no plano. Todo candidato é medido pelo mesmo plano." },
-  { titulo: "Cada nota tem prova", texto: "Nada de impressão solta: cada critério aponta o trecho da conversa ou do código e o minuto em que aconteceu." },
-  { titulo: "Você no controle", texto: "O Totti conduz e avalia, mas não aprova nem reprova ninguém sozinho. A decisão final fica no seu painel." },
-];
+/** Quanto de rolagem (em alturas de tela) cada passo do "como funciona" ocupa. */
+const TELAS_POR_PASSO = 0.9;
 
-/** Um tique a cada `ms`; parado com "reduzir movimento" (mostra o quadro final, sem animar). */
-function useTique(ms: number) {
-  const [t, setT] = useState(0);
-  const [parado, setParado] = useState(false);
-  useEffect(() => {
-    const reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setParado(reduz);
-    if (reduz) return;
-    const id = setInterval(() => setT((x) => x + 1), ms);
-    return () => clearInterval(id);
-  }, [ms]);
-  return { t, parado };
+const reduzMovimento = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Rola a página até `y` com uma curva suave (sem mexer no endereço, ao contrário de um link `#ancora`).
+ * Se a pessoa girar a roda ou tocar na tela no meio do caminho, a rolagem automática para e devolve o controle.
+ */
+function rolarAte(y: number) {
+  const destino = Math.max(0, Math.min(y, document.documentElement.scrollHeight - innerHeight));
+  if (reduzMovimento()) {
+    scrollTo(0, destino);
+    return;
+  }
+  const inicio = scrollY;
+  const distancia = destino - inicio;
+  const duracao = Math.min(1400, 650 + Math.abs(distancia) * 0.25);
+  const t0 = performance.now();
+  let raf = 0;
+  const parar = () => {
+    cancelAnimationFrame(raf);
+    removeEventListener("wheel", parar);
+    removeEventListener("touchstart", parar);
+  };
+  addEventListener("wheel", parar, { passive: true });
+  addEventListener("touchstart", parar, { passive: true });
+  const passo = (agora: number) => {
+    const t = Math.min(1, (agora - t0) / duracao);
+    const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    scrollTo(0, inicio + distancia * e);
+    if (t < 1) raf = requestAnimationFrame(passo);
+    else parar();
+  };
+  raf = requestAnimationFrame(passo);
 }
+
+const rolarPara = (id: string) => {
+  const el = document.getElementById(id);
+  if (el) rolarAte(el.getBoundingClientRect().top + scrollY);
+};
 
 const BOTAO_PRINCIPAL =
   "group inline-flex h-[52px] items-center gap-2 rounded-full bg-texto px-6 text-[16px] font-semibold text-texto-claro shadow-[0_14px_40px_-16px_rgb(28_24_18/0.6)] transition-transform duration-rapida hover:-translate-y-px active:scale-[0.98]";
@@ -95,30 +104,15 @@ export default function Landing() {
   const [demo, setDemo] = useState(false);
   const abrir = useCallback(() => setDemo(true), []);
   const fechar = useCallback(() => setDemo(false), []);
+  const como = useRef<HTMLElement>(null);
 
   return (
-    <div className="min-h-dvh bg-fundo text-texto">
-      <nav className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-4 px-6 py-6">
-        <Marca href="/" />
-        <div className="flex flex-wrap items-center gap-2">
-          <a href="#como" className="hidden px-3.5 py-2.5 text-texto-suave transition-colors hover:text-texto sm:inline">
-            Como funciona
-          </a>
-          <button
-            type="button"
-            onClick={abrir}
-            className="rounded-full px-4 py-2.5 text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.18)] transition-colors hover:bg-superficie"
-          >
-            Agendar demonstração
-          </button>
-        </div>
-      </nav>
-
+    <div className="min-h-dvh overflow-x-clip bg-fundo text-texto">
       <Heroi onDemo={abrir} />
-      <ComoFunciona />
-      <Porques />
+      <ComoFunciona ref={como} />
+      <PesoDaEntrevista />
 
-      <section className="bg-texto px-6 py-[88px] text-texto-claro">
+      <section className="bg-texto px-6 py-[96px] text-texto-claro">
         <Revelar className="mx-auto flex max-w-[1240px] flex-col items-start gap-6">
           <h2 className="titulo-display max-w-[720px] text-[clamp(32px,4vw,52px)] leading-[1.05]">Quer ver o Totti entrevistando para uma vaga sua?</h2>
           <p className="max-w-[560px] text-[17px] text-texto-claro/75">
@@ -135,10 +129,25 @@ export default function Landing() {
         </Revelar>
       </section>
 
-      <footer className="border-t border-borda px-6 py-7">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 text-[13.5px] text-texto-suave">
-          <span>Totti · Converge Challenge, Porto Digital, Recife</span>
-          <span>A câmera do candidato nunca sai do computador dele.</span>
+      <footer className="px-6 pt-14 pb-10">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-10">
+          <div className="flex flex-wrap items-start justify-between gap-8">
+            <div className="flex flex-col gap-3">
+              <Marca href="/" />
+              <p className="max-w-[320px] pl-2 text-[15px] text-texto-suave">Entrevistador técnico por voz. Do plano da vaga ao relatório com evidências.</p>
+            </div>
+            <div className="flex flex-col gap-2 pl-2 sm:items-end sm:pl-0">
+              <span className="font-mono text-[12.5px] text-texto-suave">contato</span>
+              <a href={`mailto:${CONTATO_PADRAO}`} className="inline-flex items-center gap-2 text-[16px] font-medium text-texto underline-offset-4 hover:underline">
+                <Mail size={16} />
+                {CONTATO_PADRAO}
+              </a>
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-between gap-3 border-t border-borda pt-6 pl-2 text-[13px] text-texto-suave">
+            <span>© {new Date().getFullYear()} totti</span>
+            <span>João Pessoa, Brasil</span>
+          </div>
         </div>
       </footer>
 
@@ -147,202 +156,180 @@ export default function Landing() {
   );
 }
 
-/** Texto e palco lado a lado: o palco ilustra o agente trabalhando numa entrevista. */
+/** O herói ocupa a tela inteira: navegação no topo, texto e o quadro ao vivo no centro. */
 function Heroi({ onDemo }: { onDemo: () => void }) {
-  const { t, parado } = useTique(55);
-  // 260 tiques ≈ 14s por volta: digita, lê, pergunta, escuta, fecha a nota.
-  const c = parado ? 240 : t % 260;
-  let restante = Math.max(0, c) * 4;
-  const codigo = FONTE.map(([txt, tom], i) => {
-    const visivel = txt.slice(0, Math.max(0, Math.min(txt.length, restante)));
-    restante -= txt.length + 1;
-    return { n: i + 1, txt: visivel || " ", cor: COR[tom] };
-  });
-  const alvo = c < 110 ? null : c < 170 ? 9 : 5;
-  const faixaY = 22 + (alvo ?? 9) * LINHA;
-  const pq = Math.max(0, Math.min(PERGUNTA.length, (c - 115) * 2));
-  const pr = Math.max(0, Math.min(RESPOSTA.length, (c - 180) * 2));
-  const prog = Math.max(0, Math.min(1, (c - 215) / 18));
-  const ease = 1 - Math.pow(1 - prog, 4);
-  const falando = pq > 0 && pq < PERGUNTA.length;
-
   return (
-    <section className="mx-auto grid max-w-[1240px] items-center gap-14 px-6 pt-10 pb-20 [grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr))]">
-      <div className="anim-subir flex flex-col gap-6" style={{ animationDuration: ".8s" }}>
-        <span className="inline-flex h-8 items-center gap-2 self-start rounded-full bg-superficie pr-3.5 pl-2.5 text-[13.5px] text-texto-suave shadow-padrao">
-          <Perola tamanho={14} />
-          Entrevistador técnico por voz
-        </span>
-        <h1 className="titulo-display text-[clamp(44px,6vw,80px)] leading-[0.98]">
-          <TituloRevelado texto="Cole a vaga." atraso={0.1} />
-          <br />
-          <TituloRevelado texto="O Totti entrevista." atraso={0.3} />
-          <br />
-          <em className="italic text-texto [font-variation-settings:'SOFT'_100,'WONK'_1]">Você decide.</em>
-        </h1>
-        <p className="max-w-[520px] text-[19px] text-texto-suave">
-          O Totti monta o plano da entrevista com você, conduz a conversa por voz acompanhando o código e o desenho do candidato, e entrega a nota de
-          cada critério com a evidência.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <BotaoDemo onClick={onDemo} />
-          <a
-            href="#como"
-            className="inline-flex h-[52px] items-center rounded-full bg-superficie px-[22px] text-[16px] font-medium text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.16)] transition-colors hover:bg-superficie-2"
+    <header className="relative flex min-h-dvh flex-col">
+      <nav className="mx-auto flex w-full max-w-[1320px] flex-wrap items-center justify-between gap-4 px-6 py-6">
+        <Marca href="/" />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => rolarPara("como")} className="hidden px-3.5 py-2.5 text-texto-suave transition-colors hover:text-texto sm:inline">
+            Como funciona
+          </button>
+          <button
+            type="button"
+            onClick={onDemo}
+            className="rounded-full px-4 py-2.5 text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.18)] transition-colors hover:bg-superficie"
           >
-            Ver como funciona
-          </a>
+            Agendar demonstração
+          </button>
+        </div>
+      </nav>
+
+      <div className="mx-auto grid w-full max-w-[1320px] flex-1 items-center gap-12 px-6 pt-6 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)]">
+        <div className="anim-subir flex flex-col gap-6" style={{ animationDuration: ".8s" }}>
+          <span className="inline-flex h-8 items-center gap-2 self-start rounded-full bg-superficie pr-3.5 pl-2.5 text-[13.5px] text-texto-suave shadow-padrao">
+            <Perola tamanho={14} />
+            Entrevistador técnico por voz
+          </span>
+          <h1 className="titulo-display text-[clamp(42px,4.9vw,74px)] leading-[0.98]">
+            <TituloRevelado texto="Cole a vaga." atraso={0.1} />
+            <br />
+            <TituloRevelado texto="O Totti entrevista." atraso={0.3} />
+            <br />
+            <em className="italic text-texto [font-variation-settings:'SOFT'_100,'WONK'_1]">Você decide.</em>
+          </h1>
+          <p className="max-w-[520px] text-[19px] text-texto-suave">
+            O Totti monta o plano da entrevista com você, conduz a conversa por voz acompanhando o código e o desenho do candidato, e entrega a nota de
+            cada critério com a evidência.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <BotaoDemo onClick={onDemo} />
+            <button
+              type="button"
+              onClick={() => rolarPara("como")}
+              className="inline-flex h-[52px] items-center rounded-full bg-superficie px-[22px] text-[16px] font-medium text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.16)] transition-colors hover:bg-superficie-2"
+            >
+              Ver como funciona
+            </button>
+          </div>
+        </div>
+
+        <div className="anim-subir" style={{ animationDuration: ".9s", animationDelay: ".15s" }}>
+          <QuadroAoVivo />
         </div>
       </div>
+    </header>
+  );
+}
 
-      <div className="anim-subir relative" style={{ animationDuration: ".9s", animationDelay: ".15s" }} aria-hidden>
-        <div className="overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8] shadow-[0_50px_90px_-40px_rgb(28_24_18/0.7)]">
-          <div className="flex items-center justify-between border-b border-[#f5f0e8]/8 px-[18px] py-3.5">
-            <span className="flex gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="size-2.5 rounded-full bg-[#27231d]" />
-              ))}
+/**
+ * Como funciona, guiado pela rolagem: a seção é alta e o conteúdo fica preso na tela. Cada trecho de rolagem
+ * avança um passo (a linha do passo enche junto com a rolagem) e troca a cena à direita.
+ * Clicar num passo rola até ele. Com "reduzir movimento", a rolagem até o passo é direta.
+ */
+function ComoFunciona({ ref }: { ref: React.RefObject<HTMLElement | null> }) {
+  const [progresso, setProgresso] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const medir = () => {
+      raf = 0;
+      const el = ref.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const curso = r.height - innerHeight;
+      setProgresso(curso > 0 ? Math.max(0, Math.min(1, -r.top / curso)) : 0);
+    };
+    const aoRolar = () => {
+      if (!raf) raf = requestAnimationFrame(medir);
+    };
+    medir();
+    addEventListener("scroll", aoRolar, { passive: true });
+    addEventListener("resize", aoRolar);
+    return () => {
+      cancelAnimationFrame(raf);
+      removeEventListener("scroll", aoRolar);
+      removeEventListener("resize", aoRolar);
+    };
+  }, [ref]);
+
+  const n = PASSOS.length;
+  const bruto = progresso * n;
+  const ativo = Math.min(n - 1, Math.floor(bruto));
+  const local = Math.min(1, bruto - ativo);
+
+  const irPara = (i: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const curso = el.offsetHeight - innerHeight;
+    rolarAte(el.getBoundingClientRect().top + scrollY + ((i + 0.08) / n) * curso);
+  };
+
+  return (
+    <section ref={ref} id="como" className="relative bg-superficie" style={{ height: `${100 + n * TELAS_POR_PASSO * 100}dvh` }}>
+      <div className="sticky top-0 flex h-dvh items-center overflow-hidden px-6">
+        <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-6 md:gap-10">
+          <div className="flex max-w-[680px] flex-col gap-2.5">
+            <span className="font-mono text-[13px] text-texto-suave">
+              como funciona · {String(ativo + 1).padStart(2, "0")}/{String(n).padStart(2, "0")}
             </span>
-            <span className="font-mono text-[12.5px] text-[#f5f0e8]/70">limitador.ts · Live Coding</span>
-            <span className="font-mono text-[12.5px] text-[#f5f0e8]/50">exemplo</span>
+            <h2 className="titulo-display hidden text-[clamp(30px,3.6vw,46px)] leading-[1.05] md:block">Da vaga ao retorno do candidato, em cinco passos.</h2>
           </div>
 
-          <div className="relative min-h-[300px] pt-[22px] pb-[26px] font-mono text-[14px]" style={{ lineHeight: `${LINHA}px` }}>
-            <div
-              className="absolute inset-x-0 transition-[top,opacity] duration-[900ms] ease-viagem"
-              style={{
-                top: faixaY,
-                height: LINHA,
-                opacity: alvo === null ? 0 : 1,
-                background: "rgb(245 240 232 / 0.12)",
-                boxShadow: "inset 3px 0 0 #F5F0E8",
-              }}
-            />
-            {codigo.map((l) => (
-              <div key={l.n} className="relative flex whitespace-pre">
-                <span className="w-11 pr-4 text-right text-[#f5f0e8]/30">{l.n}</span>
-                <span style={{ color: l.cor }}>{l.txt}</span>
-              </div>
-            ))}
-            {/* o cursor do Totti viaja até a linha que ele está lendo */}
-            <div
-              className="pointer-events-none absolute transition-[left,top] duration-[900ms] ease-viagem"
-              style={{ left: alvo === null ? 380 : alvo === 9 ? 170 : 300, top: alvo === null ? 12 : faixaY + 14 }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20">
-                <path d="M3 2 L17 9 L10 11 L7 18 Z" fill="#F5F0E8" stroke="#13110E" strokeWidth="1.5" strokeLinejoin="round" />
-              </svg>
-              <span className="absolute top-4 left-4 rounded-full bg-[#f5f0e8] px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap text-[#1c1812] font-sans">
-                Totti
-              </span>
+          <div className="grid items-center gap-6 md:gap-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))]">
+            <ol className="flex flex-col">
+              {PASSOS.map((p, i) => {
+                const on = i === ativo;
+                const feito = i < ativo;
+                return (
+                  <li key={p.titulo} className="relative">
+                    <span aria-hidden className="absolute top-0 bottom-0 left-0 w-px bg-borda" />
+                    {/* a linha enche junto com a rolagem dentro do passo */}
+                    <span
+                      aria-hidden
+                      className="absolute top-0 bottom-0 left-0 w-[2px] origin-top bg-texto"
+                      style={{ transform: `scaleY(${on ? Math.max(0.04, local) : feito ? 1 : 0})`, opacity: on ? 1 : feito ? 0.25 : 0, transition: "opacity .4s" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => irPara(i)}
+                      aria-current={on ? "step" : undefined}
+                      className="group flex w-full flex-col py-2.5 pl-7 text-left md:py-3.5"
+                    >
+                      <span className="flex items-baseline gap-3">
+                        <span className="font-mono text-[13px] text-texto-suave">{String(i + 1).padStart(2, "0")}</span>
+                        <span
+                          className="titulo-display text-[clamp(22px,2.6vw,32px)] leading-[1.1] transition-colors duration-[480ms]"
+                          style={{ color: on ? "var(--texto)" : "var(--pedra)" }}
+                        >
+                          {p.titulo}
+                        </span>
+                      </span>
+                      {/* só o passo ativo abre o texto: cabe numa tela só, em qualquer altura */}
+                      <span
+                        className="grid transition-[grid-template-rows,opacity] duration-500 ease-saida"
+                        style={{ gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0 }}
+                      >
+                        <span className="flex flex-col gap-1.5 overflow-hidden pl-[34px]">
+                          <span className="pt-1.5 font-mono text-[12.5px] text-texto-suave">{p.quem}</span>
+                          <span className="text-[15.5px] text-texto md:text-[16px]">{p.texto}</span>
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="relative h-[clamp(260px,40dvh,460px)] overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8] md:h-[clamp(340px,56dvh,480px)]" style={{ "--fundo": "#13110e" } as React.CSSProperties} aria-hidden>
+              <CenaDoPasso key={ativo} passo={ativo} p={Math.min(1, local / 0.8)} />
             </div>
           </div>
-
-          <div className="flex min-h-[92px] flex-col gap-2.5 border-t border-[#f5f0e8]/8 px-[18px] pt-4 pb-5">
-            {pq > 0 && (
-              <div className="flex items-start gap-2.5">
-                <BarrasDeVoz ativo={falando} n={3} altura={16} largura={3} className="mt-[3px] shrink-0 !gap-0.5 text-[#f5f0e8]" />
-                <span className="text-[15px]">
-                  <b>Totti</b> {PERGUNTA.slice(0, pq)}
-                </span>
-              </div>
-            )}
-            {pr > 0 && (
-              <div className="flex items-start gap-2.5">
-                <span className="mt-[7px] size-2 shrink-0 rounded-full bg-[#f5f0e8]" />
-                <span className="text-[15px] text-[#d9d1c4]">
-                  <b className="text-[#f5f0e8]">Candidata</b> {RESPOSTA.slice(0, pr)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div
-          className="absolute -right-3 -bottom-7 flex items-center gap-3.5 rounded-[18px] bg-superficie px-[18px] py-3.5 shadow-[0_24px_50px_-20px_rgb(28_24_18/0.45)] transition-[opacity,transform] duration-[600ms] ease-saida"
-          style={{ opacity: prog > 0 ? 1 : 0, transform: `translateY(${prog > 0 ? 0 : 14}px)` }}
-        >
-          <span className="flex flex-col">
-            <span className="text-[12.5px] text-texto-suave">Modelagem de dados</span>
-            <span className="font-mono text-[12px] text-texto-suave">evidência · min 12:40</span>
-          </span>
-          <span className="titulo-display text-[30px]">{(3.5 * ease).toFixed(1).replace(".", ",")}</span>
         </div>
       </div>
     </section>
   );
 }
 
-/** Como funciona: os cinco passos sempre visíveis à esquerda (o ativo se acende), a cena do passo à direita. */
-function ComoFunciona() {
-  const [ativo, setAtivo] = useState(0);
-  const [parado, setParado] = useState(false);
-  useEffect(() => {
-    const reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setParado(reduz);
-    if (reduz) return;
-    const id = setInterval(() => setAtivo((a) => (a + 1) % PASSOS.length), 6500);
-    return () => clearInterval(id);
-  }, [ativo]);
-
-  return (
-    <section id="como" className="scroll-mt-4 bg-superficie px-6 py-[96px]">
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-14">
-        <Revelar className="flex max-w-[680px] flex-col gap-2.5">
-          <span className="font-mono text-[13px] text-texto-suave">como funciona</span>
-          <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">Da vaga ao retorno do candidato, em cinco passos.</h2>
-        </Revelar>
-
-        <Revelar atraso={0.08} className="grid items-start gap-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))]">
-          <ol className="flex flex-col">
-            {PASSOS.map((p, i) => {
-              const on = i === ativo;
-              return (
-                <li key={p.titulo} className="relative">
-                  <span aria-hidden className="absolute top-0 bottom-0 left-0 w-px bg-borda" />
-                  {/* a linha que enche enquanto o passo está ativo */}
-                  <span
-                    aria-hidden
-                    className="absolute top-0 bottom-0 left-0 w-[2px] origin-top bg-texto"
-                    style={{
-                      transform: `scaleY(${on || i < ativo ? 1 : 0})`,
-                      opacity: on ? 1 : i < ativo ? 0.25 : 0,
-                      transition: on && !parado ? "transform 6.5s linear, opacity .3s" : "opacity .5s",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setAtivo(i)}
-                    aria-current={on ? "step" : undefined}
-                    className="group flex w-full flex-col gap-1.5 py-4 pl-7 text-left"
-                  >
-                    <span className="flex items-baseline gap-3">
-                      <span className="font-mono text-[13px] text-texto-suave">{String(i + 1).padStart(2, "0")}</span>
-                      <span
-                        className="titulo-display text-[clamp(24px,2.8vw,32px)] leading-[1.1] transition-colors duration-[480ms]"
-                        style={{ color: on ? "var(--texto)" : "var(--pedra)" }}
-                      >
-                        {p.titulo}
-                      </span>
-                    </span>
-                    <span className="pl-[34px] font-mono text-[12.5px] text-texto-suave">{p.quem}</span>
-                    <span className="pl-[34px] text-[16px] transition-colors duration-[480ms]" style={{ color: on ? "var(--texto)" : "var(--texto-suave)" }}>
-                      {p.texto}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-
-          <div className="relative min-h-[360px] overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8] lg:sticky lg:top-8" aria-hidden>
-            <CenaDoPasso key={ativo} passo={ativo} />
-          </div>
-        </Revelar>
-      </div>
-    </section>
-  );
-}
+const faixa = (p: number, a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
+/** Aparece entre a e b do progresso do passo: sobe e acende. */
+const surge = (p: number, a: number, b = a + 0.12): React.CSSProperties => {
+  const k = faixa(p, a, b);
+  return { opacity: k, transform: `translateY(${(1 - k) * 10}px)` };
+};
+/** O texto vai sendo escrito conforme a rolagem. */
+const escrito = (texto: string, p: number, a: number, b: number) => texto.slice(0, Math.round(texto.length * faixa(p, a, b)));
 
 /** Um cartão de e-mail no palco escuro (convite e feedback). */
 function CartaoEmail({ de, assunto, children, estilo }: { de: string; assunto: string; children: React.ReactNode; estilo: React.CSSProperties }) {
@@ -355,134 +342,147 @@ function CartaoEmail({ de, assunto, children, estilo }: { de: string; assunto: s
   );
 }
 
-/** A cena de cada passo. Tudo entra em cascata ao trocar de passo. */
-function CenaDoPasso({ passo }: { passo: number }) {
-  const entra = (i: number) => ({ animation: `subir .6s var(--curva-saida) ${0.12 * i}s both` });
+const CRITERIOS_DO_PLANO = ["Node + TypeScript", "Concorrência", "PostgreSQL", "Testes · eliminatório"];
+const HORARIOS = ["seg 10:00", "seg 14:30", "ter 09:00", "ter 16:00"];
+const CODIGO = ["permitir(cliente) {", "  const j = this.janelas.get(cliente);", "  if (agora - j.inicio >= this.ms) {", "    j.pedidos++;", "  }", "}"];
 
-  if (passo === 0)
+/**
+ * A cena de cada passo, montada pela rolagem: `p` vai de 0 (o passo acabou de entrar) a 1 (cena completa).
+ * Rolando, o plano se monta, o horário é escolhido, o código é escrito, a nota fecha e o retorno sai.
+ */
+function CenaDoPasso({ passo, p }: { passo: number; p: number }) {
+  const caixa = "flex h-full flex-col justify-center gap-5 p-7 sm:p-9";
+
+  if (passo === 0) {
+    const pergunta = "“Vou propor live coding de 45 minutos, nível pleno. O que reprova direto?”";
     return (
-      <div className="flex h-full min-h-[360px] flex-col justify-center gap-5 p-9">
-        <div className="flex items-center gap-4" style={entra(0)}>
-          <Perola estado="falando" tamanho={56} brilho />
-          <p className="text-[16px] leading-[1.45]">“Vou propor live coding de 45 minutos, nível pleno. O que reprova direto?”</p>
+      <div className={caixa}>
+        <div className="flex items-start gap-4" style={surge(p, 0, 0.06)}>
+          <Perola estado={p < 0.3 ? "falando" : "ouvindo"} tamanho={44} />
+          <p className="min-h-[46px] text-[16px] leading-[1.45]">{escrito(pergunta, p, 0.02, 0.3)}</p>
         </div>
-        <p className="pl-[72px] text-[15px] text-[#d9d1c4]" style={entra(1)}>
-          Se a pessoa não escrever nenhum teste, nem continuo.
+        <p className="pl-[60px] text-[15px] text-[#d9d1c4]" style={surge(p, 0.32)}>
+          {escrito("Se a pessoa não escrever nenhum teste, nem continuo.", p, 0.32, 0.5)}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2" style={entra(2)}>
-          {["Node + TypeScript", "Concorrência", "PostgreSQL", "Testes · eliminatório"].map((c) => (
-            <span key={c} className="rounded-full bg-[#f5f0e8] px-3 py-1 text-[13px] font-semibold text-[#1c1812]">
+        <div className="flex flex-wrap gap-2 pl-[60px]">
+          {CRITERIOS_DO_PLANO.map((c, i) => (
+            <span key={c} className="rounded-full bg-[#f5f0e8] px-3 py-1 text-[13px] font-semibold text-[#1c1812]" style={surge(p, 0.52 + i * 0.07, 0.6 + i * 0.07)}>
               {c}
             </span>
           ))}
         </div>
-        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(3)}>
+        <span className="pl-[60px] font-mono text-[12.5px] text-[#f5f0e8]/75" style={surge(p, 0.86)}>
           › plano aprovado: live coding · 45 min · 4 critérios
         </span>
       </div>
     );
+  }
 
-  if (passo === 1)
+  if (passo === 1) {
+    const escolhido = p >= 0.55;
     return (
-      <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-4 p-9">
-        <CartaoEmail de="Time de Recrutamento" assunto="Sua entrevista técnica: escolha o horário" estilo={entra(0)}>
+      <div className={`${caixa} items-center`}>
+        <CartaoEmail de="Time de Recrutamento" assunto="Sua entrevista técnica: escolha o horário" estilo={surge(p, 0, 0.12)}>
           <div className="flex flex-wrap gap-2">
-            {["seg 10:00", "seg 14:30", "ter 09:00", "ter 16:00"].map((h, i) => (
+            {HORARIOS.map((h, i) => (
               <span
                 key={h}
-                className={`rounded-full px-3 py-1 font-mono text-[12.5px] ${i === 2 ? "bg-[#1c1812] text-[#f5f0e8]" : "shadow-[inset_0_0_0_1px_rgb(28_24_18/0.2)]"}`}
+                className={`rounded-full px-3 py-1 font-mono text-[12.5px] transition-colors duration-300 ${i === 2 && escolhido ? "bg-[#1c1812] text-[#f5f0e8]" : "shadow-[inset_0_0_0_1px_rgb(28_24_18/0.2)]"}`}
+                style={surge(p, 0.14 + i * 0.07, 0.22 + i * 0.07)}
               >
                 {h}
               </span>
             ))}
           </div>
         </CartaoEmail>
-        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(2)}>
-          › horário confirmado, link da sala no e-mail
-        </span>
+        <CartaoEmail de="Time de Recrutamento" assunto="Confirmado: terça, 09:00" estilo={surge(p, 0.66, 0.8)}>
+          <span className="font-mono text-[12.5px]">totti.ia.br/entrevista · link da sala</span>
+        </CartaoEmail>
       </div>
     );
+  }
 
-  if (passo === 2)
+  if (passo === 2) {
+    const total = CODIGO.reduce((n, l) => n + l.length, 0);
+    let resta = Math.round(total * faixa(p, 0, 0.5));
+    const lendo = p >= 0.56;
     return (
-      <div className="flex h-full min-h-[360px] flex-col justify-center gap-6 py-9">
-        {/* a faixa fica na própria linha (e não num `top` fixo), então acompanha o código em qualquer altura do palco */}
-        <div className="font-mono text-[14px] leading-[26px]">
-          {["permitir(cliente) {", "  const j = this.janelas.get(cliente);", "  if (agora - j.inicio >= this.ms) {", "    j.pedidos++;", "  }", "}"].map((l, i) => {
-            const lendo = i === 2;
+      <div className="flex h-full flex-col justify-center gap-6 py-7 sm:py-9">
+        <div className="font-mono text-[13px] leading-[26px] sm:text-[14px]">
+          {CODIGO.map((l, i) => {
+            const visivel = l.slice(0, Math.max(0, resta));
+            resta -= l.length;
+            const marcada = lendo && i === 2;
             return (
               <div
                 key={i}
-                className={`flex whitespace-pre pr-6 ${lendo ? "bg-[#f5f0e8]/12 text-[#f5f0e8] shadow-[inset_3px_0_0_#f5f0e8]" : "text-[#c9c2b6]"}`}
-                style={entra(i)}
+                className={`flex whitespace-pre pr-6 transition-colors duration-300 ${marcada ? "bg-[#f5f0e8]/12 text-[#f5f0e8] shadow-[inset_3px_0_0_#f5f0e8]" : "text-[#c9c2b6]"}`}
               >
                 <span className="w-12 shrink-0 pr-4 text-right text-[#f5f0e8]/30">{i + 1}</span>
-                {l}
+                {visivel}
+                {resta > -l.length && resta < 0 && <span className="ml-px inline-block h-[18px] w-[2px] translate-y-[4px] bg-[#f5f0e8]" />}
               </div>
             );
           })}
         </div>
-        <div className="flex flex-col gap-1.5 px-9" style={entra(7)}>
-          <span className="font-mono text-[12.5px] text-[#f5f0e8]/70">› Totti leu a linha 3 e pergunta:</span>
-          <span className="text-[16px] leading-[1.45]">“Por que &gt;= e não &gt;? O que acontece na virada da janela?”</span>
+        <div className="flex min-h-[72px] flex-col gap-1.5 px-7 sm:px-9">
+          <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={surge(p, 0.56)}>
+            › Totti leu a linha 3 e pergunta:
+          </span>
+          <span className="text-[16px] leading-[1.45]">{escrito("“Por que >= e não >? O que acontece na virada da janela?”", p, 0.62, 0.95)}</span>
         </div>
       </div>
     );
+  }
 
-  if (passo === 4)
+  if (passo === 3) {
+    const nota = 3.5 * faixa(p, 0.55, 0.9);
     return (
-      <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-4 p-9">
-        <CartaoEmail de="Time de Recrutamento" assunto="Retorno sobre sua entrevista" estilo={entra(0)}>
-          Oi, Marina! Obrigado por participar da entrevista para Backend Pleno. Queremos seguir com você para a próxima etapa.
-        </CartaoEmail>
-        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(2)}>
-          › decisão tomada no painel, retorno enviado
+      <div className={caixa}>
+        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={surge(p, 0)}>
+          modelagem de dados · min 12:40
+        </span>
+        <p className="max-w-[420px] text-[19px] leading-[1.55]" style={surge(p, 0.04)}>
+          “Eu usaria janela deslizante{" "}
+          <span
+            className="bg-no-repeat [background-position:0_100%] [box-decoration-break:clone] [-webkit-box-decoration-break:clone]"
+            style={{ backgroundImage: "linear-gradient(#f5f0e8, #f5f0e8)", backgroundSize: `${faixa(p, 0.2, 0.5) * 100}% 2px` }}
+          >
+            porque a fixa deixa passar o dobro
+          </span>
+          .”
+        </p>
+        <div className="h-2 max-w-[360px] overflow-hidden rounded-full bg-[#f5f0e8]/15" style={surge(p, 0.5)}>
+          <div className="h-full rounded-full bg-[#f5f0e8]" style={{ width: `${(nota / 4) * 100}%` }} />
+        </div>
+        <span className="titulo-display text-[44px] tabular-nums" style={surge(p, 0.52)}>
+          {nota.toFixed(1).replace(".", ",")}
+          <span className="text-[20px] text-[#f5f0e8]/60"> / 4</span>
         </span>
       </div>
     );
+  }
 
+  const decidido = p >= 0.3;
   return (
-    <div className="flex h-full min-h-[360px] flex-col justify-center gap-5 p-9">
-      <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(0)}>
-        modelagem de dados · min 12:40
-      </span>
-      <p className="max-w-[420px] text-[19px] leading-[1.55]" style={entra(1)}>
-        “Eu usaria janela deslizante{" "}
-        {/* a evidência: um traço que corre por baixo do trecho, linha a linha quando ele quebra */}
-        <span
-          className="bg-no-repeat [background-position:0_100%] [box-decoration-break:clone] [-webkit-box-decoration-break:clone]"
-          style={{ backgroundImage: "linear-gradient(#f5f0e8, #f5f0e8)", backgroundSize: "100% 2px", animation: "sublinhar 1s var(--curva-saida) .9s both" }}
-        >
-          porque a fixa deixa passar o dobro
+    <div className={`${caixa} items-center`}>
+      <div className="flex w-full max-w-[400px] items-center justify-between gap-3 rounded-[18px] bg-[#f5f0e8]/8 p-4" style={surge(p, 0, 0.1)}>
+        <span className="flex flex-col">
+          <span className="text-[15px] font-semibold">Marina Costa</span>
+          <span className="font-mono text-[12px] text-[#f5f0e8]/60">3,5 / 4 · recomenda seguir</span>
         </span>
-        .”
-      </p>
-      <div className="h-2 max-w-[360px] overflow-hidden rounded-full bg-[#f5f0e8]/15" style={entra(3)}>
-        <div className="h-full rounded-full bg-[#f5f0e8]" style={{ width: "88%", transformOrigin: "left", animation: "crescer 1s var(--curva-saida) .7s both" }} />
+        <span
+          className={`rounded-full px-4 py-1.5 text-[13.5px] font-semibold transition-colors duration-300 ${decidido ? "bg-[#f5f0e8] text-[#1c1812]" : "shadow-[inset_0_0_0_1px_rgb(245_240_232/0.3)]"}`}
+        >
+          {decidido ? "Seguir ✓" : "Seguir"}
+        </span>
       </div>
-      <span className="titulo-display text-[44px]" style={entra(4)}>
-        3,5<span className="text-[20px] text-[#f5f0e8]/60"> / 4</span>
+      <CartaoEmail de="Time de Recrutamento" assunto="Retorno sobre sua entrevista" estilo={surge(p, 0.38, 0.5)}>
+        {escrito("Oi, Marina! Obrigado por participar da entrevista para Backend Pleno. Queremos seguir com você para a próxima etapa.", p, 0.45, 0.85)}
+      </CartaoEmail>
+      <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={surge(p, 0.88)}>
+        › retorno enviado
       </span>
     </div>
-  );
-}
-
-/** Por que o Totti: três razões, sem número inventado. */
-function Porques() {
-  return (
-    <section className="mx-auto flex max-w-[1240px] flex-col gap-12 px-6 py-[96px]">
-      <Revelar className="flex max-w-[640px] flex-col gap-2.5">
-        <span className="font-mono text-[13px] text-texto-suave">por que o totti</span>
-        <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">Entrevista técnica com régua, prova e você no comando.</h2>
-      </Revelar>
-      <Revelar como="ul" atraso={0.08} className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))]">
-        {PORQUES.map((p) => (
-          <li key={p.titulo} className="flex flex-col gap-2.5 rounded-[24px] bg-superficie p-7 shadow-padrao">
-            <span className="titulo-display text-[26px] leading-[1.1]">{p.titulo}</span>
-            <span className="text-[16px] text-texto-suave">{p.texto}</span>
-          </li>
-        ))}
-      </Revelar>
-    </section>
   );
 }

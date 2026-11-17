@@ -23,8 +23,8 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Totti — Entrevistas técnicas com IA",
-    template: "%s · Totti",
+    default: "totti",
+    template: "%s · totti",
   },
   description: "Triagem e condução de entrevistas técnicas com IA em tempo real.",
   icons: {

@@ -2,12 +2,14 @@
 // Mede o que as regex não pegam: se ele ouviu, se a pergunta valia a pena, se soou como gente.
 // Ainda não calibrado com notas humanas: use para comparar versões entre si, não como verdade absoluta.
 import "../_gasto";
+import { Agent, setGlobalDispatcher } from "undici";
 import { z } from "zod";
 import { chatJsonVia } from "../../lib/llm/openaiCompat";
 import { featherless } from "../../lib/llm/featherless";
 import { openrouter } from "../../lib/llm/openrouter";
 import { kit, problema } from "./casos";
 import type { Conversa } from "./simulacao";
+import { repetirRespostaIncompleta } from "./tentativas";
 
 /**
  * Juiz e candidato rodam na Featherless por padrão (assinatura, sem custo por token); PLACAR_PROVEDOR=openrouter
@@ -22,6 +24,24 @@ const featherlessDoPlacar = {
 export const PROVEDOR_PLACAR = process.env.PLACAR_PROVEDOR === "openrouter" ? openrouter : featherlessDoPlacar;
 export const MODELO_JUIZ =
   process.env.PLACAR_MODELO_JUIZ || (PROVEDOR_PLACAR === openrouter ? "anthropic/claude-sonnet-5.5" : "moonshotai/Kimi-K2.6");
+
+/**
+ * Folga do juiz: tempo de cada tentativa (padrão 15 min; PLACAR_TEMPO_JUIZ_MS) e tokens de saída (padrão 24 mil;
+ * PLACAR_TOKENS_JUIZ). O Kimi-K2.6 raciocina antes do JSON, a uns 35 tokens/s na Featherless: julgar uma entrevista
+ * levou 306 s e 11.279 tokens (17/11), muito além dos 90 s por tentativa do cliente e perto do teto antigo de 12 mil,
+ * em que a resposta sairia cortada. Cortar e repetir só refazia o mesmo trabalho. Modelo, rubrica e temperatura não mudam.
+ */
+export const TEMPO_JUIZ_MS = Number(process.env.PLACAR_TEMPO_JUIZ_MS) || 900_000;
+export const TOKENS_JUIZ = Number(process.env.PLACAR_TOKENS_JUIZ) || 24_000;
+
+/**
+ * O fetch do Node corta uma resposta parada por 300 s (bodyTimeout do undici, erro "terminated"; o de cabeçalhos também é
+ * de 300 s). A Featherless manda os cabeçalhos logo e segura o corpo até o juiz terminar (247 s numa avaliação medida em
+ * 17/11): toda avaliação acima de 5 min caía como erro de rede e era refeita do zero. Só neste processo de medição os
+ * dois limites acompanham o tempo do juiz. As chamadas do Totti não mudam: os prazos delas (8 s, 15 s, 90 s) cortam
+ * antes, pelo AbortController do cliente.
+ */
+setGlobalDispatcher(new Agent({ headersTimeout: TEMPO_JUIZ_MS, bodyTimeout: TEMPO_JUIZ_MS }));
 
 export const VIOLACOES = [
   "validou",
@@ -93,8 +113,10 @@ function transcrever(c: Conversa): string {
     .join("\n");
 }
 
+const avisarJuiz = (tentativa: number) => console.warn(`[placar] resposta sem mensagem para o juiz; repetindo (${tentativa}/2)`);
+
 export async function julgarConversa(c: Conversa): Promise<NotaConversa> {
-  const r = await chatJsonVia(PROVEDOR_PLACAR, {
+  const r = await repetirRespostaIncompleta(() => chatJsonVia(PROVEDOR_PLACAR, {
     model: MODELO_JUIZ,
     system: RUBRICA,
     user: `Avalie esta entrevista simulada. Dê uma nota para CADA fala do Totti (use o número entre colchetes em "n"; não avalie as falas do candidato).
@@ -104,9 +126,10 @@ ${transcrever(c)}
 
 Responda só com JSON: {"falas":[{"n":2,"escuta":4,"pertinencia":4,"naturalidade":3,"concisao":5,"violacoes":[],"comentario":"..."}],"geral":{"pareceu_pessoa":3,"conduziu_bem":3,"inteligencia":3,"resumo":"...","piores_momentos":[{"n":4,"problema":"...","fala_melhor":"..."}]}}`,
     schema: EsquemaConversa,
-    maxTokens: 12000,
+    maxTokens: TOKENS_JUIZ,
     temperature: 0,
-  });
+    tempoPorTentativaMs: TEMPO_JUIZ_MS,
+  }), avisarJuiz);
   return r.data;
 }
 
@@ -117,7 +140,7 @@ export async function julgarFalas(itens: FalaAvulsa[]): Promise<NotaFala[]> {
   const lista = itens
     .map((i) => `[${i.n}] CONTEXTO: ${i.contexto}\n    CANDIDATO: ${i.candidato}\n    TOTTI: ${i.totti || "(ficou quieto)"}`)
     .join("\n\n");
-  const r = await chatJsonVia(PROVEDOR_PLACAR, {
+  const r = await repetirRespostaIncompleta(() => chatJsonVia(PROVEDOR_PLACAR, {
     model: MODELO_JUIZ,
     system: RUBRICA,
     user: `Cada item abaixo é um momento isolado de uma entrevista. Dê uma nota para a fala do Totti em CADA item (use o número entre colchetes em "n").
@@ -126,8 +149,9 @@ ${lista}
 
 Responda só com JSON: {"falas":[{"n":1,"escuta":4,"pertinencia":4,"naturalidade":3,"concisao":5,"violacoes":[],"comentario":"..."}]}`,
     schema: EsquemaCasos,
-    maxTokens: 12000,
+    maxTokens: TOKENS_JUIZ,
     temperature: 0,
-  });
+    tempoPorTentativaMs: TEMPO_JUIZ_MS,
+  }), avisarJuiz);
   return r.data.falas;
 }

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* A letra de mão do Excalidraw (só o recorte latino), para a ilustração do quadro na landing. */
+@font-face {
+  font-family: "Excalifont Landing";
+  src: url("/fonts/excalifont-latin.woff2") format("woff2");
+  font-display: swap;
+}
+
 /*
  * Sistema de design do Totti ("Um agente que se vê trabalhando").
  * Duas tintas, zero cor: dois chãos (papel e noite), uma tinta e seus cinzas quentes.
