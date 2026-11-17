@@ -133,6 +133,7 @@ function markdown(p: Placar): string {
   const linhas = [
     `# Placar do Totti no quadro: ${p.rotulo}`,
     "",
+    ...(!comparavel(p) ? ["**Resultado incompleto ou com falhas de provedor: não usar para comparar versões.**", ""] : []),
     `${p.em} · versão ${p.versaoTotti} · conversa ${p.modelos.conversa} · análise ${p.modelos.analise} · juiz ${p.modelos.juiz} · candidato ${p.modelos.candidato}`,
     "",
     "| Medida | Valor |",
