@@ -8,6 +8,7 @@
 //   npm run placar:quadro -- --rotulo atual
 //   npm run placar:quadro -- --rotulo v2 --personas senior_claro,junior_nervoso --so conversas
 //   npm run placar:quadro -- --rejulgar test-results/placar-quadro/A.json   (só o juiz, sobre as falas salvas)
+//   npm run placar:quadro -- --completar test-results/placar-quadro/A.json  (só o que o juiz não avaliou; mantém as notas)
 //   npm run placar:quadro -- --comparar test-results/placar-quadro/A.json test-results/placar-quadro/B.json
 import "../_gasto";
 import fs from "node:fs";
@@ -17,8 +18,11 @@ import { perguntar } from "../../lib/agente/perguntar";
 import { CASOS_FALA, conversa, estado, GRAFO, kit, pergunta, problema, REQUISITOS_NO_QUADRO } from "./casos";
 import { julgarConversa, julgarFalas, MODELO_JUIZ, type NotaConversa, type NotaFala } from "./juiz";
 import { MODELO_CANDIDATO, PERSONAS, simular, type Conversa } from "./simulacao";
+import { comparavel, diferencasDeBase } from "./comparabilidade";
+import { paraJulgar } from "./completar";
 
 const PASTA = path.join("test-results", "placar-quadro");
+const CASOS_POR_LOTE_DO_JUIZ = 6;
 
 type ResultadoCaso = { nome: string; candidato: string; totti: string; responder: boolean; ms: number; falhas: string[]; nota?: NotaFala };
 type ResultadoConversa = Conversa & { juiz?: NotaConversa; erroJuiz?: string };
@@ -37,6 +41,8 @@ type Percentis = { n: number; p50: number; p95: number; max: number };
 
 type Placar = {
   rotulo: string;
+  /** Placares salvos de que este veio, quando completado pelo juiz (--completar), do mais antigo ao mais novo. */
+  origens?: string[];
   em: string;
   versaoTotti: string;
   modelos: { conversa: string; analise: string; juiz: string; candidato: string };
@@ -132,6 +138,7 @@ function markdown(p: Placar): string {
   const linhas = [
     `# Placar do Totti no quadro: ${p.rotulo}`,
     "",
+    ...(!comparavel(p) ? ["**Resultado incompleto (faltam casos, conversas ou notas do juiz): não usar para comparar versões.**", ""] : []),
     `${p.em} · versão ${p.versaoTotti} · conversa ${p.modelos.conversa} · análise ${p.modelos.analise} · juiz ${p.modelos.juiz} · candidato ${p.modelos.candidato}`,
     "",
     "| Medida | Valor |",
@@ -143,7 +150,7 @@ function markdown(p: Placar): string {
     `| Violações | ${Object.entries(r.violacoes).map(([k, v]) => `${k}: ${v}`).join(", ") || "nenhuma"} |`,
     `| /perguntar p50 / p95 / máx | ${r.latencia.perguntar.p50} / ${r.latencia.perguntar.p95} / ${r.latencia.perguntar.max} ms (n=${r.latencia.perguntar.n}) |`,
     `| Análise p50 / p95 / máx | ${r.latencia.analise.p50} / ${r.latencia.analise.p95} / ${r.latencia.analise.max} ms (n=${r.latencia.analise.n}) |`,
-    `| Falhas de provedor | ${r.falhasDeProvedor} |`,
+    `| Falhas do Totti (prazo ou provedor) | ${r.falhasDeProvedor} |`,
     "",
     "## Casos fixos",
     "",
@@ -180,6 +187,13 @@ function markdown(p: Placar): string {
 // ------------------------------------------------------------------ comparar
 
 function comparar(a: Placar, b: Placar) {
+  for (const p of [a, b]) {
+    if (!p.resumo || !p.casos || !p.conversas || !comparavel(p)) {
+      throw new Error(`Comparação recusada: ${p.rotulo} está incompleto (faltam casos, conversas ou notas do juiz).`);
+    }
+  }
+  const diferencas = diferencasDeBase(a, b);
+  if (diferencas.length) throw new Error(`Comparação recusada: ${diferencas.join("; ")}.`);
   const linha = (nome: string, va: number | string, vb: number | string, melhorMaior = true) => {
     const na = Number(va);
     const nb = Number(vb);
@@ -197,7 +211,7 @@ function comparar(a: Placar, b: Placar) {
   linha("/perguntar p50 (ms)", ra.latencia.perguntar.p50, rb.latencia.perguntar.p50, false);
   linha("/perguntar p95 (ms)", ra.latencia.perguntar.p95, rb.latencia.perguntar.p95, false);
   linha("análise p50 (ms)", ra.latencia.analise.p50, rb.latencia.analise.p50, false);
-  linha("falhas de provedor", ra.falhasDeProvedor, rb.falhasDeProvedor, false);
+  linha("falhas do Totti", ra.falhasDeProvedor, rb.falhasDeProvedor, false);
 }
 
 // ------------------------------------------------------------------ main
@@ -208,43 +222,66 @@ async function main() {
     const [a, b] = process.argv.slice(comparacao + 1, comparacao + 3).map((f) => JSON.parse(fs.readFileSync(f, "utf8")) as Placar);
     return comparar(a, b);
   }
-  const rejulgar = arg("rejulgar");
-  const salvo = rejulgar ? (JSON.parse(fs.readFileSync(rejulgar, "utf8")) as Placar) : null;
-  const rotulo = arg("rotulo") ?? (salvo ? `${salvo.rotulo}-rejulgado` : "sem-rotulo");
+  const completar = arg("completar");
+  const origem = arg("rejulgar") ?? completar;
+  const salvo = origem ? (JSON.parse(fs.readFileSync(origem, "utf8")) as Placar & { status?: string }) : null;
+  if (salvo?.status === "incompleto") {
+    throw new Error(`${origem} é o progresso de uma simulação interrompida: faltam conversas, e julgá-lo não produz um placar completo.`);
+  }
+  if (completar && salvo?.modelos?.juiz !== MODELO_JUIZ) {
+    throw new Error(`${completar} foi julgado por ${salvo?.modelos?.juiz}: completar com ${MODELO_JUIZ} misturaria juízes.`);
+  }
+  const rotulo = arg("rotulo") ?? (salvo ? (completar ? salvo.rotulo : `${salvo.rotulo}-rejulgado`) : "sem-rotulo");
+  const doSalvo = salvo ? paraJulgar(salvo.casos, salvo.conversas, !!completar) : null;
   const so = arg("so");
   const ids = arg("personas")?.split(",");
   const personas = PERSONAS.filter((p) => !ids || ids.includes(p.id));
   const llm = criarClientePrincipal();
 
-  let casos: ResultadoCaso[] = salvo ? salvo.casos.map(({ nota: _n, ...c }) => c) : [];
+  let casos: ResultadoCaso[] = doSalvo?.casos ?? [];
   if (!salvo && so !== "conversas") {
     console.log("\n== Casos fixos ==");
     casos = await rodarCasos(llm);
   }
-  const conversas: ResultadoConversa[] = salvo ? salvo.conversas.map(({ juiz: _j, erroJuiz: _e, ...c }) => c) : [];
+  const conversas: ResultadoConversa[] = doSalvo?.conversas ?? [];
+  let caminhoParcial: string | undefined;
   if (!salvo && so !== "casos") {
+    fs.mkdirSync(PASTA, { recursive: true });
+    const parcial = path.join(PASTA, `${new Date().toISOString().replace(/[:.]/g, "-")}-${rotulo}-incompleto.json`);
+    caminhoParcial = parcial;
+    const guardarParcial = (emAndamento: Conversa) => fs.writeFileSync(parcial, JSON.stringify({ status: "incompleto", rotulo, casos, conversas, emAndamento }, null, 2));
     for (const p of personas) {
       console.log(`\n== Conversa: ${p.id} ==`);
-      conversas.push(await simular(llm, p, console.log));
+      guardarParcial({ persona: p.id, turnos: [] });
+      try {
+        conversas.push(await simular(llm, p, console.log, guardarParcial));
+      } catch (erro) {
+        console.error(`Medição incompleta; progresso preservado em ${parcial}`);
+        throw erro;
+      }
     }
+    fs.writeFileSync(parcial, JSON.stringify({ status: "incompleto", rotulo, casos, conversas }, null, 2));
   }
 
+  // Uma avaliação por vez: duas do Kimi-K2.6 ao mesmo tempo na mesma conta caíam em série com erro de rede (17/11).
   console.log(`\n== Juiz (${MODELO_JUIZ}) ==`);
-  const juizes: Promise<void>[] = [];
-  if (casos.length) {
-    juizes.push(
-      julgarFalas(casos.map((c, i) => ({ n: i + 1, contexto: contextoDoCaso(c.nome), candidato: c.candidato, totti: c.totti })))
-        .then((notas) => notas.forEach((nota) => { if (casos[nota.n - 1]) casos[nota.n - 1].nota = nota; }))
-        .catch((e) => console.warn(`juiz dos casos falhou: ${e instanceof Error ? e.message : e}`)),
-    );
+  // Casos em lotes: cada item já é um momento isolado, e uma geração menor do juiz cai menos (os 18 de uma vez falharam
+  // três vezes seguidas sem mensagem em 17/11). Só entra a nota de um caso que foi pedido naquele lote.
+  const casosSemNota = casos.flatMap((c, i) => (c.nota ? [] : [{ c, n: i + 1 }]));
+  for (let i = 0; i < casosSemNota.length; i += CASOS_POR_LOTE_DO_JUIZ) {
+    const lote = casosSemNota.slice(i, i + CASOS_POR_LOTE_DO_JUIZ);
+    const pedidos = new Set(lote.map(({ n }) => n));
+    await julgarFalas(lote.map(({ c, n }) => ({ n, contexto: contextoDoCaso(c.nome), candidato: c.candidato, totti: c.totti })))
+      .then((notas) => notas.forEach((nota) => { if (pedidos.has(nota.n)) casos[nota.n - 1].nota = nota; }))
+      .catch((e) => console.warn(`juiz dos casos ${[...pedidos].join(", ")} falhou: ${e instanceof Error ? e.message : e}`));
   }
-  for (const c of conversas) {
-    juizes.push(julgarConversa(c).then((j) => { c.juiz = j; }).catch((e) => { c.erroJuiz = e instanceof Error ? e.message.slice(0, 200) : String(e); }));
+  for (const c of conversas.filter((x) => !x.juiz)) {
+    await julgarConversa(c).then((j) => { c.juiz = j; }).catch((e) => { c.erroJuiz = e instanceof Error ? e.message.slice(0, 200) : String(e); });
   }
-  await Promise.all(juizes);
 
   const placar: Placar = {
     rotulo,
+    ...(completar ? { origens: [...(salvo?.origens ?? []), completar] } : {}),
     em: new Date().toISOString(),
     versaoTotti: salvo?.versaoTotti ?? (process.env.TOTTI_QUADRO || "v1"),
     modelos: salvo ? { ...salvo.modelos, juiz: MODELO_JUIZ } : {
@@ -264,6 +301,10 @@ async function main() {
   const base = path.join(PASTA, `${placar.em.slice(0, 16).replace(/[:T]/g, "-")}-${rotulo}`);
   fs.writeFileSync(`${base}.json`, JSON.stringify(placar, null, 2));
   fs.writeFileSync(`${base}.md`, markdown(placar));
+  if (!comparavel(placar)) {
+    console.error("Placar incompleto (faltam casos, conversas ou notas do juiz); não use como comparação válida.");
+    process.exitCode = 1;
+  } else if (caminhoParcial) fs.unlinkSync(caminhoParcial);
   console.log(`\n${markdown(placar).split("\n## ")[0]}`);
   console.log(`\nSalvo em ${base}.json e ${base}.md`);
 }
