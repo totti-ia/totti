@@ -17,6 +17,7 @@ import { perguntar } from "../../lib/agente/perguntar";
 import { CASOS_FALA, conversa, estado, GRAFO, kit, pergunta, problema, REQUISITOS_NO_QUADRO } from "./casos";
 import { julgarConversa, julgarFalas, MODELO_JUIZ, type NotaConversa, type NotaFala } from "./juiz";
 import { MODELO_CANDIDATO, PERSONAS, simular, type Conversa } from "./simulacao";
+import { comparavel } from "./comparabilidade";
 
 const PASTA = path.join("test-results", "placar-quadro");
 
@@ -180,6 +181,11 @@ function markdown(p: Placar): string {
 // ------------------------------------------------------------------ comparar
 
 function comparar(a: Placar, b: Placar) {
+  for (const p of [a, b]) {
+    if (!p.resumo || !p.casos || !p.conversas || !comparavel(p)) {
+      throw new Error("Comparação recusada: placar incompleto ou com falhas de provedor.");
+    }
+  }
   const linha = (nome: string, va: number | string, vb: number | string, melhorMaior = true) => {
     const na = Number(va);
     const nb = Number(vb);
@@ -222,11 +228,23 @@ async function main() {
     casos = await rodarCasos(llm);
   }
   const conversas: ResultadoConversa[] = salvo ? salvo.conversas.map(({ juiz: _j, erroJuiz: _e, ...c }) => c) : [];
+  let caminhoParcial: string | undefined;
   if (!salvo && so !== "casos") {
+    fs.mkdirSync(PASTA, { recursive: true });
+    const parcial = path.join(PASTA, `${new Date().toISOString().replace(/[:.]/g, "-")}-${rotulo}-incompleto.json`);
+    caminhoParcial = parcial;
+    const guardarParcial = (emAndamento: Conversa) => fs.writeFileSync(parcial, JSON.stringify({ status: "incompleto", rotulo, casos, conversas, emAndamento }, null, 2));
     for (const p of personas) {
       console.log(`\n== Conversa: ${p.id} ==`);
-      conversas.push(await simular(llm, p, console.log));
+      guardarParcial({ persona: p.id, turnos: [] });
+      try {
+        conversas.push(await simular(llm, p, console.log, guardarParcial));
+      } catch (erro) {
+        console.error(`Medição incompleta; progresso preservado em ${parcial}`);
+        throw erro;
+      }
     }
+    fs.writeFileSync(parcial, JSON.stringify({ status: "incompleto", rotulo, casos, conversas }, null, 2));
   }
 
   console.log(`\n== Juiz (${MODELO_JUIZ}) ==`);
@@ -264,6 +282,11 @@ async function main() {
   const base = path.join(PASTA, `${placar.em.slice(0, 16).replace(/[:T]/g, "-")}-${rotulo}`);
   fs.writeFileSync(`${base}.json`, JSON.stringify(placar, null, 2));
   fs.writeFileSync(`${base}.md`, markdown(placar));
+  const juizIncompleto = casos.some((c) => !c.nota) || conversas.some((c) => !c.juiz) || placar.resumo.falhasDeProvedor > 0;
+  if (juizIncompleto) {
+    console.error("Placar incompleto ou com falhas de provedor; não use como comparação válida.");
+    process.exitCode = 1;
+  } else if (caminhoParcial) fs.unlinkSync(caminhoParcial);
   console.log(`\n${markdown(placar).split("\n## ")[0]}`);
   console.log(`\nSalvo em ${base}.json e ${base}.md`);
 }

@@ -14,6 +14,7 @@ import { chatJsonVia } from "../../lib/llm/openaiCompat";
 import { openrouter } from "../../lib/llm/openrouter";
 import { kit, problema } from "./casos";
 import { PROVEDOR_PLACAR } from "./juiz";
+import { repetirRespostaIncompleta } from "./tentativas";
 
 /** Quem faz o candidato: de outra família que o Totti e o juiz, para não se espelharem. */
 export const MODELO_CANDIDATO =
@@ -157,7 +158,7 @@ async function falaDoCandidato(p: Persona, i: number, desenho: string, turnos: T
     .filter((t) => !t.quieto)
     .map((t) => `${t.fonte === "candidato" ? "Você" : "Entrevistador"}: ${t.texto}`)
     .join("\n");
-  const r = await chatJsonVia(PROVEDOR_PLACAR, {
+  const r = await repetirRespostaIncompleta(() => chatJsonVia(PROVEDOR_PLACAR, {
     model: MODELO_CANDIDATO,
     system: `Você faz o papel de um CANDIDATO numa entrevista de system design por voz, em português do Brasil. Não é assistente: é a pessoa sendo entrevistada.
 Quem você é: ${p.descricao}
@@ -176,7 +177,7 @@ ${perguntaNoAr ? `PERGUNTA DO ENTREVISTADOR NO AR (a sua fala responde a ela): $
     schema: EsquemaFala,
     maxTokens: 400,
     temperature: 0.8,
-  });
+  }), (tentativa) => console.warn(`[placar] resposta incompleta do candidato; repetindo (${tentativa}/2)`));
   return r.data.fala.trim();
 }
 
@@ -195,7 +196,7 @@ function pedidoDeAnalise(estado: EstadoSessao, fase: Fase, grafo: string, desenh
 }
 
 /** Roda uma entrevista simulada inteira e devolve os turnos (com o tempo de cada chamada do Totti). */
-export async function simular(llm: LlmCliente, p: Persona, log: (linha: string) => void = () => {}): Promise<Conversa> {
+export async function simular(llm: LlmCliente, p: Persona, log: (linha: string) => void = () => {}, progresso: (conversa: Conversa) => void = () => {}): Promise<Conversa> {
   const deps = { llm, kit, problema, log: () => {} };
   const t0 = Date.now();
   let agora = t0;
@@ -214,6 +215,7 @@ export async function simular(llm: LlmCliente, p: Persona, log: (linha: string) 
 
     const fala = await falaDoCandidato(p, i, grafo, turnos, perguntaNoAr);
     turnos.push({ n: ++n, fase, fonte: "candidato", texto: fala });
+    progresso({ persona: p.id, turnos: [...turnos] });
     log(`  [${fase}] candidato: ${fala}`);
 
     const inicio = Date.now();
@@ -249,6 +251,7 @@ export async function simular(llm: LlmCliente, p: Persona, log: (linha: string) 
       }
     }
     desenhoAnterior = grafo;
+    progresso({ persona: p.id, turnos: [...turnos] });
   }
   return { persona: p.id, turnos };
 }
