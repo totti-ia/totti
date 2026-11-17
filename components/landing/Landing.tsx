@@ -1,18 +1,16 @@
 "use client";
 
-// Boas-vindas da recrutadora: a primeira tela antes do painel de vagas.
-// "Cole a vaga. O Totti entrevista. Você decide." Um palco escuro mostra o agente trabalhando de verdade
-// (digita, lê uma linha, pergunta, fecha uma nota); abaixo, o caminho de uma vaga e o rastro do que o
-// Totti faz quando você não está olhando. Todo movimento corresponde a um evento (ver globals.css).
-// Ao abrir, grava um cookie: a partir daí a raiz do site vai direto para /vagas (ver app/page.tsx).
-import { useEffect, useState } from "react";
-import Link from "next/link";
+// Landing do Totti: o que a raiz do site mostra para quem chega sem `?config=` (ver app/page.tsx).
+// Hierarquia: o que é (herói) → como funciona, da vaga ao feedback do candidato → por que → pedir demonstração.
+// Todo CTA abre o pop-up de demonstração (PedirDemonstracao); a landing não leva ao painel, que tem dados de exemplo.
+// As cenas no palco escuro são ilustração do produto, não dados ao vivo.
+import { useCallback, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { COOKIE_ONBOARDING } from "@/lib/vagas/onboarding";
 import Perola, { BarrasDeVoz } from "@/components/totti/Perola";
 import Revelar from "@/components/totti/Revelar";
 import TituloRevelado from "@/components/totti/TituloRevelado";
-import Marca from "./Marca";
+import Marca from "@/components/vagas/Marca";
+import PedirDemonstracao from "./PedirDemonstracao";
 
 const FONTE: [string, "forte" | "normal" | "claro"][] = [
   ["export class LimitadorDeTaxa {", "forte"],
@@ -32,21 +30,40 @@ const LINHA = 26;
 const PERGUNTA = "E se dois pedidos chegarem no mesmo milissegundo, na virada da janela?";
 const RESPOSTA = "Aí passa o dobro… dá pra trocar por janela deslizante.";
 
+/** O caminho completo, na ordem em que acontece. `quem` diz quem age em cada passo. */
 const PASSOS = [
-  { titulo: "Vaga", texto: "Cole a descrição. O Totti lê, extrai os requisitos e diz quais decidem a vaga." },
-  { titulo: "Conversa", texto: "Por voz, ele confirma formato e nível e pergunta o que reprova direto." },
-  { titulo: "Entrevista", texto: "Live coding ou system design, com o agente lendo, desenhando e perguntando." },
-  { titulo: "Relatório", texto: "Nota por critério, com o minuto exato de cada evidência. Você decide." },
+  {
+    titulo: "Plano da vaga",
+    quem: "Recrutadora e Totti",
+    texto: "Você cola a descrição da vaga e conversa por voz com o Totti. Ele propõe formato, nível e critérios, pergunta o que reprova direto, e você aprova o plano.",
+  },
+  {
+    titulo: "Convite e agendamento",
+    quem: "Candidato",
+    texto: "Cada candidato recebe o convite por e-mail, escolhe o horário e recebe a confirmação com o link da sala.",
+  },
+  {
+    titulo: "Entrevista",
+    quem: "Totti e candidato",
+    texto: "Por voz, em live coding ou system design. O Totti acompanha o código e o desenho em tempo real e pergunta no momento certo.",
+  },
+  {
+    titulo: "Relatório",
+    quem: "Você",
+    texto: "Nota por critério da vaga, com o trecho e o minuto de cada evidência. O Totti recomenda; quem decide é você.",
+  },
+  {
+    titulo: "Feedback",
+    quem: "Candidato",
+    texto: "Quando você decide no painel, o candidato recebe o retorno por e-mail. Ninguém fica sem resposta.",
+  },
 ];
 
-const FEED = [
-  { icone: "✓", titulo: "Plano aprovado", sub: "Backend Pleno — Pagamentos · live coding, 45 min", cheio: true },
-  { icone: "→", titulo: "12 convites enviados", sub: "Agendaram 8 · lembrete sai 1h antes", cheio: false },
-  { icone: "●", titulo: "Entrevistando Marina Albuquerque", sub: "minuto 23 · fez 4 perguntas, 2 anotações", cheio: false },
-  { icone: "…", titulo: "Gerando o relatório de Caio Menezes", sub: "cruzando 18 evidências com os critérios", cheio: false },
-  { icone: "+", titulo: "Nova regra aprendida", sub: "“Sem testes no fim reprova” · veio da sua decisão de ontem", cheio: false },
+const PORQUES = [
+  { titulo: "A régua é a vaga", texto: "Os critérios saem da descrição e do que você aprovou no plano. Todo candidato é medido pelo mesmo plano." },
+  { titulo: "Cada nota tem prova", texto: "Nada de impressão solta: cada critério aponta o trecho da conversa ou do código e o minuto em que aconteceu." },
+  { titulo: "Você no controle", texto: "O Totti conduz e avalia, mas não aprova nem reprova ninguém sozinho. A decisão final fica no seu painel." },
 ];
-const QUANDOS = ["agora", "2 min", "9 min", "14 min", "ontem"];
 
 /** Um tique a cada `ms`; parado com "reduzir movimento" (mostra o quadro final, sem animar). */
 function useTique(ms: number) {
@@ -62,31 +79,61 @@ function useTique(ms: number) {
   return { t, parado };
 }
 
-export default function Onboarding() {
-  useEffect(() => {
-    document.cookie = `${COOKIE_ONBOARDING}=1; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-  }, []);
+const BOTAO_PRINCIPAL =
+  "group inline-flex h-[52px] items-center gap-2 rounded-full bg-texto px-6 text-[16px] font-semibold text-texto-claro shadow-[0_14px_40px_-16px_rgb(28_24_18/0.6)] transition-transform duration-rapida hover:-translate-y-px active:scale-[0.98]";
+
+function BotaoDemo({ onClick, children = "Agendar uma demonstração" }: { onClick: () => void; children?: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className={BOTAO_PRINCIPAL}>
+      {children}
+      <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+    </button>
+  );
+}
+
+export default function Landing() {
+  const [demo, setDemo] = useState(false);
+  const abrir = useCallback(() => setDemo(true), []);
+  const fechar = useCallback(() => setDemo(false), []);
 
   return (
     <div className="min-h-dvh bg-fundo text-texto">
       <nav className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-4 px-6 py-6">
-        <Marca href="/boas-vindas" />
+        <Marca href="/" />
         <div className="flex flex-wrap items-center gap-2">
-          <a href="#como" className="px-3.5 py-2.5 text-texto-suave transition-colors hover:text-texto">
+          <a href="#como" className="hidden px-3.5 py-2.5 text-texto-suave transition-colors hover:text-texto sm:inline">
             Como funciona
           </a>
-          <Link
-            href="/vagas"
+          <button
+            type="button"
+            onClick={abrir}
             className="rounded-full px-4 py-2.5 text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.18)] transition-colors hover:bg-superficie"
           >
-            Entrar no painel
-          </Link>
+            Agendar demonstração
+          </button>
         </div>
       </nav>
 
-      <Heroi />
-      <Passos />
-      <Rastro />
+      <Heroi onDemo={abrir} />
+      <ComoFunciona />
+      <Porques />
+
+      <section className="bg-texto px-6 py-[88px] text-texto-claro">
+        <Revelar className="mx-auto flex max-w-[1240px] flex-col items-start gap-6">
+          <h2 className="titulo-display max-w-[720px] text-[clamp(32px,4vw,52px)] leading-[1.05]">Quer ver o Totti entrevistando para uma vaga sua?</h2>
+          <p className="max-w-[560px] text-[17px] text-texto-claro/75">
+            Deixe seu contato. A gente responde por e-mail, marca uma conversa e mostra o caminho inteiro, do plano ao relatório.
+          </p>
+          <button
+            type="button"
+            onClick={abrir}
+            className="group inline-flex h-[52px] items-center gap-2 rounded-full bg-texto-claro px-6 text-[16px] font-semibold text-texto transition-transform duration-rapida hover:-translate-y-px active:scale-[0.98]"
+          >
+            Agendar uma demonstração
+            <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </Revelar>
+      </section>
 
       <footer className="border-t border-borda px-6 py-7">
         <div className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-3 text-[13.5px] text-texto-suave">
@@ -94,12 +141,14 @@ export default function Onboarding() {
           <span>A câmera do candidato nunca sai do computador dele.</span>
         </div>
       </footer>
+
+      <PedirDemonstracao aberto={demo} onFechar={fechar} />
     </div>
   );
 }
 
-/** Texto e palco lado a lado: o palco é o agente trabalhando. */
-function Heroi() {
+/** Texto e palco lado a lado: o palco ilustra o agente trabalhando numa entrevista. */
+function Heroi({ onDemo }: { onDemo: () => void }) {
   const { t, parado } = useTique(55);
   // 260 tiques ≈ 14s por volta: digita, lê, pergunta, escuta, fecha a nota.
   const c = parado ? 240 : t % 260;
@@ -115,17 +164,14 @@ function Heroi() {
   const pr = Math.max(0, Math.min(RESPOSTA.length, (c - 180) * 2));
   const prog = Math.max(0, Math.min(1, (c - 215) / 18));
   const ease = 1 - Math.pow(1 - prog, 4);
-  const seg = 754 + Math.floor(t / 18);
-  const relogio = `${String(Math.floor(seg / 60)).padStart(2, "0")}:${String(seg % 60).padStart(2, "0")}`;
-  const aoVivo = 3 + (Math.floor(t / 120) % 3);
   const falando = pq > 0 && pq < PERGUNTA.length;
 
   return (
     <section className="mx-auto grid max-w-[1240px] items-center gap-14 px-6 pt-10 pb-20 [grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr))]">
       <div className="anim-subir flex flex-col gap-6" style={{ animationDuration: ".8s" }}>
         <span className="inline-flex h-8 items-center gap-2 self-start rounded-full bg-superficie pr-3.5 pl-2.5 text-[13.5px] text-texto-suave shadow-padrao">
-          <span aria-hidden className="size-2 rounded-full bg-texto anim-pulso" />
-          {aoVivo} entrevistas acontecendo agora
+          <Perola tamanho={14} />
+          Entrevistador técnico por voz
         </span>
         <h1 className="titulo-display text-[clamp(44px,6vw,80px)] leading-[0.98]">
           <TituloRevelado texto="Cole a vaga." atraso={0.1} />
@@ -135,23 +181,17 @@ function Heroi() {
           <em className="italic text-texto [font-variation-settings:'SOFT'_100,'WONK'_1]">Você decide.</em>
         </h1>
         <p className="max-w-[520px] text-[19px] text-texto-suave">
-          Um entrevistador técnico por voz que acompanha o código e o desenho do candidato em tempo real, pergunta no momento certo e
-          entrega a nota com a evidência de cada critério.
+          O Totti monta o plano da entrevista com você, conduz a conversa por voz acompanhando o código e o desenho do candidato, e entrega a nota de
+          cada critério com a evidência.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/vagas/nova"
-            className="group inline-flex h-[52px] items-center gap-2 rounded-full bg-texto px-6 text-[16px] font-semibold text-texto-claro shadow-[0_14px_40px_-16px_rgb(28_24_18/0.6)] transition-transform duration-rapida hover:-translate-y-px active:scale-[0.98]"
-          >
-            Começar com o Totti
-            <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <Link
-            href="/vagas"
+          <BotaoDemo onClick={onDemo} />
+          <a
+            href="#como"
             className="inline-flex h-[52px] items-center rounded-full bg-superficie px-[22px] text-[16px] font-medium text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.16)] transition-colors hover:bg-superficie-2"
           >
-            Ver minhas vagas
-          </Link>
+            Ver como funciona
+          </a>
         </div>
       </div>
 
@@ -164,7 +204,7 @@ function Heroi() {
               ))}
             </span>
             <span className="font-mono text-[12.5px] text-[#f5f0e8]/70">limitador.ts · Live Coding</span>
-            <span className="font-mono text-[12.5px]">● {relogio}</span>
+            <span className="font-mono text-[12.5px] text-[#f5f0e8]/50">exemplo</span>
           </div>
 
           <div className="relative min-h-[300px] pt-[22px] pb-[26px] font-mono text-[14px]" style={{ lineHeight: `${LINHA}px` }}>
@@ -211,7 +251,7 @@ function Heroi() {
               <div className="flex items-start gap-2.5">
                 <span className="mt-[7px] size-2 shrink-0 rounded-full bg-[#f5f0e8]" />
                 <span className="text-[15px] text-[#d9d1c4]">
-                  <b className="text-[#f5f0e8]">Marina</b> {RESPOSTA.slice(0, pr)}
+                  <b className="text-[#f5f0e8]">Candidata</b> {RESPOSTA.slice(0, pr)}
                 </span>
               </div>
             )}
@@ -233,60 +273,61 @@ function Heroi() {
   );
 }
 
-/** O caminho de uma vaga: títulos grandes à esquerda (o ativo se acende e a linha enche), a cena do passo à direita. */
-function Passos() {
+/** Como funciona: os cinco passos sempre visíveis à esquerda (o ativo se acende), a cena do passo à direita. */
+function ComoFunciona() {
   const [ativo, setAtivo] = useState(0);
   const [parado, setParado] = useState(false);
   useEffect(() => {
     const reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setParado(reduz);
     if (reduz) return;
-    const id = setInterval(() => setAtivo((a) => (a + 1) % PASSOS.length), 5200);
+    const id = setInterval(() => setAtivo((a) => (a + 1) % PASSOS.length), 6500);
     return () => clearInterval(id);
   }, [ativo]);
 
   return (
     <section id="como" className="scroll-mt-4 bg-superficie px-6 py-[96px]">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-14">
-        <Revelar className="flex max-w-[640px] flex-col gap-2.5">
+        <Revelar className="flex max-w-[680px] flex-col gap-2.5">
           <span className="font-mono text-[13px] text-texto-suave">como funciona</span>
-          <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">Da descrição da vaga ao relatório, sem você montar nada.</h2>
+          <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">Da vaga ao retorno do candidato, em cinco passos.</h2>
         </Revelar>
 
-        <Revelar atraso={0.08} className="grid items-stretch gap-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))]">
+        <Revelar atraso={0.08} className="grid items-start gap-10 [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))]">
           <ol className="flex flex-col">
             {PASSOS.map((p, i) => {
               const on = i === ativo;
               return (
                 <li key={p.titulo} className="relative">
-                  {/* a linha que enche enquanto o passo está ativo */}
                   <span aria-hidden className="absolute top-0 bottom-0 left-0 w-px bg-borda" />
+                  {/* a linha que enche enquanto o passo está ativo */}
                   <span
                     aria-hidden
                     className="absolute top-0 bottom-0 left-0 w-[2px] origin-top bg-texto"
                     style={{
-                      transform: `scaleY(${on ? 1 : i < ativo ? 1 : 0})`,
+                      transform: `scaleY(${on || i < ativo ? 1 : 0})`,
                       opacity: on ? 1 : i < ativo ? 0.25 : 0,
-                      transition: on && !parado ? "transform 5.2s linear, opacity .3s" : "opacity .5s",
+                      transition: on && !parado ? "transform 6.5s linear, opacity .3s" : "opacity .5s",
                     }}
                   />
                   <button
                     type="button"
                     onClick={() => setAtivo(i)}
-                    aria-pressed={on}
-                    className="group flex w-full flex-col gap-2 py-5 pl-7 text-left"
+                    aria-current={on ? "step" : undefined}
+                    className="group flex w-full flex-col gap-1.5 py-4 pl-7 text-left"
                   >
-                    <span
-                      className="titulo-display text-[clamp(28px,3.4vw,40px)] leading-[1.05] transition-[color,transform] duration-[480ms] ease-saida group-hover:translate-x-1"
-                      style={{ color: on ? "var(--texto)" : "var(--pedra)", transform: on ? "translateX(4px)" : undefined }}
-                    >
-                      {p.titulo}
+                    <span className="flex items-baseline gap-3">
+                      <span className="font-mono text-[13px] text-texto-suave">{String(i + 1).padStart(2, "0")}</span>
+                      <span
+                        className="titulo-display text-[clamp(24px,2.8vw,32px)] leading-[1.1] transition-colors duration-[480ms]"
+                        style={{ color: on ? "var(--texto)" : "var(--pedra)" }}
+                      >
+                        {p.titulo}
+                      </span>
                     </span>
-                    <span
-                      className="grid transition-[grid-template-rows,opacity] duration-[480ms] ease-saida"
-                      style={{ gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0 }}
-                    >
-                      <span className="overflow-hidden text-[16px] text-texto-suave">{p.texto}</span>
+                    <span className="pl-[34px] font-mono text-[12.5px] text-texto-suave">{p.quem}</span>
+                    <span className="pl-[34px] text-[16px] transition-colors duration-[480ms]" style={{ color: on ? "var(--texto)" : "var(--texto-suave)" }}>
+                      {p.texto}
                     </span>
                   </button>
                 </li>
@@ -294,7 +335,7 @@ function Passos() {
             })}
           </ol>
 
-          <div className="relative min-h-[320px] overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8]" aria-hidden>
+          <div className="relative min-h-[360px] overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8] lg:sticky lg:top-8" aria-hidden>
             <CenaDoPasso key={ativo} passo={ativo} />
           </div>
         </Revelar>
@@ -303,43 +344,68 @@ function Passos() {
   );
 }
 
-/** A cena de cada passo, no palco escuro. Tudo entra em cascata ao trocar de passo. */
+/** Um cartão de e-mail no palco escuro (convite e feedback). */
+function CartaoEmail({ de, assunto, children, estilo }: { de: string; assunto: string; children: React.ReactNode; estilo: React.CSSProperties }) {
+  return (
+    <div className="w-full max-w-[400px] rounded-[18px] bg-[#f5f0e8] p-5 text-[#1c1812]" style={estilo}>
+      <span className="font-mono text-[12px] text-[#6b675f]">de: {de}</span>
+      <p className="mt-1 text-[16px] font-semibold">{assunto}</p>
+      <div className="mt-3 text-[14.5px] leading-[1.5] text-[#3a352d]">{children}</div>
+    </div>
+  );
+}
+
+/** A cena de cada passo. Tudo entra em cascata ao trocar de passo. */
 function CenaDoPasso({ passo }: { passo: number }) {
-  const linha = "h-2.5 rounded-full bg-[#f5f0e8]/15";
   const entra = (i: number) => ({ animation: `subir .6s var(--curva-saida) ${0.12 * i}s both` });
+
   if (passo === 0)
     return (
-      <div className="flex h-full flex-col justify-center gap-4 p-9">
-        {[88, 100, 72, 94, 60].map((w, i) => (
-          <span key={i} className={linha} style={{ width: `${w}%`, ...entra(i) }} />
-        ))}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {["Node + TypeScript", "Concorrência", "PostgreSQL", "Testes"].map((c, i) => (
-            <span key={c} className="rounded-full bg-[#f5f0e8] px-3 py-1 text-[13px] font-semibold text-[#1c1812]" style={entra(i + 5)}>
+      <div className="flex h-full min-h-[360px] flex-col justify-center gap-5 p-9">
+        <div className="flex items-center gap-4" style={entra(0)}>
+          <Perola estado="falando" tamanho={56} brilho />
+          <p className="text-[16px] leading-[1.45]">“Vou propor live coding de 45 minutos, nível pleno. O que reprova direto?”</p>
+        </div>
+        <p className="pl-[72px] text-[15px] text-[#d9d1c4]" style={entra(1)}>
+          Se a pessoa não escrever nenhum teste, nem continuo.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2" style={entra(2)}>
+          {["Node + TypeScript", "Concorrência", "PostgreSQL", "Testes · eliminatório"].map((c) => (
+            <span key={c} className="rounded-full bg-[#f5f0e8] px-3 py-1 text-[13px] font-semibold text-[#1c1812]">
               {c}
             </span>
           ))}
         </div>
-        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(9)}>
-          › 7 requisitos extraídos, 3 decidem a vaga
+        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(3)}>
+          › plano aprovado: live coding · 45 min · 4 critérios
         </span>
       </div>
     );
+
   if (passo === 1)
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-5 p-9">
-        <Perola estado="falando" tamanho={84} brilho />
-        <p className="max-w-[340px] text-center text-[17px] leading-[1.45]" style={entra(1)}>
-          “Vou propor live coding de 45 minutos. O que reprova direto?”
-        </p>
-        <p className="max-w-[340px] text-center text-[15px] text-[#d9d1c4]" style={entra(3)}>
-          Se a pessoa não escrever nenhum teste, nem continuo.
-        </p>
+      <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-4 p-9">
+        <CartaoEmail de="Time de Recrutamento" assunto="Sua entrevista técnica: escolha o horário" estilo={entra(0)}>
+          <div className="flex flex-wrap gap-2">
+            {["seg 10:00", "seg 14:30", "ter 09:00", "ter 16:00"].map((h, i) => (
+              <span
+                key={h}
+                className={`rounded-full px-3 py-1 font-mono text-[12.5px] ${i === 2 ? "bg-[#1c1812] text-[#f5f0e8]" : "shadow-[inset_0_0_0_1px_rgb(28_24_18/0.2)]"}`}
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+        </CartaoEmail>
+        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(2)}>
+          › horário confirmado, link da sala no e-mail
+        </span>
       </div>
     );
+
   if (passo === 2)
     return (
-      <div className="flex h-full flex-col justify-center gap-6 py-9">
+      <div className="flex h-full min-h-[360px] flex-col justify-center gap-6 py-9">
         {/* a faixa fica na própria linha (e não num `top` fixo), então acompanha o código em qualquer altura do palco */}
         <div className="font-mono text-[14px] leading-[26px]">
           {["permitir(cliente) {", "  const j = this.janelas.get(cliente);", "  if (agora - j.inicio >= this.ms) {", "    j.pedidos++;", "  }", "}"].map((l, i) => {
@@ -362,8 +428,21 @@ function CenaDoPasso({ passo }: { passo: number }) {
         </div>
       </div>
     );
+
+  if (passo === 4)
+    return (
+      <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-4 p-9">
+        <CartaoEmail de="Time de Recrutamento" assunto="Retorno sobre sua entrevista" estilo={entra(0)}>
+          Oi, Marina! Obrigado por participar da entrevista para Backend Pleno. Queremos seguir com você para a próxima etapa.
+        </CartaoEmail>
+        <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(2)}>
+          › decisão tomada no painel, retorno enviado
+        </span>
+      </div>
+    );
+
   return (
-    <div className="flex h-full flex-col justify-center gap-5 p-9">
+    <div className="flex h-full min-h-[360px] flex-col justify-center gap-5 p-9">
       <span className="font-mono text-[12.5px] text-[#f5f0e8]/70" style={entra(0)}>
         modelagem de dados · min 12:40
       </span>
@@ -388,38 +467,19 @@ function CenaDoPasso({ passo }: { passo: number }) {
   );
 }
 
-/** "Enquanto você não olha": o feed do que o Totti fez, uma linha acesa por vez. */
-function Rastro() {
-  const { t, parado } = useTique(55);
-  const ativo = parado ? 2 : Math.floor(t / 40) % FEED.length;
+/** Por que o Totti: três razões, sem número inventado. */
+function Porques() {
   return (
-    <section className="mx-auto grid max-w-[1240px] items-center gap-12 px-6 py-[88px] [grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))]">
-      <Revelar className="flex flex-col gap-3.5">
-        <span className="font-mono text-[13px] text-texto-suave">enquanto você não olha</span>
-        <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">O Totti continua trabalhando — e mostra o que fez.</h2>
-        <p className="max-w-[480px] text-[17px] text-texto-suave">
-          Cada ação vira uma linha no rastro do agente. As decisões que você toma no painel viram regras que as próximas entrevistas já usam.
-        </p>
+    <section className="mx-auto flex max-w-[1240px] flex-col gap-12 px-6 py-[96px]">
+      <Revelar className="flex max-w-[640px] flex-col gap-2.5">
+        <span className="font-mono text-[13px] text-texto-suave">por que o totti</span>
+        <h2 className="titulo-display text-[clamp(32px,4vw,48px)] leading-[1.05]">Entrevista técnica com régua, prova e você no comando.</h2>
       </Revelar>
-      <Revelar como="ul" atraso={0.1} className="flex flex-col rounded-[24px] bg-superficie p-3 shadow-[0_1px_2px_rgb(28_24_18/0.06),0_24px_50px_-28px_rgb(28_24_18/0.35)]">
-        {FEED.map((f, i) => (
-          <li
-            key={f.titulo}
-            className="grid items-center gap-3 rounded-[14px] p-3 transition-colors duration-[600ms] [grid-template-columns:36px_minmax(0,1fr)_auto]"
-            style={{ background: i === ativo ? "var(--fundo)" : "var(--superficie)" }}
-          >
-            <span
-              aria-hidden
-              className="flex size-9 items-center justify-center rounded-xl font-mono text-[13px] font-medium"
-              style={{ background: f.cheio ? "var(--texto)" : i === 0 || i === 1 ? "var(--fundo)" : "var(--superficie-2)", color: f.cheio ? "var(--texto-claro)" : "var(--texto)" }}
-            >
-              {f.icone}
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium">{f.titulo}</span>
-              <span className="text-[13px] text-texto-suave">{f.sub}</span>
-            </span>
-            <span className="font-mono text-[12px] text-texto-suave">{QUANDOS[(i - ativo + FEED.length) % FEED.length]}</span>
+      <Revelar como="ul" atraso={0.08} className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))]">
+        {PORQUES.map((p) => (
+          <li key={p.titulo} className="flex flex-col gap-2.5 rounded-[24px] bg-superficie p-7 shadow-padrao">
+            <span className="titulo-display text-[26px] leading-[1.1]">{p.titulo}</span>
+            <span className="text-[16px] text-texto-suave">{p.texto}</span>
           </li>
         ))}
       </Revelar>

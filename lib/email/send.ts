@@ -9,6 +9,8 @@ type SendArgs = {
   fromDisplayName?: string;
   /** Nome do template, só pra log (sem PII). */
   templateName?: string;
+  /** Sobrepõe o EMAIL_REPLY_TO (ex.: pedido de demonstração, onde "responder" vai para quem pediu). */
+  replyTo?: string;
 };
 
 /** Subconjunto do cliente de envio usado aqui (permite injetar um fake nos testes). */
@@ -86,7 +88,7 @@ export const resendFetchClient: EmailClient = {
  * EmailDeliveryError. Logs trazem só metadados — nunca o HTML (PII).
  */
 export async function sendEmail(
-  { to, subject, template, templateName = "unknown", fromDisplayName }: SendArgs,
+  { to, subject, template, templateName = "unknown", fromDisplayName, replyTo: replyToArg }: SendArgs,
   /** Seam de teste: cliente alternativo (padrão: Resend via fetch). */
   client: EmailClient = resendFetchClient,
 ): Promise<EmailSendResult> {
@@ -94,7 +96,7 @@ export async function sendEmail(
   const address = configuredFrom.match(/<([^<>]+)>/)?.[1] ?? configuredFrom;
   // Entre aspas: a vírgula de "Ana, do time de recrutamento" é caractere especial no cabeçalho From (RFC 5322).
   const from = fromDisplayName ? `"${fromDisplayName.replace(/["\\]/g, "\\$&")}" <${address}>` : configuredFrom;
-  const replyTo = process.env.EMAIL_REPLY_TO || undefined;
+  const replyTo = replyToArg || process.env.EMAIL_REPLY_TO || undefined;
   const domain = to.split("@")[1] ?? "?";
 
   if (!process.env.RESEND_API_KEY && process.env.NODE_ENV !== "production") {
