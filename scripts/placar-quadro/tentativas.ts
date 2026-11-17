@@ -1,4 +1,7 @@
-/** Repete apenas uma resposta incompleta do candidato simulado, sem alterar chamadas do Totti ou do juiz. */
+/**
+ * Repete só a resposta sem mensagem (choices[0].message ausente) das chamadas do instrumento: candidato simulado e juiz.
+ * As chamadas do Totti não passam por aqui: as falhas dele são resultado da versão medida.
+ */
 export async function repetirRespostaIncompleta<T>(chamar: () => Promise<T>, avisar: (tentativa: number) => void = () => {}): Promise<T> {
   for (let tentativa = 1; ; tentativa++) {
     try {

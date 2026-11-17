@@ -177,7 +177,7 @@ ${perguntaNoAr ? `PERGUNTA DO ENTREVISTADOR NO AR (a sua fala responde a ela): $
     schema: EsquemaFala,
     maxTokens: 400,
     temperature: 0.8,
-  }), (tentativa) => console.warn(`[placar] resposta incompleta do candidato; repetindo (${tentativa}/2)`));
+  }), (tentativa) => console.warn(`[placar] resposta sem mensagem para o candidato; repetindo (${tentativa}/2)`));
   return r.data.fala.trim();
 }
 

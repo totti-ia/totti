@@ -17,7 +17,7 @@ import { perguntar } from "../../lib/agente/perguntar";
 import { CASOS_FALA, conversa, estado, GRAFO, kit, pergunta, problema, REQUISITOS_NO_QUADRO } from "./casos";
 import { julgarConversa, julgarFalas, MODELO_JUIZ, type NotaConversa, type NotaFala } from "./juiz";
 import { MODELO_CANDIDATO, PERSONAS, simular, type Conversa } from "./simulacao";
-import { comparavel } from "./comparabilidade";
+import { comparavel, diferencasDeBase } from "./comparabilidade";
 
 const PASTA = path.join("test-results", "placar-quadro");
 
@@ -133,7 +133,7 @@ function markdown(p: Placar): string {
   const linhas = [
     `# Placar do Totti no quadro: ${p.rotulo}`,
     "",
-    ...(!comparavel(p) ? ["**Resultado incompleto ou com falhas de provedor: não usar para comparar versões.**", ""] : []),
+    ...(!comparavel(p) ? ["**Resultado incompleto (faltam casos, conversas ou notas do juiz): não usar para comparar versões.**", ""] : []),
     `${p.em} · versão ${p.versaoTotti} · conversa ${p.modelos.conversa} · análise ${p.modelos.analise} · juiz ${p.modelos.juiz} · candidato ${p.modelos.candidato}`,
     "",
     "| Medida | Valor |",
@@ -145,7 +145,7 @@ function markdown(p: Placar): string {
     `| Violações | ${Object.entries(r.violacoes).map(([k, v]) => `${k}: ${v}`).join(", ") || "nenhuma"} |`,
     `| /perguntar p50 / p95 / máx | ${r.latencia.perguntar.p50} / ${r.latencia.perguntar.p95} / ${r.latencia.perguntar.max} ms (n=${r.latencia.perguntar.n}) |`,
     `| Análise p50 / p95 / máx | ${r.latencia.analise.p50} / ${r.latencia.analise.p95} / ${r.latencia.analise.max} ms (n=${r.latencia.analise.n}) |`,
-    `| Falhas de provedor | ${r.falhasDeProvedor} |`,
+    `| Falhas do Totti (prazo ou provedor) | ${r.falhasDeProvedor} |`,
     "",
     "## Casos fixos",
     "",
@@ -184,9 +184,11 @@ function markdown(p: Placar): string {
 function comparar(a: Placar, b: Placar) {
   for (const p of [a, b]) {
     if (!p.resumo || !p.casos || !p.conversas || !comparavel(p)) {
-      throw new Error("Comparação recusada: placar incompleto ou com falhas de provedor.");
+      throw new Error(`Comparação recusada: ${p.rotulo} está incompleto (faltam casos, conversas ou notas do juiz).`);
     }
   }
+  const diferencas = diferencasDeBase(a, b);
+  if (diferencas.length) throw new Error(`Comparação recusada: ${diferencas.join("; ")}.`);
   const linha = (nome: string, va: number | string, vb: number | string, melhorMaior = true) => {
     const na = Number(va);
     const nb = Number(vb);
@@ -204,7 +206,7 @@ function comparar(a: Placar, b: Placar) {
   linha("/perguntar p50 (ms)", ra.latencia.perguntar.p50, rb.latencia.perguntar.p50, false);
   linha("/perguntar p95 (ms)", ra.latencia.perguntar.p95, rb.latencia.perguntar.p95, false);
   linha("análise p50 (ms)", ra.latencia.analise.p50, rb.latencia.analise.p50, false);
-  linha("falhas de provedor", ra.falhasDeProvedor, rb.falhasDeProvedor, false);
+  linha("falhas do Totti", ra.falhasDeProvedor, rb.falhasDeProvedor, false);
 }
 
 // ------------------------------------------------------------------ main
@@ -216,7 +218,10 @@ async function main() {
     return comparar(a, b);
   }
   const rejulgar = arg("rejulgar");
-  const salvo = rejulgar ? (JSON.parse(fs.readFileSync(rejulgar, "utf8")) as Placar) : null;
+  const salvo = rejulgar ? (JSON.parse(fs.readFileSync(rejulgar, "utf8")) as Placar & { status?: string }) : null;
+  if (salvo?.status === "incompleto") {
+    throw new Error(`${rejulgar} é o progresso de uma simulação interrompida: faltam conversas, e rejulgá-lo não produz um placar completo.`);
+  }
   const rotulo = arg("rotulo") ?? (salvo ? `${salvo.rotulo}-rejulgado` : "sem-rotulo");
   const so = arg("so");
   const ids = arg("personas")?.split(",");
@@ -283,9 +288,8 @@ async function main() {
   const base = path.join(PASTA, `${placar.em.slice(0, 16).replace(/[:T]/g, "-")}-${rotulo}`);
   fs.writeFileSync(`${base}.json`, JSON.stringify(placar, null, 2));
   fs.writeFileSync(`${base}.md`, markdown(placar));
-  const juizIncompleto = casos.some((c) => !c.nota) || conversas.some((c) => !c.juiz) || placar.resumo.falhasDeProvedor > 0;
-  if (juizIncompleto) {
-    console.error("Placar incompleto ou com falhas de provedor; não use como comparação válida.");
+  if (!comparavel(placar)) {
+    console.error("Placar incompleto (faltam casos, conversas ou notas do juiz); não use como comparação válida.");
     process.exitCode = 1;
   } else if (caminhoParcial) fs.unlinkSync(caminhoParcial);
   console.log(`\n${markdown(placar).split("\n## ")[0]}`);
