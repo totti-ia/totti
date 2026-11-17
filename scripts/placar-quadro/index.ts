@@ -253,19 +253,16 @@ async function main() {
     fs.writeFileSync(parcial, JSON.stringify({ status: "incompleto", rotulo, casos, conversas }, null, 2));
   }
 
+  // Uma avaliação por vez: duas do Kimi-K2.6 ao mesmo tempo na mesma conta caíam em série com erro de rede (17/11).
   console.log(`\n== Juiz (${MODELO_JUIZ}) ==`);
-  const juizes: Promise<void>[] = [];
   if (casos.length) {
-    juizes.push(
-      julgarFalas(casos.map((c, i) => ({ n: i + 1, contexto: contextoDoCaso(c.nome), candidato: c.candidato, totti: c.totti })))
-        .then((notas) => notas.forEach((nota) => { if (casos[nota.n - 1]) casos[nota.n - 1].nota = nota; }))
-        .catch((e) => console.warn(`juiz dos casos falhou: ${e instanceof Error ? e.message : e}`)),
-    );
+    await julgarFalas(casos.map((c, i) => ({ n: i + 1, contexto: contextoDoCaso(c.nome), candidato: c.candidato, totti: c.totti })))
+      .then((notas) => notas.forEach((nota) => { if (casos[nota.n - 1]) casos[nota.n - 1].nota = nota; }))
+      .catch((e) => console.warn(`juiz dos casos falhou: ${e instanceof Error ? e.message : e}`));
   }
   for (const c of conversas) {
-    juizes.push(julgarConversa(c).then((j) => { c.juiz = j; }).catch((e) => { c.erroJuiz = e instanceof Error ? e.message.slice(0, 200) : String(e); }));
+    await julgarConversa(c).then((j) => { c.juiz = j; }).catch((e) => { c.erroJuiz = e instanceof Error ? e.message.slice(0, 200) : String(e); });
   }
-  await Promise.all(juizes);
 
   const placar: Placar = {
     rotulo,

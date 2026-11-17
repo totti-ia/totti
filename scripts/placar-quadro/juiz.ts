@@ -35,9 +35,10 @@ export const TEMPO_JUIZ_MS = Number(process.env.PLACAR_TEMPO_JUIZ_MS) || 900_000
 export const TOKENS_JUIZ = Number(process.env.PLACAR_TOKENS_JUIZ) || 24_000;
 
 /**
- * O fetch do Node desiste aos 300 s sem cabeçalhos (UND_ERR_HEADERS_TIMEOUT, "fetch failed"), e a Featherless só responde
- * quando o juiz termina: toda avaliação acima de 5 min caía como erro de rede e era refeita do zero. Só neste processo de
- * medição o limite acompanha o tempo do juiz. As chamadas do Totti não mudam: os prazos delas (8 s, 15 s, 90 s) cortam
+ * O fetch do Node corta uma resposta parada por 300 s (bodyTimeout do undici, erro "terminated"; o de cabeçalhos também é
+ * de 300 s). A Featherless manda os cabeçalhos logo e segura o corpo até o juiz terminar (247 s numa avaliação medida em
+ * 17/11): toda avaliação acima de 5 min caía como erro de rede e era refeita do zero. Só neste processo de medição os
+ * dois limites acompanham o tempo do juiz. As chamadas do Totti não mudam: os prazos delas (8 s, 15 s, 90 s) cortam
  * antes, pelo AbortController do cliente.
  */
 setGlobalDispatcher(new Agent({ headersTimeout: TEMPO_JUIZ_MS, bodyTimeout: TEMPO_JUIZ_MS }));
