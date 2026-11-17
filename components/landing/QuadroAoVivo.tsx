@@ -1,127 +1,197 @@
 "use client";
 
-// O palco do herói: uma entrevista de system design em ~14s, em loop.
-// A candidata rabisca a arquitetura → o Totti arruma o desenho (o traço tremido vira caixa arredondada) →
-// circula o banco e anota → pergunta por voz → ela responde e desenha a réplica → o relatório sai com a nota.
+// O palco do herói: a sala de system design como ela é (quadro do Excalidraw, legenda escura embaixo, pílula da
+// chamada no canto), numa entrevista de ~15s em loop:
+// a candidata desenha Cliente → API → Banco · o Totti seleciona e arredonda as caixas · circula o banco e anota em
+// azul · pergunta por voz (legenda) · ela responde e desenha o cache · o Totti marca o check · o relatório chega.
+// Tudo é desenhado num palco fixo de 760×500 e escalado para caber, então nada corta em tela nenhuma.
 // É ilustração do produto (selo "exemplo"), não dado ao vivo. Com "reduzir movimento", mostra o quadro final parado.
 import { useEffect, useRef, useState } from "react";
-import { BarrasDeVoz } from "@/components/totti/Perola";
+import { ArrowRight, BookOpen, Circle, Diamond, Eraser, Hand, Image as Imagem, Lock, Menu, Mic, Minus, MousePointer2, Pencil, PhoneOff, Plus, Redo2, Square, Type, Undo2 } from "lucide-react";
 
-/** Um "tique" do roteiro = 44ms (a volta dá ~14,5s). A volta inteira tem VOLTA tiques. */
-const VOLTA = 330;
+const L = 760;
+const A = 500;
+/** Um "tique" do roteiro = 44ms. A volta inteira tem VOLTA tiques (~15s). */
 const TIQUE_MS = 44;
+const VOLTA = 345;
+const FINAL = 326;
 
-type Ponto = [number, number];
+const TINTA = "#1e1e1e";
+const AZUL = "#1971c2";
+const VERDE = "#2f9e44";
+const SELECAO = "#6965db";
+const FONTE_MAO = '"Excalifont Landing", "Comic Sans MS", cursive';
+
+type P = [number, number];
 
 const lim = (x: number) => Math.max(0, Math.min(1, x));
-const faixa = (c: number, [a, b]: readonly [number, number]) => lim((c - a) / (b - a));
+const faixa = (c: number, a: number, b: number) => lim((c - a) / (b - a));
 const suave = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+/** Tremor determinístico (o mesmo traço a cada volta), entre -1 e 1. */
+const ruido = (i: number, s: number) => Math.sin(i * 12.9898 + s * 78.233) * 0.5 + Math.sin(i * 4.1 + s * 1.7) * 0.5;
 
-/** Tremor de traço feito à mão: duas senoides por forma, determinístico (o mesmo desenho a cada volta). */
-const tremor = (i: number, semente: number) => Math.sin(i * 0.55 + semente) * 0.6 + Math.sin(i * 1.7 + semente * 2.3) * 0.4;
+type Caixa = { x: number; y: number; w: number; h: number; rotulo: string; desenha: [number, number]; arruma: [number, number]; s: number };
+type Seta = { de: P; para: P; desenha: [number, number]; s: number };
 
-/** N pontos no contorno de um retângulo de cantos com raio r, começando no canto de cima à esquerda. */
-function contorno(x: number, y: number, w: number, h: number, r: number, n: number): Ponto[] {
-  const arco = (Math.PI * r) / 2;
-  const segs: { len: number; at: (t: number) => Ponto }[] = [
-    { len: w - 2 * r, at: (t) => [x + r + t * (w - 2 * r), y] },
-    { len: arco, at: (t) => [x + w - r + r * Math.sin((t * Math.PI) / 2), y + r - r * Math.cos((t * Math.PI) / 2)] },
-    { len: h - 2 * r, at: (t) => [x + w, y + r + t * (h - 2 * r)] },
-    { len: arco, at: (t) => [x + w - r + r * Math.cos((t * Math.PI) / 2), y + h - r + r * Math.sin((t * Math.PI) / 2)] },
-    { len: w - 2 * r, at: (t) => [x + w - r - t * (w - 2 * r), y + h] },
-    { len: arco, at: (t) => [x + r - r * Math.sin((t * Math.PI) / 2), y + h - r + r * Math.cos((t * Math.PI) / 2)] },
-    { len: h - 2 * r, at: (t) => [x, y + h - r - t * (h - 2 * r)] },
-    { len: arco, at: (t) => [x + r - r * Math.cos((t * Math.PI) / 2), y + r - r * Math.sin((t * Math.PI) / 2)] },
-  ];
-  const total = segs.reduce((s, g) => s + g.len, 0);
-  const pts: Ponto[] = [];
-  for (let k = 0; k < n; k++) {
-    let d = (k / n) * total;
-    for (const g of segs) {
-      if (d <= g.len || g === segs[segs.length - 1]) {
-        pts.push(g.at(g.len ? Math.min(1, d / g.len) : 0));
-        break;
-      }
-      d -= g.len;
-    }
-  }
-  return pts;
-}
-
-type Forma =
-  | { tipo: "caixa"; x: number; y: number; w: number; h: number; rotulo: string; desenha: [number, number]; arruma: [number, number]; semente: number }
-  | { tipo: "seta"; de: Ponto; para: Ponto; desenha: [number, number]; arruma: [number, number]; semente: number };
-
-const FORMAS: Forma[] = [
-  { tipo: "caixa", x: 20, y: 62, w: 108, h: 54, rotulo: "Cliente", desenha: [3, 20], arruma: [104, 118], semente: 1 },
-  { tipo: "seta", de: [128, 89], para: [186, 89], desenha: [20, 28], arruma: [108, 122], semente: 2 },
-  { tipo: "caixa", x: 186, y: 62, w: 108, h: 54, rotulo: "API", desenha: [28, 45], arruma: [110, 124], semente: 3 },
-  { tipo: "seta", de: [294, 89], para: [352, 89], desenha: [45, 53], arruma: [113, 127], semente: 4 },
-  { tipo: "caixa", x: 352, y: 62, w: 128, h: 54, rotulo: "Banco", desenha: [53, 70], arruma: [116, 130], semente: 5 },
-  { tipo: "seta", de: [240, 116], para: [240, 182], desenha: [70, 78], arruma: [119, 133], semente: 6 },
-  { tipo: "caixa", x: 186, y: 182, w: 108, h: 54, rotulo: "Fila", desenha: [78, 95], arruma: [122, 136], semente: 7 },
-  // depois da pergunta: a candidata desenha a réplica e o Totti arruma de novo
-  { tipo: "seta", de: [416, 116], para: [416, 182], desenha: [244, 252], arruma: [262, 274], semente: 8 },
-  { tipo: "caixa", x: 352, y: 182, w: 128, h: 54, rotulo: "Réplica", desenha: [252, 268], arruma: [266, 280], semente: 9 },
+const CAIXAS: Caixa[] = [
+  { x: 56, y: 196, w: 140, h: 66, rotulo: "Cliente", desenha: [4, 20], arruma: [104, 116], s: 1 },
+  { x: 290, y: 196, w: 140, h: 66, rotulo: "API", desenha: [28, 44], arruma: [104, 116], s: 2 },
+  { x: 524, y: 196, w: 150, h: 66, rotulo: "Banco", desenha: [52, 70], arruma: [104, 116], s: 3 },
+  { x: 384, y: 300, w: 176, h: 58, rotulo: "Cache (Redis)", desenha: [228, 246], arruma: [266, 276], s: 4 },
+];
+const SETAS: Seta[] = [
+  { de: [200, 229], para: [284, 229], desenha: [20, 28], s: 5 },
+  { de: [434, 229], para: [518, 229], desenha: [44, 52], s: 6 },
+  { de: [392, 266], para: [440, 298], desenha: [246, 253], s: 7 },
+  { de: [520, 298], para: [570, 266], desenha: [253, 260], s: 8 },
 ];
 
-/** Os pontos da forma no instante: tremidos (traço da candidata) → limpos (depois que o Totti arruma). */
-function pontosDaForma(f: Forma, arrumado: number): Ponto[] {
-  const amp = 3.2 * (1 - arrumado);
-  if (f.tipo === "caixa") {
-    const base = contorno(f.x, f.y, f.w, f.h, lerp(2, 12, arrumado), 56);
-    return base.map(([x, y], i) => [x + tremor(i, f.semente) * amp, y + tremor(i + 40, f.semente) * amp]);
-  }
-  const [x1, y1] = f.de;
-  const [x2, y2] = f.para;
-  const len = Math.hypot(x2 - x1, y2 - y1);
-  const nx = -(y2 - y1) / len;
-  const ny = (x2 - x1) / len;
-  return Array.from({ length: 14 }, (_, i) => {
-    const t = i / 13;
-    const curva = Math.sin(t * Math.PI) * 4 * (1 - arrumado);
-    const off = curva + tremor(i, f.semente) * amp * 0.6;
-    return [lerp(x1, x2, t) + nx * off, lerp(y1, y2, t) + ny * off] as Ponto;
-  });
+/** Retângulo no traço do Excalidraw: dois passes levemente diferentes, cantos com raio r (0 = canto vivo). */
+function tracoCaixa(c: Caixa, r: number, passe: number): string {
+  const j = (k: number) => ruido(k + passe * 31, c.s) * 1.4;
+  const { x, y, w, h } = c;
+  if (r < 0.5)
+    return `M${x + j(1)},${y + j(2)} L${x + w + j(3)},${y + j(4)} L${x + w + j(5)},${y + h + j(6)} L${x + j(7)},${y + h + j(8)} L${x + j(9)},${y + j(10) + 1.5}`;
+  return [
+    `M${x + r + j(1)},${y + j(2)}`,
+    `L${x + w - r + j(3)},${y + j(4)}`,
+    `Q${x + w},${y} ${x + w + j(5)},${y + r + j(6)}`,
+    `L${x + w + j(7)},${y + h - r + j(8)}`,
+    `Q${x + w},${y + h} ${x + w - r + j(9)},${y + h + j(10)}`,
+    `L${x + r + j(11)},${y + h + j(12)}`,
+    `Q${x},${y + h} ${x + j(13)},${y + h - r + j(14)}`,
+    `L${x + j(15)},${y + r + j(16)}`,
+    `Q${x},${y} ${x + r + j(17)},${y + j(18) + 1}`,
+  ].join(" ");
 }
 
-const caminho = (p: Ponto[], fechado: boolean) => `M${p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join("L")}${fechado ? "Z" : ""}`;
+function tracoSeta(s: Seta, passe: number): string {
+  const [x1, y1] = s.de;
+  const [x2, y2] = s.para;
+  const mx = (x1 + x2) / 2 + ruido(passe, s.s) * 2;
+  const my = (y1 + y2) / 2 + ruido(passe + 9, s.s) * 2;
+  return `M${x1},${y1} Q${mx},${my} ${x2},${y2}`;
+}
 
-/** Ponto a uma fração do comprimento da polilinha (onde a caneta da candidata está). */
-function pontoEm(p: Ponto[], t: number, fechado: boolean): Ponto {
-  const pts = fechado ? [...p, p[0]] : p;
-  const lens = pts.slice(1).map((q, i) => Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]));
-  let d = t * lens.reduce((s, l) => s + l, 0);
-  for (let i = 0; i < lens.length; i++) {
-    if (d <= lens[i]) {
-      const k = lens[i] ? d / lens[i] : 0;
-      return [lerp(pts[i][0], pts[i + 1][0], k), lerp(pts[i][1], pts[i + 1][1], k)];
+function pontaDaSeta(s: Seta): string {
+  const [x1, y1] = s.de;
+  const [x2, y2] = s.para;
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  const p = (d: number) => `${(x2 - 12 * Math.cos(a + d)).toFixed(1)},${(y2 - 12 * Math.sin(a + d)).toFixed(1)}`;
+  return `M${p(0.45)} L${x2},${y2} L${p(-0.45)}`;
+}
+
+/** Ponto no contorno da caixa, a uma fração t do caminho (onde está a mão da candidata enquanto desenha). */
+function noContorno(c: Caixa, t: number): P {
+  let d = t * 2 * (c.w + c.h);
+  if (d < c.w) return [c.x + d, c.y];
+  d -= c.w;
+  if (d < c.h) return [c.x + c.w, c.y + d];
+  d -= c.h;
+  if (d < c.w) return [c.x + c.w - d, c.y + c.h];
+  d -= c.w;
+  return [c.x, c.y + c.h - d];
+}
+
+/** Interpola entre quadros-chave [tique, x, y] com curva suave. */
+function trilha(chaves: [number, number, number][], c: number): P {
+  if (c <= chaves[0][0]) return [chaves[0][1], chaves[0][2]];
+  for (let i = 1; i < chaves.length; i++) {
+    const [t1, x1, y1] = chaves[i];
+    const [t0, x0, y0] = chaves[i - 1];
+    if (c <= t1) {
+      const k = suave((c - t0) / (t1 - t0 || 1));
+      return [lerp(x0, x1, k), lerp(y0, y1, k)];
     }
-    d -= lens[i];
   }
-  return pts[pts.length - 1];
+  const u = chaves[chaves.length - 1];
+  return [u[1], u[2]];
 }
 
-const PERGUNTA = "Se o banco cair, o que acontece com os pedidos que já estão na fila?";
-const RESPOSTA = "Ponho uma réplica, e o worker reprocessa da fila quando ela assumir.";
-const NOTA = "ponto único de falha?";
+const TRACOS_DA_CANDIDATA = [
+  ...CAIXAS.map((k) => ({ de: k.desenha[0], ate: k.desenha[1], em: (t: number) => noContorno(k, t) })),
+  ...SETAS.map((s) => ({ de: s.desenha[0], ate: s.desenha[1], em: (t: number): P => [lerp(s.de[0], s.para[0], t), lerp(s.de[1], s.para[1], t)] })),
+].sort((a, b) => a.de - b.de);
+const DESCANSO: P = [240, 380];
+
+/** A mão da candidata: segue o traço enquanto desenha e descansa entre um traço e outro. */
+function maoDaCandidata(c: number): P {
+  let fim = 0;
+  let ultimo: P = DESCANSO;
+  for (const tr of TRACOS_DA_CANDIDATA) {
+    if (c >= tr.de && c <= tr.ate) return tr.em((c - tr.de) / (tr.ate - tr.de));
+    if (c < tr.de) {
+      const intervaloLongo = tr.de - fim > 20;
+      if (!intervaloLongo) return trilha([[fim, ...ultimo], [tr.de, ...tr.em(0)]], c);
+      if (c < tr.de - 10) return trilha([[fim, ...ultimo], [fim + 10, ...DESCANSO]], c);
+      return trilha([[tr.de - 10, ...DESCANSO], [tr.de, ...tr.em(0)]], c);
+    }
+    fim = tr.ate;
+    ultimo = tr.em(1);
+  }
+  return trilha([[fim, ...ultimo], [fim + 10, ...DESCANSO]], c);
+}
+
+const CIRCULO = { cx: 599, cy: 229, rx: 104, ry: 56 };
+function pontoDoCirculo(t: number): P {
+  const a = -2.4 + t * (Math.PI * 2 + 0.5);
+  const r = 1 + 0.05 * Math.sin(a * 3) + t * 0.05;
+  return [CIRCULO.cx + Math.cos(a) * CIRCULO.rx * r, CIRCULO.cy + Math.sin(a) * CIRCULO.ry * r];
+}
+const CAMINHO_DO_CIRCULO = `M${Array.from({ length: 64 }, (_, i) => pontoDoCirculo(i / 63).map((v) => v.toFixed(1)).join(" ")).join(" L")}`;
+
+const NOTA = "100 mil acessos/s?";
+const NOTA_XY: P = [520, 150];
+
+const PERGUNTA = "Se um link curto viralizar e for aberto cem mil vezes por segundo, o banco aguenta?";
+const RESPOSTA = "Coloco um cache na frente, com os links mais acessados. O banco só recebe o que não está no cache.";
 
 const CRITERIOS = [
-  { nome: "Arquitetura", nota: 3.5 },
-  { nome: "Tolerância a falhas", nota: 3 },
+  { nome: "Escalabilidade", nota: 3.5 },
+  { nome: "Modelagem de dados", nota: 3 },
   { nome: "Comunicação", nota: 4 },
 ];
+
+/** O cursor do Totti, por fase: entra, seleciona tudo, arredonda, circula o banco, escreve, confere o cache, sai. */
+function maoDoTotti(c: number): P {
+  if (c >= 118 && c <= 132) return pontoDoCirculo(faixa(c, 118, 132));
+  if (c > 132 && c <= 146) return [NOTA_XY[0] + 150 * faixa(c, 132, 146), NOTA_XY[1] + 4];
+  return trilha(
+    [
+      [0, 800, 120],
+      [76, 800, 120],
+      [84, 40, 176],
+      [96, 690, 284],
+      [104, 690, 284],
+      [114, 610, 300],
+      [118, ...pontoDoCirculo(0)],
+      [146, NOTA_XY[0] + 150, NOTA_XY[1] + 4],
+      [160, 650, 380],
+      [262, 650, 380],
+      [270, 566, 292],
+      [278, 566, 292],
+      [284, NOTA_XY[0] - 10, NOTA_XY[1] + 4],
+      [296, 650, 400],
+    ],
+    c,
+  );
+}
 
 /** Relógio contínuo em tiques (float), via requestAnimationFrame; pausa fora da tela ou com a aba escondida. */
 function useRoteiro() {
   const raiz = useRef<HTMLDivElement>(null);
   const [c, setC] = useState(0);
   const [parado, setParado] = useState(false);
+  const [escala, setEscala] = useState(0);
   useEffect(() => {
+    const el = raiz.current;
+    if (!el) return;
+    const medir = new ResizeObserver(([e]) => setEscala(e.contentRect.width / L));
+    medir.observe(el);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setParado(true);
-      return;
+      return () => medir.disconnect();
     }
     let visivel = true;
     let raf = 0;
@@ -143,211 +213,305 @@ function useRoteiro() {
       visivel = e.isIntersecting;
       ligar();
     });
-    if (raiz.current) obs.observe(raiz.current);
+    obs.observe(el);
     document.addEventListener("visibilitychange", ligar);
     ligar();
     return () => {
       cancelAnimationFrame(raf);
+      medir.disconnect();
       obs.disconnect();
       document.removeEventListener("visibilitychange", ligar);
     };
   }, []);
-  return { raiz, c: parado ? 318 : c };
+  return { raiz, c: parado ? FINAL : c, escala };
 }
 
 export default function QuadroAoVivo() {
-  const { raiz, c } = useRoteiro();
+  const { raiz, c, escala } = useRoteiro();
+  const some = c > FINAL + 4 ? 1 - faixa(c, FINAL + 4, VOLTA - 2) : 1;
 
-  // no fim da volta tudo some junto e recomeça do quadro vazio
-  const opacidadeGeral = c > 318 ? 1 - (c - 318) / 12 : 1;
+  const selecao = faixa(c, 84, 96); // o retângulo de seleção abrindo
+  const selecionado = c >= 96 && c < 116;
+  const selecionaCache = c >= 266 && c < 280;
+  const circulo = faixa(c, 118, 132);
+  const circuloSome = 1 - faixa(c, 270, 280);
+  const nota = Math.floor(NOTA.length * faixa(c, 132, 146));
+  const check = faixa(c, 280, 286);
 
-  // caneta da candidata: segue o traço que está sendo desenhado
-  let caneta: Ponto | null = null;
-  const desenhos = FORMAS.map((f) => {
-    const d = faixa(c, f.desenha);
-    const a = suave(faixa(c, f.arruma));
-    const pts = pontosDaForma(f, a);
-    const fechado = f.tipo === "caixa";
-    if (d > 0) caneta = pontoEm(pts, d, fechado);
-    return { f, d, a, pts, fechado };
-  });
-  const canetaVisivel = (c > 1 && c < 99) || (c > 241 && c < 271);
-  const [cx, cy]: Ponto = caneta ?? [60, 60];
+  const legenda =
+    c >= 150 && c < 198 ? { texto: PERGUNTA, ate: Math.floor(PERGUNTA.length * faixa(c, 150, 194)), totti: true }
+    : c >= 200 && c < 262 ? { texto: RESPOSTA, ate: Math.floor(RESPOSTA.length * faixa(c, 200, 244)), totti: false }
+    : null;
+  const tottiFalando = c >= 150 && c < 194;
 
-  // cursor do Totti: viaja entre alvos (com transição); quem decide o alvo é a fase do roteiro
-  const alvoTotti: Ponto =
-    c < 100 ? [500, 14] : c < 138 ? ([[84, 70], [240, 70], [420, 70], [240, 192]][Math.min(3, Math.floor((c - 100) / 9))] as Ponto)
-    : c < 150 ? [496, 92] : c < 172 ? [352 + Math.min(1, (c - 150) / 18) * 130, 30] : c < 262 ? [500, 14] : c < 284 ? [420, 194] : [500, 14];
-
-  const circulo = faixa(c, [140, 152]);
-  const circuloSome = 1 - faixa(c, [282, 292]);
-  const nota = Math.floor(NOTA.length * faixa(c, [150, 168]));
-
-  const pq = Math.floor(PERGUNTA.length * faixa(c, [172, 206]));
-  const pr = Math.floor(RESPOSTA.length * faixa(c, [210, 242]));
-  const totFala = pq > 0 && pq < PERGUNTA.length;
-  const sistema = c >= 100 && c < 150 ? "› Totti organizou o desenho" : c >= 150 && c < 172 ? "› Totti anotou no quadro" : null;
-
-  const relatorio = faixa(c, [288, 300]);
-  const barras = suave(faixa(c, [294, 312]));
+  const relatorio = suave(faixa(c, 290, 302));
+  const barras = suave(faixa(c, 298, 318));
+  const segundos = 12 * 60 + 7 + Math.floor(c / 22);
+  const [tx, ty] = maoDoTotti(c);
+  const [mx, my] = maoDaCandidata(c);
 
   return (
-    <div ref={raiz} className="relative" aria-hidden>
-      <div className="overflow-hidden rounded-[28px] bg-[#13110e] text-[#f5f0e8] shadow-[0_50px_90px_-40px_rgb(28_24_18/0.7)]">
-        <div className="flex items-center justify-between border-b border-[#f5f0e8]/8 px-[18px] py-3.5">
-          <span className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="size-2.5 rounded-full bg-[#27231d]" />
-            ))}
-          </span>
-          <span className="font-mono text-[12.5px] text-[#f5f0e8]/70">quadro · System Design</span>
-          <span className="font-mono text-[12.5px] text-[#f5f0e8]/50">exemplo</span>
-        </div>
+    <div ref={raiz} className="relative w-full" style={{ aspectRatio: `${L} / ${A}` }} aria-hidden>
+      <div
+        className="absolute top-0 left-0 overflow-hidden rounded-[22px] bg-white text-[#1c1812] shadow-[0_50px_90px_-40px_rgb(28_24_18/0.55),0_0_0_1px_rgb(28_24_18/0.08)]"
+        style={{ width: L, height: A, transform: `scale(${escala})`, transformOrigin: "0 0", visibility: escala ? "visible" : "hidden" }}
+      >
+        <BarraDoExcalidraw />
 
-        <div style={{ opacity: opacidadeGeral }}>
-          <svg viewBox="0 0 500 250" className="block w-full px-3 pt-3">
-            {/* pontilhado do quadro */}
-            <defs>
-              <pattern id="quadro-pontos" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="1" cy="1" r="1" fill="#f5f0e8" opacity="0.07" />
-              </pattern>
-            </defs>
-            <rect width="500" height="250" fill="url(#quadro-pontos)" />
+        <svg width={L} height={A} viewBox={`0 0 ${L} ${A}`} className="absolute inset-0" style={{ opacity: some }}>
+          {/* o enunciado que o Totti escreveu no começo da entrevista */}
+          <text x={40} y={112} fontSize={30} fill={TINTA} style={{ fontFamily: FONTE_MAO }}>
+            Encurtador de URL
+          </text>
+          <text x={40} y={142} fontSize={17} fill={TINTA} style={{ fontFamily: FONTE_MAO }}>
+            Recebe uma URL longa e devolve uma curta.
+          </text>
 
-            {desenhos.map(({ f, d, a, pts, fechado }, i) => {
-              if (d <= 0) return null;
-              const cor = a > 0.5 ? "#f5f0e8" : "#c9c2b6";
-              return (
-                <g key={i}>
+          {CAIXAS.map((k) => {
+            const d = faixa(c, ...k.desenha);
+            if (d <= 0) return null;
+            const r = 14 * suave(faixa(c, ...k.arruma));
+            const rotulo = Math.floor(k.rotulo.length * faixa(c, k.desenha[1] - 4, k.desenha[1] + 4));
+            return (
+              <g key={k.rotulo}>
+                {[0, 1].map((passe) => (
                   <path
-                    d={caminho(pts, fechado)}
+                    key={passe}
+                    d={tracoCaixa(k, r, passe)}
                     pathLength={1}
                     strokeDasharray="1 1"
                     strokeDashoffset={1 - d}
-                    fill={fechado ? `rgb(245 240 232 / ${0.05 * a})` : "none"}
-                    stroke={cor}
-                    strokeWidth={lerp(2.2, 1.6, a)}
+                    fill="none"
+                    stroke={TINTA}
+                    strokeWidth={passe ? 1 : 1.6}
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    opacity={passe ? 0.7 : 1}
                   />
-                  {f.tipo === "seta" && d >= 1 && <PontaDeSeta de={pts[pts.length - 2]} para={pts[pts.length - 1]} cor={cor} />}
-                  {f.tipo === "caixa" && (
-                    <text
-                      x={f.x + f.w / 2}
-                      y={f.y + f.h / 2 + 5}
-                      textAnchor="middle"
-                      fontSize="15"
-                      fill={cor}
-                      opacity={lim((d - 0.75) * 4)}
-                      fontStyle={a > 0.5 ? "normal" : "italic"}
-                      fontWeight={a > 0.5 ? 600 : 400}
-                      style={{ fontFamily: a > 0.5 ? "var(--font-jetbrains)" : "var(--font-inter)" }}
-                    >
-                      {f.rotulo}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* a anotação do Totti: circula o banco e escreve a dúvida */}
-            {circulo > 0 && (
-              <g opacity={circuloSome}>
-                <ellipse
-                  cx={416}
-                  cy={89}
-                  rx={84}
-                  ry={44}
-                  pathLength={1}
-                  strokeDasharray={`${circulo} 1`}
-                  fill="none"
-                  stroke="#f5f0e8"
-                  strokeWidth={1.5}
-                  strokeLinecap="round"
-                  transform="rotate(-4 416 89)"
-                />
-                <text x={352} y={30} fontSize="13" fill="#f5f0e8" style={{ fontFamily: "var(--font-jetbrains)" }}>
-                  {NOTA.slice(0, nota)}
+                ))}
+                <text x={k.x + k.w / 2} y={k.y + k.h / 2 + 7} textAnchor="middle" fontSize={20} fill={TINTA} style={{ fontFamily: FONTE_MAO }}>
+                  {k.rotulo.slice(0, rotulo)}
                 </text>
               </g>
-            )}
+            );
+          })}
 
-            {/* caneta da candidata */}
-            <g
-              style={{ transform: `translate(${cx}px, ${cy}px)`, opacity: canetaVisivel ? 1 : 0, transition: "opacity .3s" }}
-            >
-              <circle r="3.5" fill="#c9c2b6" />
-              <rect x={cx > 410 ? -78 : 8} y="6" width="70" height="20" rx="10" fill="#3a352d" />
-              <text x={cx > 410 ? -43 : 43} y="20" textAnchor="middle" fontSize="11.5" fill="#f5f0e8" fontWeight="600" style={{ fontFamily: "var(--font-inter)" }}>
-                Candidata
-              </text>
-            </g>
+          {SETAS.map((s) => {
+            const d = faixa(c, ...s.desenha);
+            if (d <= 0) return null;
+            return (
+              <g key={s.s} fill="none" stroke={TINTA} strokeLinecap="round" strokeLinejoin="round">
+                {[0, 1].map((passe) => (
+                  <path key={passe} d={tracoSeta(s, passe)} pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - d} strokeWidth={passe ? 1 : 1.6} opacity={passe ? 0.7 : 1} />
+                ))}
+                {d >= 1 && <path d={pontaDaSeta(s)} strokeWidth={1.6} />}
+              </g>
+            );
+          })}
 
-            {/* cursor do Totti */}
-            <g style={{ transform: `translate(${alvoTotti[0]}px, ${alvoTotti[1]}px)`, transition: "transform .55s cubic-bezier(0.65, 0, 0.35, 1)" }}>
-              <path d="M0 0 L13 6.5 L6.5 8.2 L4 14.5 Z" fill="#f5f0e8" stroke="#13110e" strokeWidth="1.3" strokeLinejoin="round" />
-              <rect x="10" y="12" width="44" height="20" rx="10" fill="#f5f0e8" />
-              <text x="32" y="26" textAnchor="middle" fontSize="11.5" fill="#1c1812" fontWeight="700" style={{ fontFamily: "var(--font-inter)" }}>
-                Totti
-              </text>
-            </g>
-          </svg>
+          {/* seleção do Totti: o retângulo arrastado e as alças, como no Excalidraw */}
+          {selecao > 0 && c < 98 && <rect x={40} y={176} width={650 * selecao} height={108 * selecao} fill="rgb(105 101 219 / 0.08)" stroke={SELECAO} strokeWidth={1} />}
+          {selecionado && <Alcas x={46} y={186} w={638} h={86} />}
+          {selecionaCache && <Alcas x={374} y={290} w={196} h={78} />}
 
-          <div className="flex min-h-[112px] flex-col justify-end gap-2.5 border-t border-[#f5f0e8]/8 px-[18px] pt-3.5 pb-5">
-            {sistema && <span className="font-mono text-[12.5px] text-[#f5f0e8]/60">{sistema}</span>}
-            {pq > 0 && (
-              <div className="flex items-start gap-2.5">
-                <BarrasDeVoz ativo={totFala} n={3} altura={16} largura={3} className="mt-[3px] shrink-0 !gap-0.5 text-[#f5f0e8]" />
-                <span className="text-[15px] leading-[1.45]">
-                  <b>Totti</b> {PERGUNTA.slice(0, pq)}
-                </span>
-              </div>
-            )}
-            {pr > 0 && (
-              <div className="flex items-start gap-2.5">
-                <span className="mt-[7px] size-2 shrink-0 rounded-full bg-[#c9c2b6]" />
-                <span className="text-[15px] leading-[1.45] text-[#d9d1c4]">
-                  <b className="text-[#f5f0e8]">Candidata</b> {RESPOSTA.slice(0, pr)}
-                </span>
-              </div>
-            )}
+          {/* anotações do Totti, em azul */}
+          {circulo > 0 && (
+            <path
+              d={CAMINHO_DO_CIRCULO}
+              pathLength={1}
+              strokeDasharray="1 1"
+              strokeDashoffset={1 - circulo}
+              fill="none"
+              stroke={AZUL}
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              opacity={circuloSome}
+            />
+          )}
+          {nota > 0 && (
+            <text x={NOTA_XY[0]} y={NOTA_XY[1]} fontSize={19} fill={AZUL} style={{ fontFamily: FONTE_MAO }}>
+              {NOTA.slice(0, nota)}
+            </text>
+          )}
+          {check > 0 && (
+            <path
+              d={`M${NOTA_XY[0] - 28},${NOTA_XY[1] - 8} l7,8 l13,-17`}
+              pathLength={1}
+              strokeDasharray="1 1"
+              strokeDashoffset={1 - check}
+              fill="none"
+              stroke={VERDE}
+              strokeWidth={2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* a mão da candidata (o ponteiro dela) */}
+          <g transform={`translate(${mx.toFixed(1)} ${my.toFixed(1)})`}>
+            <path d="M0 0 L0 15 L4 11.4 L6.8 17.4 L9.4 16.2 L6.7 10.4 L12 10.4 Z" fill="#fff" stroke={TINTA} strokeWidth={1.2} strokeLinejoin="round" />
+            <rect x={13} y={14} width={72} height={20} rx={10} fill="#8a8277" />
+            <text x={49} y={28} textAnchor="middle" fontSize={11.5} fontWeight={600} fill="#fff" style={{ fontFamily: "var(--font-inter)" }}>
+              Candidata
+            </text>
+          </g>
+
+          {/* o cursor do Totti (o mesmo da sala: seta escura com o nome) */}
+          <g transform={`translate(${tx.toFixed(1)} ${ty.toFixed(1)})`}>
+            <path d="M2 2 L2 17.5 L6.4 13.4 L9.3 20 L12.2 18.7 L9.4 12.3 L15.5 12.3 Z" fill="#1c1812" stroke="#fff" strokeWidth={1.5} strokeLinejoin="round" />
+            <rect x={14} y={18} width={46} height={20} rx={10} fill="#1c1812" />
+            <text x={37} y={32} textAnchor="middle" fontSize={11.5} fontWeight={700} fill="#f5f0e8" style={{ fontFamily: "var(--font-inter)" }}>
+              Totti
+            </text>
+          </g>
+        </svg>
+
+        {/* legenda ao vivo: o que já foi falado fica claro, o resto apagado */}
+        <div className="absolute bottom-[66px] left-[130px] w-[500px]" style={{ opacity: some }}>
+          {legenda && (
+            <p className="flex items-center gap-3 rounded-[16px] bg-[rgb(28_24_18/0.88)] px-4 py-2.5 text-[13.5px] leading-[1.4] text-[#f5f0e8] shadow-[0_12px_30px_-12px_rgb(0_0_0/0.5)]">
+              {legenda.totti ? <Barras ativo={tottiFalando} /> : <Mic size={14} className="shrink-0 text-[#f5f0e8]/70" />}
+              <span>
+                <span className="mr-1.5 font-semibold">{legenda.totti ? "Totti" : "Candidata"}</span>
+                {legenda.texto.slice(0, legenda.ate)}
+                <span className="text-[#f5f0e8]/35">{legenda.texto.slice(legenda.ate)}</span>
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* a pílula da chamada, no canto */}
+        <div className="absolute right-3.5 bottom-3.5 flex h-11 items-center gap-1.5 rounded-full bg-[rgb(28_24_18/0.88)] pr-1.5 pl-2 text-[13px] text-[#f5f0e8] shadow-[0_12px_30px_-12px_rgb(0_0_0/0.5)]">
+          <Anel falando={tottiFalando} c={c} />
+          <span className="px-1 font-mono tabular-nums">
+            {String(Math.floor(segundos / 60)).padStart(2, "0")}:{String(segundos % 60).padStart(2, "0")}
+          </span>
+          <span className="rounded-full bg-[#f5f0e8]/12 px-2.5 py-1 text-[11.5px] font-medium">Interromper</span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-[#f5f0e8]/12">
+            <Mic size={14} />
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-[#f5f0e8]/12">
+            <PhoneOff size={14} />
+          </span>
+        </div>
+
+        {/* o relatório, que a recrutadora recebe no fim */}
+        <div
+          className="absolute top-[70px] right-3.5 w-[262px] rounded-[18px] bg-[#f5f2ec] p-4 shadow-[0_24px_50px_-20px_rgb(28_24_18/0.45),0_0_0_1px_rgb(28_24_18/0.08)]"
+          style={{ opacity: relatorio * some, transform: `translateX(${(1 - relatorio) * 24}px)` }}
+        >
+          <div className="flex items-baseline justify-between">
+            <span className="text-[14px] font-semibold">Relatório</span>
+            <span className="font-mono text-[11px] text-[#6b675f]">Backend Pleno</span>
           </div>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {CRITERIOS.map((k) => (
+              <li key={k.nome} className="flex flex-col gap-1">
+                <span className="flex justify-between text-[12.5px]">
+                  <span className="text-[#5c5448]">{k.nome}</span>
+                  <span className="font-mono">{(k.nota * barras).toFixed(1).replace(".", ",")}</span>
+                </span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-[#1c1812]/10">
+                  <span className="block h-full rounded-full bg-[#1c1812]" style={{ width: `${(k.nota / 4) * 100 * barras}%` }} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 border-t border-[#1c1812]/10 pt-2.5 text-[12px] leading-[1.45] text-[#5c5448]">
+            “Coloco um cache na frente…” <span className="font-mono text-[11px]">min 12:31</span>
+          </p>
+          <p className="mt-1.5 font-mono text-[11px] text-[#6b675f]">3 evidências · recomenda seguir</p>
         </div>
-      </div>
-
-      {/* o relatório chega no fim */}
-      <div
-        className="absolute right-2 -bottom-10 w-[272px] rounded-[20px] bg-superficie p-[18px] text-texto shadow-[0_24px_50px_-20px_rgb(28_24_18/0.45)] sm:-right-5"
-        style={{
-          opacity: relatorio * opacidadeGeral,
-          transform: `translateY(${(1 - suave(relatorio)) * 16}px) scale(${0.97 + 0.03 * suave(relatorio)})`,
-        }}
-      >
-        <div className="flex items-baseline justify-between">
-          <span className="text-[13px] font-semibold">Relatório</span>
-          <span className="font-mono text-[11.5px] text-texto-suave">Backend Pleno</span>
-        </div>
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {CRITERIOS.map((k) => (
-            <li key={k.nome} className="flex flex-col gap-1">
-              <span className="flex justify-between text-[12.5px]">
-                <span className="text-texto-suave">{k.nome}</span>
-                <span className="font-mono">{(k.nota * barras).toFixed(1).replace(".", ",")}</span>
-              </span>
-              <span className="h-1.5 overflow-hidden rounded-full bg-texto/10">
-                <span className="block h-full rounded-full bg-texto" style={{ width: `${(k.nota / 4) * 100 * barras}%` }} />
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 border-t border-borda pt-2.5 font-mono text-[11.5px] text-texto-suave">3 evidências · min 18:20 · recomenda seguir</p>
       </div>
     </div>
   );
 }
 
-function PontaDeSeta({ de, para, cor }: { de: Ponto; para: Ponto; cor: string }) {
-  const ang = Math.atan2(para[1] - de[1], para[0] - de[0]);
-  const p = (da: number): string => `${(para[0] - 8 * Math.cos(ang + da)).toFixed(1)},${(para[1] - 8 * Math.sin(ang + da)).toFixed(1)}`;
-  return <path d={`M${p(0.5)}L${para[0]},${para[1]}L${p(-0.5)}`} fill="none" stroke={cor} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />;
+const FERRAMENTAS = [Lock, Hand, MousePointer2, Square, Diamond, Circle, ArrowRight, Minus, Pencil, Type, Imagem, Eraser];
+
+/** A barra de ferramentas e os controles do Excalidraw, como aparecem na sala. */
+function BarraDoExcalidraw() {
+  return (
+    <>
+      <span className="absolute top-3.5 left-3.5 flex size-9 items-center justify-center rounded-[10px] bg-[#ececf4] text-[#1b1b1f]">
+        <Menu size={16} />
+      </span>
+      <div className="absolute top-3 left-1/2 flex h-11 -translate-x-1/2 items-center gap-0.5 rounded-[12px] bg-white px-1.5 shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_4px_14px_-4px_rgb(0_0_0/0.12)]">
+        {FERRAMENTAS.map((Icone, i) => (
+          <span key={i} className={`flex size-8 items-center justify-center rounded-[8px] text-[#1b1b1f] ${i === 2 ? "bg-[#e0dfff]" : ""}`}>
+            <Icone size={15} strokeWidth={1.75} />
+          </span>
+        ))}
+      </div>
+      <span className="absolute top-3.5 right-3.5 flex h-9 items-center gap-1.5 rounded-[10px] bg-[#ececf4] px-3 text-[12.5px] text-[#1b1b1f]">
+        <BookOpen size={14} /> exemplo
+      </span>
+      <div className="absolute bottom-[58px] left-3.5 flex h-9 items-center gap-2.5 rounded-[10px] bg-[#ececf4] px-2.5 text-[#1b1b1f]/50">
+        <Undo2 size={14} />
+        <Redo2 size={14} />
+      </div>
+      <div className="absolute bottom-3.5 left-3.5 flex h-9 items-center gap-1 rounded-[10px] bg-[#ececf4] px-1.5 text-[12px] text-[#1b1b1f]">
+        <Minus size={13} className="mx-1" />
+        <span>100%</span>
+        <Plus size={13} className="mx-1" />
+      </div>
+    </>
+  );
+}
+
+/** As alças de seleção do Excalidraw em volta do que foi selecionado. */
+function Alcas({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  const cantos: P[] = [
+    [x, y],
+    [x + w, y],
+    [x, y + h],
+    [x + w, y + h],
+    [x + w / 2, y],
+    [x + w / 2, y + h],
+    [x, y + h / 2],
+    [x + w, y + h / 2],
+  ];
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} fill="none" stroke={SELECAO} strokeWidth={1} />
+      {cantos.map(([cx, cy], i) => (
+        <rect key={i} x={cx - 4} y={cy - 4} width={8} height={8} rx={2} fill="#fff" stroke={SELECAO} strokeWidth={1} />
+      ))}
+      <circle cx={x + w / 2} cy={y - 16} r={4} fill="#fff" stroke={SELECAO} strokeWidth={1} />
+    </g>
+  );
+}
+
+function Barras({ ativo }: { ativo: boolean }) {
+  return (
+    <span className="flex h-4 shrink-0 items-center gap-[3px]">
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="h-full w-[3px] rounded-full bg-[#f5f0e8]"
+          style={{ transform: "scaleY(0.3)", animation: ativo ? `barra .9s ease-in-out ${i * 0.12}s infinite` : undefined }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** O anel do Totti na pílula: um arco claro gira (mais longo quando ele fala). */
+function Anel({ falando, c }: { falando: boolean; c: number }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" className="shrink-0">
+      <circle cx="14" cy="14" r="9" fill="none" stroke="#f5f0e8" strokeOpacity={0.35} strokeWidth={2} />
+      <circle
+        cx="14"
+        cy="14"
+        r="9"
+        fill="none"
+        stroke="#f5f0e8"
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeDasharray={falando ? "14 43" : "6 51"}
+        transform={`rotate(${(c * 9) % 360} 14 14)`}
+      />
+    </svg>
+  );
 }
