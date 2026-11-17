@@ -2,12 +2,10 @@
 
 // Landing do Totti: o que a raiz do site mostra para quem chega sem `?config=` (ver app/page.tsx).
 // Hierarquia: o que é (herói, tela cheia) → como funciona (rolagem guiada, passo a passo) → por que (o custo de
-// entrevistar à mão) → pedir demonstração. Ao sair do herói, a navegação vira uma pílula flutuante no topo, que
-// some durante o "como funciona" para o foco ficar nos passos.
+// entrevistar à mão) → pedir demonstração.
 // Todo CTA abre o pop-up de demonstração (PedirDemonstracao); a landing não leva ao painel, que tem dados de exemplo.
 // As cenas no palco escuro são ilustração do produto, não dados ao vivo.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { ArrowRight, Mail } from "lucide-react";
 import Perola from "@/components/totti/Perola";
 import Revelar from "@/components/totti/Revelar";
@@ -106,38 +104,11 @@ export default function Landing() {
   const [demo, setDemo] = useState(false);
   const abrir = useCallback(() => setDemo(true), []);
   const fechar = useCallback(() => setDemo(false), []);
-  const heroi = useRef<HTMLElement>(null);
   const como = useRef<HTMLElement>(null);
-  const [pilula, setPilula] = useState(false);
-
-  // A pílula aparece depois que o herói vai embora e some enquanto o "como funciona" está preso na tela.
-  useEffect(() => {
-    let raf = 0;
-    const medir = () => {
-      raf = 0;
-      const h = heroi.current?.getBoundingClientRect();
-      const c = como.current?.getBoundingClientRect();
-      const passouDoHeroi = h ? h.bottom < innerHeight * 0.45 : false;
-      const noComo = c ? c.top <= 1 && c.bottom >= innerHeight - 1 : false;
-      setPilula(passouDoHeroi && !noComo);
-    };
-    const aoRolar = () => {
-      if (!raf) raf = requestAnimationFrame(medir);
-    };
-    medir();
-    addEventListener("scroll", aoRolar, { passive: true });
-    addEventListener("resize", aoRolar);
-    return () => {
-      cancelAnimationFrame(raf);
-      removeEventListener("scroll", aoRolar);
-      removeEventListener("resize", aoRolar);
-    };
-  }, []);
 
   return (
     <div className="min-h-dvh overflow-x-clip bg-fundo text-texto">
-      <Heroi ref={heroi} onDemo={abrir} />
-      <Pilula visivel={pilula && !demo} onDemo={abrir} />
+      <Heroi onDemo={abrir} />
       <ComoFunciona ref={como} />
       <PesoDaEntrevista />
 
@@ -185,50 +156,24 @@ export default function Landing() {
   );
 }
 
-/** A navegação que acompanha a rolagem: pílula no topo, centralizada. Vai num portal (o app/template.tsx anima com transform). */
-function Pilula({ visivel, onDemo }: { visivel: boolean; onDemo: () => void }) {
-  const [montado, setMontado] = useState(false);
-  useEffect(() => setMontado(true), []);
-  if (!montado) return null;
-  return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center px-4">
-      <nav
-        aria-label="Navegação"
-        aria-hidden={!visivel}
-        inert={!visivel}
-        className="tema-recrutador pointer-events-auto flex items-center gap-1 rounded-full p-1.5 pl-3 text-texto shadow-[0_1px_2px_rgb(28_24_18/0.06),0_18px_40px_-18px_rgb(28_24_18/0.45),inset_0_0_0_1px_rgb(28_24_18/0.08)] backdrop-blur-xl"
-        style={{
-          // inline: o .tema-recrutador pinta o fundo opaco, e a pílula é vidro
-          background: "color-mix(in srgb, var(--superficie) 85%, transparent)",
-          opacity: visivel ? 1 : 0,
-          transform: visivel ? "none" : "translateY(-14px) scale(0.96)",
-          transition: "opacity .35s var(--curva-saida), transform .5s var(--curva-saida)",
-          pointerEvents: visivel ? "auto" : "none",
-        }}
-      >
-        <button type="button" onClick={() => rolarAte(0)} className="flex items-center gap-2 rounded-full py-1 pr-3 pl-0.5" aria-label="Voltar ao topo">
-          <Perola estado="pensando" tamanho={22} />
-          <span className="font-display text-[18px] leading-none font-bold tracking-[-0.02em]">totti</span>
-        </button>
-        <span aria-hidden className="mx-1 hidden h-5 w-px bg-borda sm:block" />
-        <button type="button" onClick={() => rolarPara("como")} className="hidden rounded-full px-3.5 py-2 text-[14.5px] text-texto-suave transition-colors hover:text-texto sm:block">
-          Como funciona
-        </button>
-        <button type="button" onClick={onDemo} className="rounded-full bg-texto px-4 py-2 text-[14.5px] font-semibold text-texto-claro transition-transform duration-rapida hover:-translate-y-px active:scale-[0.98]">
-          Agendar demonstração
-        </button>
-      </nav>
-    </div>,
-    document.body,
-  );
-}
-
 /** O herói ocupa a tela inteira: navegação no topo, texto e o quadro ao vivo no centro. */
-function Heroi({ ref, onDemo }: { ref: React.Ref<HTMLElement>; onDemo: () => void }) {
+function Heroi({ onDemo }: { onDemo: () => void }) {
   return (
-    <header ref={ref} className="relative flex min-h-dvh flex-col">
-      <nav className="mx-auto flex w-full max-w-[1320px] items-center px-6 py-6">
+    <header className="relative flex min-h-dvh flex-col">
+      <nav className="mx-auto flex w-full max-w-[1320px] flex-wrap items-center justify-between gap-4 px-6 py-6">
         <Marca href="/" />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => rolarPara("como")} className="hidden px-3.5 py-2.5 text-texto-suave transition-colors hover:text-texto sm:inline">
+            Como funciona
+          </button>
+          <button
+            type="button"
+            onClick={onDemo}
+            className="rounded-full px-4 py-2.5 text-texto shadow-[inset_0_0_0_1px_rgb(28_24_18/0.18)] transition-colors hover:bg-superficie"
+          >
+            Agendar demonstração
+          </button>
+        </div>
       </nav>
 
       <div className="mx-auto grid w-full max-w-[1320px] flex-1 items-center gap-12 px-6 pt-6 pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)]">
