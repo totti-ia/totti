@@ -61,6 +61,7 @@ export function criarEscutaTranscricao(opcoes: {
   servidor: boolean;
   aoEstado: (estado: EstadoEscuta) => void;
   aoTrecho?: (trecho: TrechoTranscrito) => void;
+  aoInicioDaVoz?: (em: number) => void;
   /** Token do Scribe; o servidor pode mandar junto o vocabulário da sessão (keyterms). */
   obterToken?: (sessaoId: string) => Promise<string | CredencialTranscricao>;
   interrupcao?: InterrupcaoPelaVoz;
@@ -155,6 +156,7 @@ export function criarEscutaTranscricao(opcoes: {
     const retomar = disparou && antes.length > 0;
     reiniciarVigia();
     if (!retomar) return;
+    opcoes.aoInicioDaVoz?.(Date.now() - antes.length / 16);
     const passou = portao.passar(antes, true);
     amostrasNoTrecho = passou.amostras.length;
     // O disparo pediu ~250 ms seguidos acima do vazamento: é voz, e conta para o trecho não parecer inventado.
@@ -326,6 +328,7 @@ export function criarEscutaTranscricao(opcoes: {
         const convertido = reamostrar(amostras, contexto.sampleRate, 16000, reamostragem);
         reamostragem = convertido.estado;
         const passou = portao.passar(convertido.amostras, fala);
+        if (passou.abriu) opcoes.aoInicioDaVoz?.(Date.now() - duracaoMs);
         amostrasNoTrecho = (passou.abriu ? 0 : amostrasNoTrecho) + passou.amostras.length;
         pendentes.guardar(passou.amostras);
         if (fala) { vozSemCommit = true; cancelarCommitDeSeguranca(); }
@@ -455,6 +458,7 @@ export function criarEscutaTranscricao(opcoes: {
     };
     reconhecimento.onresult = (evento) => {
       if (encerrado || !podeOuvir()) return;
+      if (!texto.parcial) opcoes.aoInicioDaVoz?.(Date.now());
       const parciais: string[] = [];
       for (let i = 0; i < evento.results.length; i++) {
         const resultado = evento.results[i];
@@ -566,21 +570,22 @@ export function useTranscricao(opcoes: {
   sessaoId: string | null;
   aoParcial?: (texto: string) => void;
   aoFinal?: (texto: string) => void;
+  aoInicioDaVoz?: (em: number) => void;
   contexto?: "coding" | "quadro";
   servidor?: boolean;
   /** Interrupção pela voz enquanto a escuta está pausada pelo Totti falando (ver InterrupcaoPelaVoz). */
   interrupcao?: { ativa: boolean; aoInterromper: () => void };
 }): EstadoEscuta {
-  const { stream, ativo, sessaoId, aoParcial, aoFinal } = opcoes;
+  const { stream, ativo, sessaoId, aoParcial, aoFinal, aoInicioDaVoz } = opcoes;
   const interrupcao = useRef(opcoes.interrupcao);
   interrupcao.current = opcoes.interrupcao;
   const [estado, setEstado] = useState<EstadoEscuta>({ motor: "nenhum", escutando: false, erro: null });
-  const callbacks = useRef({ aoParcial, aoFinal });
+  const callbacks = useRef({ aoParcial, aoFinal, aoInicioDaVoz });
   const escuta = useRef<ReturnType<typeof criarEscutaTranscricao> | null>(null);
   // Scribe por padrão; "0" (demonstração) usa só a transcrição do navegador.
   const servidor = opcoes.servidor ?? (process.env.NEXT_PUBLIC_USAR_SERVIDOR !== "0");
   const contexto = opcoes.contexto ?? "coding";
-  useEffect(() => { callbacks.current = { aoParcial, aoFinal }; }, [aoParcial, aoFinal]);
+  useEffect(() => { callbacks.current = { aoParcial, aoFinal, aoInicioDaVoz }; }, [aoParcial, aoFinal, aoInicioDaVoz]);
   useEffect(() => {
     if (!stream) {
       setEstado({ motor: "nenhum", escutando: false, erro: null });
@@ -588,6 +593,7 @@ export function useTranscricao(opcoes: {
     }
     const controle = criarEscutaTranscricao({
       stream, sessaoId, servidor, aoEstado: setEstado,
+      aoInicioDaVoz: (em) => callbacks.current.aoInicioDaVoz?.(em),
       obterToken: (id) => tokenTranscricao(id, contexto),
       interrupcao: {
         ativa: () => !!interrupcao.current?.ativa,

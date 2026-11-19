@@ -305,6 +305,7 @@ export default function SalaEntrevista({ configId, convite, regraDeIa }: { confi
     servidor: usarServidor(),
     aoParcial: receberParcial,
     aoFinal: receberVoz,
+    aoInicioDaVoz: entrevista.registrarInicioDaVoz,
     interrupcao: interrupcao.escuta,
   });
 

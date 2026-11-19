@@ -208,7 +208,7 @@ export const SessionEvent = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("paste"), chars: z.number().int(), lines: z.number().int(), startLine: z.number().int(), origem: OrigemDaColagem.optional() }),
   /** Só registro: envia no fim as saídas que sobraram sem snapshot. */
   z.object({ ...base, type: z.literal("foco"), saidas: z.array(SaidaDeFoco).max(200) }),
-  z.object({ ...base, type: z.literal("speech"), role: z.enum(["candidate", "agent"]), text: z.string(), blipId: z.string().optional() }),
+  z.object({ ...base, type: z.literal("speech"), role: z.enum(["candidate", "agent"]), text: z.string(), blipId: z.string().optional(), latenciaMs: z.number().finite().nonnegative().optional() }),
   /** O candidato cortou a fala do Totti (#97): falando por cima ou pelo botão/Esc. `heardChars`: até onde ele ouviu. */
   z.object({ ...base, type: z.literal("speech_interrupted"), by: z.enum(["voz", "manual"]), heardChars: z.number().int().nonnegative() }),
   z.object({ ...base, type: z.literal("hint"), level: z.number().int(), text: z.string() }),
@@ -470,16 +470,17 @@ export const Gravacao = z.object({
   /** Montado sem LLM ao preparar a gravação. Ausente nas gravações antigas. */
   integridade: z.object({
     sinais: z.array(z.object({
-      id: z.string(), tipo: z.enum(["colagem_de_fora", "saida_de_foco", "escrita_linear", "bloco_apos_saida", "canario", "injecao"]),
+      id: z.string(), tipo: z.enum(["colagem_de_fora", "saida_de_foco", "escrita_linear", "bloco_apos_saida", "canario", "injecao", "eco_da_pergunta", "tempo_plano", "bloco_sem_fala"]),
       t: z.number(), fim: z.number().optional(), texto: z.string(), detalhe: z.string().optional(),
     })),
     destaques: z.array(z.object({ texto: z.string(), t: z.number(), sinais: z.array(z.string()) })),
+    temposDeResposta: z.array(z.object({ tipo: z.enum(["conversa", "tecnica"]), quantidade: z.number(), medianaMs: z.number(), minimoMs: z.number(), maximoMs: z.number() })).optional(),
   }).nullable().optional(),
   sessionId: z.string(),
   durationMs: z.number(),
   /** Uma entrada por versão diferente do código, em ordem de tempo. */
   codigo: z.array(z.object({ t: z.number(), language: z.string(), code: z.string() })),
-  falas: z.array(z.object({ t: z.number(), role: z.enum(["candidate", "agent"]), text: z.string() })),
+  falas: z.array(z.object({ t: z.number(), role: z.enum(["candidate", "agent"]), text: z.string(), latenciaMs: z.number().finite().nonnegative().optional() })),
   execucoes: z.array(z.object({ t: z.number(), passed: z.number().int(), total: z.number().int() })),
   /** Acontecimentos curtos para dar contexto ("recebeu uma dica", "colou 12 linhas"). */
   marcos: z.array(

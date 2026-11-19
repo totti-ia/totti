@@ -170,6 +170,7 @@ export function tocarComAlinhamento(
   audio: Blob,
   alinhamento: Alinhamento,
   opcoes: {
+    aoIniciar?: () => void;
     aoProgresso?: (caracteres: number) => void;
     marcas?: MarcaDeFala[];
     sinal?: AbortSignal;
@@ -189,6 +190,7 @@ export function tocarComAlinhamento(
     let pararDeEsperarGesto: (() => void) | null = null;
     let ganho: GainNode | null = null;
     let rampaAgendada = false;
+    let iniciou = false;
 
     // A rampa começa no início real da reprodução e só uma vez por fala: um engasgo (waiting → playing) não a repete.
     function iniciarRampa() {
@@ -307,6 +309,7 @@ export function tocarComAlinhamento(
       // aceito. Depois de um engasgo (waiting → playing) ele continua de onde a mídia está.
       const comecarRelogio = () => {
         if (terminou) return;
+        if (!iniciou) { iniciou = true; opcoes.aoIniciar?.(); }
         iniciarRampa();
         if (quadro === null) animar();
       };

@@ -4,6 +4,7 @@ import { colagemDeFora } from "@/lib/agents/colagem";
 import { tentativasEmTextos } from "@/lib/seguranca/injecao";
 import { canarioApareceu, nomeDoCanario } from "./canario";
 import { duracao } from "./formato";
+import { blocoSemFala, sinaisDaConversa, type FalaDaConversa } from "./conversa";
 
 export { duracao };
 import type { BlocoDeIntegridade, SinalDeIntegridade, TipoDeSinal } from "./tipos";
@@ -77,6 +78,14 @@ function concluir(sinais: SinalDeIntegridade[], dadosPresentes: boolean): BlocoD
     const saiu = focos.length === 1 ? focos[0].texto : `Saiu da entrevista ${focos.length} vezes (${duracao(total)} no total)`;
     destaques.push({ texto: `${saiu} e, ${quando}, ${minuscula(atividade.texto)}`, t: focos[0].t, sinais: [...focos.map((f) => f.id), atividade.id] });
   }
+  // Eco e tempo medem comportamentos diferentes. Repetições do mesmo eco não são duas provas.
+  const plano = sinais.find((s) => s.tipo === "tempo_plano");
+  const ecos = plano ? sinais.filter((s) => s.tipo === "eco_da_pergunta" && s.t >= plano.t && s.t <= plano.fim!) : [];
+  if (plano && ecos.length) destaques.push({ texto: "Tempos de resposta próximos em perguntas de conversa e técnicas, junto de repetição das perguntas", t: plano.t, sinais: [plano.id, ...ecos.map((s) => s.id)] });
+  for (const bloco of sinais.filter((s) => s.tipo === "bloco_sem_fala")) {
+    const foco = sinais.findLast((s) => s.tipo === "saida_de_foco" && s.fim! <= bloco.t && bloco.t - s.fim! <= LIMITES.depoisDaSaidaMs);
+    if (foco && !destaques.some((d) => d.sinais.includes(foco.id))) destaques.push({ texto: `${foco.texto} e, ao voltar, ${minuscula(bloco.texto)}`, t: foco.t, sinais: [foco.id, bloco.id] });
+  }
   return { sinais, destaques: destaques.sort((a, b) => a.t - b.t) };
 }
 
@@ -137,7 +146,13 @@ export function integridadeDaIde(sessaoId: string, eventos: readonly SessionEven
     ultimaFoto = e.t;
   }
   registrarTextos(c, sessaoId, textos);
-  return concluir(c.sinais, dadosPresentes);
+  const falas = ordenados.flatMap((e) => e.type === "speech" ? [e] : []);
+  const conversa = sinaisDaConversa(falas);
+  c.sinais.push(...conversa.sinais, ...blocoSemFala(ordenados.flatMap((e) => e.type === "snapshot" ? [e] : []), falas, starter,
+    colagens.filter((e) => e.origem === "editor" || e.origem === "enunciado").map((e) => e.t)));
+  const bloco = concluir(c.sinais, dadosPresentes || conversa.temposDeResposta.length > 0);
+  if (bloco && conversa.temposDeResposta.length) bloco.temposDeResposta = conversa.temposDeResposta;
+  return bloco;
 }
 
 /** Fallback das gravações antigas: só fatos ainda verificáveis no código e nas falas. */
@@ -159,6 +174,7 @@ export function integridadeDoQuadro(sessaoId: string, eventos: readonly EventoEn
   const inicio = Number.isFinite(primeiraFase) ? primeiraFase : criadaEm;
   const saidas: Saida[] = [];
   const textos: Texto[] = [];
+  const falas: FalaDaConversa[] = [];
   let dadosPresentes = false;
   for (const e of ordenados) {
     const d = objeto(e.dados);
@@ -180,8 +196,19 @@ export function integridadeDoQuadro(sessaoId: string, eventos: readonly EventoEn
     if (e.tipo === "desenho" && typeof d.grafo === "string") textos.push({ t, onde: "numa caixa do quadro", texto: d.grafo });
     const falaDoCandidato = (e.tipo === "fala" && d.quem === "candidato") || (e.tipo === "resposta" && (d.quem === undefined || d.quem === "candidato"));
     if (falaDoCandidato && typeof d.texto === "string") textos.push({ t, onde: "na fala", texto: d.texto });
+    if (typeof d.texto === "string" && (falaDoCandidato || (e.tipo === "fala" && d.quem === "agente"))) {
+      const fala: FalaDaConversa = { t, role: falaDoCandidato ? "candidate" : "agent", text: d.texto, ...(typeof d.latenciaMs === "number" ? { latenciaMs: d.latenciaMs } : {}) };
+      // O quadro antigo registra a mesma resposta como fala e resposta. Não duplica a amostra nem perde a medida.
+      const duplicada = falaDoCandidato ? falas.findLast((f) => f.role === fala.role && f.text === fala.text && t - f.t <= 15_000) : undefined;
+      if (duplicada) { if (fala.latenciaMs !== undefined) duplicada.latenciaMs = fala.latenciaMs; }
+      else falas.push(fala);
+    }
   }
   registrarSaidas(c, saidasUnicas(saidas));
   registrarTextos(c, sessaoId, textos);
-  return concluir(c.sinais, dadosPresentes);
+  const conversa = sinaisDaConversa(falas);
+  c.sinais.push(...conversa.sinais);
+  const bloco = concluir(c.sinais, dadosPresentes || conversa.temposDeResposta.length > 0);
+  if (bloco && conversa.temposDeResposta.length) bloco.temposDeResposta = conversa.temposDeResposta;
+  return bloco;
 }

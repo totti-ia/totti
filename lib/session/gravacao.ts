@@ -29,7 +29,7 @@ export function gravacaoDaSessao(session: SessionState): Gravacao {
   for (const e of session.events) {
     switch (e.type) {
       case "speech":
-        falas.push({ t: e.t, role: e.role, text: e.text });
+        falas.push({ t: e.t, role: e.role, text: e.text, ...(e.latenciaMs !== undefined ? { latenciaMs: e.latenciaMs } : {}) });
         break;
       case "run":
         execucoes.push({ t: e.t, passed: e.result.passed, total: e.result.total });

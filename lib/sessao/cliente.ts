@@ -226,7 +226,7 @@ export async function finalizarSessao(sessaoId: string): Promise<void> {
  * Fala o texto. `aoProgresso(n)` recebe quantos caracteres já foram falados (para a legenda andar junto).
  * Se a voz falhar, resolve mesmo assim: a pergunta continua escrita na legenda e no quadro.
  */
-function falarNoNavegador(texto: string, aoProgresso: (caracteres: number) => void, sinal: AbortSignal): Promise<void> {
+function falarNoNavegador(texto: string, aoProgresso: (caracteres: number) => void, sinal: AbortSignal, audio?: import("../conversa/tempoDeResposta").ObservadorDoAudio): Promise<void> {
   return new Promise((resolver) => {
     let terminou = false;
     let estimativa: ReturnType<typeof setInterval> | undefined;
@@ -236,7 +236,7 @@ function falarNoNavegador(texto: string, aoProgresso: (caracteres: number) => vo
       terminou = true;
       if (estimativa !== undefined) clearInterval(estimativa);
       sinal.removeEventListener("abort", cancelar);
-      if (fala) fala.onend = fala.onerror = fala.onboundary = null;
+      if (fala) fala.onstart = fala.onend = fala.onerror = fala.onboundary = null;
       if (completar && !sinal.aborted) aoProgresso(texto.length);
       resolver();
     };
@@ -259,8 +259,9 @@ function falarNoNavegador(texto: string, aoProgresso: (caracteres: number) => vo
         const fimDaPalavra = texto.indexOf(" ", e.charIndex + 1);
         aoProgresso(fimDaPalavra === -1 ? texto.length : fimDaPalavra);
       };
-      fala.onend = () => terminar();
-      fala.onerror = () => terminar();
+      fala.onstart = () => audio?.iniciou();
+      fala.onend = () => { audio?.terminou(true); terminar(); };
+      fala.onerror = () => { audio?.terminou(false); terminar(); };
       sinal.addEventListener("abort", cancelar, { once: true });
       window.speechSynthesis.speak(fala);
     } catch {
@@ -301,11 +302,11 @@ let ultimaFalaDoTotti: string | undefined;
 let vozDoServidorDisponivel = true;
 
 /** A assinatura usada pelo quadro permanece a mesma nos dois modos. */
-export function falar(texto: string, aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>): Promise<void> {
-  return falarComMarcas(texto, [], aoProgresso, antesDeTocar);
+export function falar(texto: string, aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>, audio?: import("../conversa/tempoDeResposta").ObservadorDoAudio): Promise<void> {
+  return falarComMarcas(texto, [], aoProgresso, antesDeTocar, audio);
 }
 
-export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>): Promise<void> {
+export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>, audio?: import("../conversa/tempoDeResposta").ObservadorDoAudio): Promise<void> {
   calar();
   const controle = new AbortController();
   controleDaVoz = controle;
@@ -342,12 +343,15 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
           const { bytes, alinhamento } = comFolga(voz.bytes, voz.alinhamento, quadrosAntesDaFala());
           const { tocarComAlinhamento } = await import("../presenca/vozSincronizada");
           await tocarComAlinhamento(new Blob([bytes as BlobPart], { type: "audio/mpeg" }), alinhamento, {
+            aoIniciar: () => { if (!controle.signal.aborted) audio?.iniciou(); },
             aoProgresso: (n) => { tocou = true; progresso(n); }, marcas: marcasUnicas, sinal: controle.signal,
           });
+          if (controleDaVoz === controle && !controle.signal.aborted) audio?.terminou(true);
           marcarSaidaDeSom();
           progresso(texto.length);
           return;
         } catch (erro) {
+          if (controleDaVoz === controle) audio?.terminou(false);
           if (controle.signal.aborted) return;
           if (erro instanceof servidor.ErroHttp && erro.status === 501) vozDoServidorDisponivel = false;
           // Se o áudio já começou, repetir faria o candidato ouvir a frase duas vezes: as marcas e a legenda fecham.
@@ -369,7 +373,7 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
     }
     if (!controle.signal.aborted && (!antesDeTocar || await iniciar())) {
       marcasUnicas.forEach((m) => m.aoChegar());
-      await falarNoNavegador(texto, progresso, controle.signal);
+      await falarNoNavegador(texto, progresso, controle.signal, audio);
     }
   } catch {
     progresso(texto.length);
@@ -382,17 +386,19 @@ export async function falarComMarcas(texto: string, marcas: MarcaDeFala[], aoPro
  * Toca a gravação curta de uma reação ("Hm.", "Uhum.") sem fala seguinte (lib/voz/reacao.ts). Se a gravação não
  * carrega, a reação some em silêncio: não cai na síntese. A gravação é carregada só quando a reação é tocada.
  */
-export async function falarReacao(slug: string, texto: string, aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>): Promise<void> {
+export async function falarReacao(slug: string, texto: string, aoProgresso?: (caracteres: number) => void, antesDeTocar?: () => Promise<boolean>, audio?: import("../conversa/tempoDeResposta").ObservadorDoAudio): Promise<void> {
   calar();
   const controle = new AbortController();
   controleDaVoz = controle;
   try {
     const { tocarGravacao } = await import("../voz/cliente");
     await tocarGravacao(urlDaReacao(slug), texto, controle.signal, {
-      aoIniciar: () => {},
+      aoIniciar: () => { if (!controle.signal.aborted) audio?.iniciou(); },
       aoProgresso: (n) => { if (!controle.signal.aborted && controleDaVoz === controle) aoProgresso?.(Math.min(texto.length, n)); },
     }, antesDeTocar);
+    if (controleDaVoz === controle && !controle.signal.aborted) audio?.terminou(true);
   } catch {
+    if (controleDaVoz === controle) audio?.terminou(false);
     // Gravação ausente ou falha ao tocar: a reação fica de fora, sem erro.
   } finally {
     if (controleDaVoz === controle) controleDaVoz = null;

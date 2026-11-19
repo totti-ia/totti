@@ -31,6 +31,7 @@ const MIN_PALAVRAS_FALA = 2;
 const PEDIDOS_DE_REPETICAO = FALAS_DE_REPETICAO;
 
 export interface ConversaDeps {
+  tomarLatencia?: (substitui: boolean) => number | undefined;
   sessionId: string | null;
   sendEvent: (input: EventInput) => Promise<void>;
   applyCommands: (commands: EditorCommand[]) => void;
@@ -194,6 +195,7 @@ export function useConversa(deps: ConversaDeps) {
   /** Uma fala do candidato (já sem as pausas: ver PAUSA_FIM_DA_FALA_MS) indo ao entrevistador. */
   const enviar = useCallback(async (texto: string, sinal: AbortSignal, { substitui }: { substitui: boolean }) => {
     const d = depsRef.current;
+    const latenciaMs = d.tomarLatencia?.(substitui);
     if (d.sessionId === null) return;
     if (aberturaRef.current) await aberturaRef.current;
     semRespostaDesdeRef.current = null;
@@ -219,7 +221,7 @@ export function useConversa(deps: ConversaDeps) {
     }
     repeticoesRef.current = 0;
     // Um "terminei" solto também vai para a linha do tempo: o segundo, noutra conversa, precisa saber do primeiro.
-    if (blip || palavras(texto) >= MIN_PALAVRAS_FALA || disseQueTerminou(texto)) void d.sendEvent({ type: "speech", role: "candidate", text: texto, blipId: blip?.id });
+    if (blip || palavras(texto) >= MIN_PALAVRAS_FALA || disseQueTerminou(texto)) void d.sendEvent({ type: "speech", role: "candidate", text: texto, blipId: blip?.id, ...(latenciaMs !== undefined ? { latenciaMs } : {}) });
     if (lista === livresRef.current) aparar();
     if (res.despedida) {
       d.onDespedida?.(res.reply);
