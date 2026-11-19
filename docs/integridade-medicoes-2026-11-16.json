@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-16",
+  "reference": "origin/main@0cdffdd468e7155564637bbe7fc415946a717dff",
+  "implementation": "d29f86ce09fd1d20bb31cbb85b9e7dc4c768c6ac",
+  "storage": "memoria",
+  "paid_fallback": false,
+  "merge_allowed": false,
+  "runs": {
+    "main": {
+      "bench-conversa": {
+        "status": "completed",
+        "returncode": 0,
+        "seconds": 61.5,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/bench-conversa.ts",
+          "featherless:google/gemma-4-26B-A4B-it"
+        ],
+        "sha": "0cdffdd468e7155564637bbe7fc415946a717dff",
+        "metrics": {
+          "p50_ms": 3915,
+          "p95_ms": 8018,
+          "correct": "8/14"
+        }
+      },
+      "bench-quadro": {
+        "status": "completed",
+        "returncode": 0,
+        "seconds": 69.6,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/bench-quadro.ts",
+          "featherless:google/gemma-4-26B-A4B-it"
+        ],
+        "sha": "0cdffdd468e7155564637bbe7fc415946a717dff",
+        "metrics": {
+          "alvo": "featherless:google/gemma-4-26B-A4B-it",
+          "aprovadas": "0/2",
+          "erros": 0,
+          "p50": 2605,
+          "p90": 5620,
+          "p95": 11379,
+          "acimaDe6s": 1,
+          "acimaDe7s": 1,
+          "acimaDe8s": 1,
+          "chamadas": 20,
+          "tokensEntradaMedia": 6608,
+          "tokensSaidaMedia": 97,
+          "custoUsd": 0.0073,
+          "custoTotalUsd": 0.0073,
+          "falhas": "só 0 pergunta(s) em 6 análises"
+        }
+      },
+      "placar-quadro": {
+        "status": "completed",
+        "returncode": 1,
+        "seconds": 385.3,
+        "command": [
+          "cmd",
+          "/c",
+          "npm",
+          "run",
+          "placar:quadro",
+          "--",
+          "--rotulo",
+          "integridade-123-main"
+        ],
+        "sha": "0cdffdd468e7155564637bbe7fc415946a717dff",
+        "partial": {
+          "fixed_cases": 18,
+          "fixed_ok": 13,
+          "personas_started": [
+            "== Conversa: senior_claro ==",
+            "== Conversa: junior_nervoso =="
+          ],
+          "judge_started": false
+        },
+        "final_score": null,
+        "errors": [
+          "LlmProviderError: resposta da featherless sem choices[0].message"
+        ]
+      },
+      "validar-conversa-ide": {
+        "status": "completed",
+        "returncode": 1,
+        "seconds": 48.2,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/validar-conversa-ide.ts"
+        ],
+        "sha": "0cdffdd468e7155564637bbe7fc415946a717dff",
+        "metrics": {
+          "cases": 13,
+          "p50_ms": 2869,
+          "p95_ms": 7012,
+          "max_ms": 7012,
+          "failures": [
+            "pede para encerrar: devia ficar quieto",
+            "",
+            "1 !== 0",
+            ""
+          ]
+        }
+      }
+    },
+    "pr": {
+      "bench-conversa": {
+        "status": "completed",
+        "returncode": 0,
+        "seconds": 45.1,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/bench-conversa.ts",
+          "featherless:google/gemma-4-26B-A4B-it"
+        ],
+        "sha": "d29f86ce09fd1d20bb31cbb85b9e7dc4c768c6ac",
+        "metrics": {
+          "p50_ms": 2030,
+          "p95_ms": 8024,
+          "correct": "9/14"
+        }
+      },
+      "bench-quadro": {
+        "status": "completed",
+        "returncode": 0,
+        "seconds": 44.9,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/bench-quadro.ts",
+          "featherless:google/gemma-4-26B-A4B-it"
+        ],
+        "sha": "d29f86ce09fd1d20bb31cbb85b9e7dc4c768c6ac",
+        "metrics": {
+          "alvo": "featherless:google/gemma-4-26B-A4B-it",
+          "aprovadas": "0/2",
+          "erros": 0,
+          "p50": 2016,
+          "p90": 2979,
+          "p95": 4070,
+          "acimaDe6s": 0,
+          "acimaDe7s": 0,
+          "acimaDe8s": 0,
+          "chamadas": 19,
+          "tokensEntradaMedia": 6608,
+          "tokensSaidaMedia": 97,
+          "custoUsd": 0.0069,
+          "custoTotalUsd": 0.0073,
+          "falhas": "só 1 pergunta(s) em 6 análises | só 0 pergunta(s) em 6 análises"
+        }
+      },
+      "placar-quadro": {
+        "status": "timeout",
+        "returncode": null,
+        "seconds": 1200.2,
+        "command": [
+          "cmd",
+          "/c",
+          "npm",
+          "run",
+          "placar:quadro",
+          "--",
+          "--rotulo",
+          "integridade-123-pr"
+        ],
+        "sha": "f1fead7ce5590f60e42cd4a3809c92ca2ddc798e",
+        "partial": {
+          "fixed_cases": 18,
+          "fixed_ok": 15,
+          "personas_started": [
+            "== Conversa: senior_claro ==",
+            "== Conversa: junior_nervoso ==",
+            "== Conversa: vago_testador =="
+          ],
+          "judge_started": true
+        },
+        "final_score": null,
+        "errors": [
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 1/3 falhou (timeout após 90s); nova tentativa em 1000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 1/3 falhou (timeout após 90s); nova tentativa em 1000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 1/3 falhou (timeout após 90s); nova tentativa em 1000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 1/3 falhou (timeout após 90s); nova tentativa em 1000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 2/3 falhou (timeout após 90s); nova tentativa em 3000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 2/3 falhou (timeout após 90s); nova tentativa em 3000ms",
+          "[featherless] moonshotai/Kimi-K2.6 tentativa 2/3 falhou (timeout após 90s); nova tentativa em 3000ms"
+        ]
+      },
+      "validar-conversa-ide": {
+        "status": "completed",
+        "returncode": 1,
+        "seconds": 53.4,
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "--env-file=.env.local",
+          "scripts/validar-conversa-ide.ts"
+        ],
+        "sha": "f1fead7ce5590f60e42cd4a3809c92ca2ddc798e",
+        "metrics": {
+          "cases": 13,
+          "p50_ms": 4505,
+          "p95_ms": 7016,
+          "max_ms": 7016,
+          "failures": [
+            "lendo o enunciado: devia ficar quieto; pede para encerrar: devia ficar quieto",
+            "",
+            "2 !== 0",
+            ""
+          ]
+        }
+      }
+    }
+  }
+}

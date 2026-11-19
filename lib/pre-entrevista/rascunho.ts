@@ -70,11 +70,12 @@ export type Origem = z.infer<typeof Origem>;
  * Campos que a recrutadora pode editar na revisão. Um campo editado fica "fixado": a extração e os pesos
  * automáticos não o sobrescrevem até ela falar daquele campo de novo (ver `fixados.ts`).
  */
-export const CampoFixado = z.enum(["mode", "seniority", "focus", "criteria", "recruiterNotes", "durationMin", "conducao"]);
+export const CampoFixado = z.enum(["mode", "seniority", "focus", "criteria", "recruiterNotes", "durationMin", "conducao", "regraDeIa"]);
 export type CampoFixado = z.infer<typeof CampoFixado>;
 
 export const Rascunho = z.object({
   mode: InterviewMode,
+  regraDeIa: InterviewConfig.shape.regraDeIa,
   roleTitle: z.string(),
   jobDescription: z.string().optional(),
   seniority: InterviewConfig.shape.seniority,
@@ -348,6 +349,7 @@ export function paraInterviewConfig(
     ...(conducao.length > 0 ? { conductNotes: conducao } : {}),
     tone: preferencias?.tom ?? "amigavel",
     hints: preferencias?.dicas ?? "leves",
+    ...(r.regraDeIa ? { regraDeIa: r.regraDeIa } : {}),
     criteria,
     ...escolherProblema(r),
     languages: preferencias?.linguagens?.length ? preferencias.linguagens : LINGUAGENS,

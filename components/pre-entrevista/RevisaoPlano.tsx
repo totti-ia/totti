@@ -434,6 +434,22 @@ export default function RevisaoPlano({ rascunho, enviando, publicado = false, er
           </Cartao>
 
           {/* Instruções de comportamento do Totti: não viram critério nem entram na nota. Uma por linha. */}
+          <Cartao titulo="Uso de IA na entrevista" dica="Esta regra aparece para o candidato antes de começar.">
+            <label className="text-sm">
+              Assistência de IA
+              <select
+                aria-label="Assistência de IA"
+                className={`${campo} mt-2`}
+                value={r.regraDeIa ?? "sem_ia"}
+                onChange={(e) => setR({ ...r, regraDeIa: e.target.value as "sem_ia" | "permitida" })}
+              >
+                <option value="sem_ia">Resolver sem IA (padrão)</option>
+                <option value="permitida">Permitir IA com explicação do uso</option>
+              </select>
+            </label>
+            <p className="text-sm text-texto-suave">Pode permitir IA quando o plano avaliar como a pessoa usa essa ferramenta.</p>
+          </Cartao>
+
           <Cartao titulo="Como o Totti deve conduzir" dica="O que ele faz na entrevista. Não entra na nota. Uma instrução por linha.">
             <textarea
               value={(r.conducao ?? []).join("\n")}

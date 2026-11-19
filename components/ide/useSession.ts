@@ -22,7 +22,7 @@ const LOG_LIMIT = 200;
  * Eventos que não podem se perder: sem eles o relatório dizia "não rodou o código" com dois runs feitos. Ficam na
  * fila até o servidor responder 2xx, com reenvio; os outros (pausa, fala, balão) vão uma vez, como antes.
  */
-const EVENTOS_GARANTIDOS = new Set<SessionEvent["type"]>(["snapshot", "paste", "run", "session_ended"]);
+const EVENTOS_GARANTIDOS = new Set<SessionEvent["type"]>(["snapshot", "paste", "run", "session_ended", "foco"]);
 /** Teto da espera pela fila ao encerrar: a despedida não fica presa numa rede caída. */
 const ESPERA_DA_FILA_AO_ENCERRAR_MS = 10_000;
 /** Com o candidato parado, o blip só aparece por polling: a cada 3 s. */
@@ -123,7 +123,7 @@ export function useSession(
   );
 
   const endSession = useCallback(
-    async (reason: "timeout" | "button") => {
+    async (reason: "timeout" | "button", foco?: Extract<SessionEvent, { type: "session_ended" }>["foco"]) => {
       if (endedRef.current) return;
       endedRef.current = true;
       setEnded(true);
@@ -131,7 +131,7 @@ export function useSession(
       // Nunca espera sem teto: com a rede caída, a despedida segue e os reenvios continuam em segundo plano.
       const esvaziou = await esperarEventos();
       if (!esvaziou) console.warn("[events] encerrando com eventos ainda na fila de reenvio");
-      void sendEvent({ type: "session_ended", reason });
+      void sendEvent({ type: "session_ended", reason, ...(foco?.length ? { foco } : {}) });
       await esperarEventos();
     },
     [sendEvent, esperarEventos],

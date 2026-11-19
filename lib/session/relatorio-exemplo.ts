@@ -8,6 +8,7 @@
  */
 import { DEFAULT_CONFIG } from "@/lib/config/default";
 import type { Gravacao, Report } from "@/lib/contracts";
+import { INTEGRIDADE_EXEMPLO } from "@/lib/integridade/exemplo";
 import { regrasDaVaga, vagaDaConfig } from "@/lib/squad-memory/config";
 import { regrasDoCriterio } from "@/lib/squad-memory/prompt";
 
@@ -163,6 +164,7 @@ const CODIGO_ADAPTADO = `def two_sum(nums: list[int], target: int) -> list[int]:
 `;
 
 export const GRAVACAO_EXEMPLO: Gravacao = {
+  integridade: INTEGRIDADE_EXEMPLO,
   sessionId: ID_EXEMPLO,
   durationMs: min(32, 0),
   codigo: [

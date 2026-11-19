@@ -4,6 +4,7 @@
 // É o modelo dos dados mockados: veredito e nota, números que importam, nota por critério com a prova a um clique,
 // linha do tempo, regra de reprovação, adaptação e aprendizado, e a decisão no fim. Quem alimenta é o tipo comum
 // de `lib/relatorio` (ver `do-quadro.ts` e `da-ide.ts`); aqui não se sabe de onde o dado veio.
+// O bloco Integridade (#123) fica à parte da nota: evidência com minuto, nunca veredito.
 import React, { useCallback, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Check, ChevronDown, Printer, TriangleAlert, X } from "lucide-react";
@@ -15,11 +16,13 @@ import NotasDosCriterios, { type NotaCriterio } from "@/components/report/NotasD
 import AprendidoComOTime from "@/components/squad/AprendidoComOTime";
 import type { Gravacao } from "@/lib/contracts";
 import { formatMs } from "@/lib/format";
+import { duracao } from "@/lib/integridade/formato";
 import {
   NOME_DA_RECOMENDACAO,
   NOME_DO_STATUS_ELIMINATORIO,
   type AdaptacaoComum,
   type AprendizadoComum,
+  type BlocoDeIntegridade,
   type EliminatorioComum,
   type ProvaComum,
   type RelatorioComum,
@@ -29,6 +32,7 @@ const ORIGEM_ADAPTACAO = "Adaptação à mudança";
 const ORIGEM_APRENDIZADO = "Aprendizado";
 const ORIGEM_HISTORIA = "Acontecimento";
 const ORIGEM_ELIMINATORIO = "Regra de reprovação";
+const ORIGEM_INTEGRIDADE = "Integridade";
 
 /** "Próxima conversa" só faz sentido quando a pessoa segue no processo ou ainda falta evidência. */
 const ROTULO_DO_BRIEFING: Record<RelatorioComum["recomendacao"], string> = {
@@ -37,6 +41,16 @@ const ROTULO_DO_BRIEFING: Record<RelatorioComum["recomendacao"], string> = {
   talvez: "Para a próxima conversa",
   evidencia_insuficiente: "Para a próxima conversa",
   nao_avancar: "O que sustenta a recomendação",
+};
+
+/**
+ * Colunas da faixa de números pela quantidade (a IDE tem 4 ou 5, o quadro 3 ou 4): sempre linhas cheias, sem célula
+ * vazia. No celular são 2 colunas e o último ímpar ocupa a linha toda; `ultimo` desfaz isso quando a grade alarga.
+ */
+const GRADE_DOS_FATOS: Record<number, { grade: string; ultimo: string }> = {
+  3: { grade: "sm:grid-cols-3", ultimo: "sm:odd:last:col-span-1" },
+  4: { grade: "md:grid-cols-4", ultimo: "" },
+  5: { grade: "lg:grid-cols-5", ultimo: "lg:odd:last:col-span-1" },
 };
 
 const nota1 = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -79,6 +93,8 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
       const texto = a.detalhe ? `${a.titulo}. ${a.detalhe}` : a.titulo;
       lista.push({ prova: { t: a.t, texto, tipo: "fala", elementos: [], imagem: null }, origem: ORIGEM_HISTORIA, texto });
     }
+    // Destaques e sinais da integridade também abrem o momento na gravação (o código e a conversa daquele minuto).
+    for (const p of provasDaIntegridade(r.integridade)) lista.push({ prova: p, origem: ORIGEM_INTEGRIDADE, texto: p.texto });
     const ordenada = lista
       .filter((p) => abrivel(p.prova))
       .sort((a, b) => (a.prova.t ?? Infinity) - (b.prova.t ?? Infinity));
@@ -167,7 +183,10 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
     return { ...a, momento: gravacao ? (i >= 0 ? i : undefined) : r.gravacaoQuadro ? a.t : undefined };
   });
 
-  const totalDeProvas = todas.filter((p) => p.origem !== ORIGEM_HISTORIA).length;
+  const fora = (p: ProvaIndexada) => p.origem === ORIGEM_HISTORIA || p.origem === ORIGEM_INTEGRIDADE;
+  const totalDeProvas = todas.filter((p) => !fora(p)).length;
+  const provaDaIntegridade = (t: number, texto: string) =>
+    todas.find((p) => p.origem === ORIGEM_INTEGRIDADE && p.prova.t === t && p.texto === texto)?.prova;
   const comNota = r.criterios.filter((c) => c.nota !== null).length;
   const semProva = r.criterios.filter((c) => c.nota === null);
   const linhaDoTempoDoQuadroIndisponivel = !r.gravacaoQuadro || [r.gravacaoQuadro.falas, r.gravacaoQuadro.desenho, r.gravacaoQuadro.fases, r.gravacaoQuadro.acontecimentos].every(lista => lista.length === 0);
@@ -222,9 +241,14 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
         </header>
 
         {r.fatos.length > 0 && (
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-padrao border border-borda bg-borda sm:grid-cols-3 lg:grid-cols-5">
+          <dl
+            className={`grid grid-cols-2 gap-px overflow-hidden rounded-padrao border border-borda bg-borda ${GRADE_DOS_FATOS[r.fatos.length]?.grade ?? ""}`}
+          >
             {r.fatos.map((f) => (
-              <div key={f.nome} className="flex flex-col gap-1 bg-superficie px-4 py-3.5 odd:last:col-span-2 lg:odd:last:col-span-1">
+              <div
+                key={f.nome}
+                className={`flex flex-col gap-1 bg-superficie px-4 py-3.5 odd:last:col-span-2 ${GRADE_DOS_FATOS[r.fatos.length]?.ultimo ?? ""}`}
+              >
                 <dt className="text-[12.5px] text-texto-suave">{f.nome}</dt>
                 <dd className="numero text-[16px] font-medium tabular-nums">{f.valor}</dd>
               </div>
@@ -294,6 +318,16 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
           falasNeutras={r.gravacaoQuadro?.falas}
           onAbrir={gravacao ? abrir : r.gravacaoQuadro ? setMomentoQuadro : undefined}
         />{r.formato === "system_design" && r.gravacaoQuadro && r.perguntasEsperadas !== undefined && r.gravacaoQuadro.acontecimentos.filter(a => a.tipo === "pergunta").length !== r.perguntasEsperadas && <p role="status" className="mt-2 text-xs text-texto-suave">Há uma divergência entre as perguntas registradas na linha do tempo e o total do relatório.</p>}</div>}
+
+      {r.integridade && (
+        <Integridade
+          bloco={r.integridade}
+          desenhar={(t, texto, chave) => {
+            const p = provaDaIntegridade(t, texto);
+            return p ? desenharProva(p, ORIGEM_INTEGRIDADE, chave) : null;
+          }}
+        />
+      )}
 
       <details data-secao="momentos" className="group -mt-6 rounded-padrao border border-borda">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[14px] font-medium select-none [&::-webkit-details-marker]:hidden">
@@ -368,6 +402,113 @@ export default function Relatorio({ r, gravacao = null, comDecisao = true }: Pro
       <ImagemAmpliada url={imagem} aoFechar={() => setImagem(null)} />
     </main>
   );
+}
+
+/** As provas do bloco Integridade: os destaques primeiro, depois cada sinal (com o detalhe, quando houver). */
+function provasDaIntegridade(b: BlocoDeIntegridade | null): ProvaComum[] {
+  if (!b) return [];
+  const prova = (t: number, texto: string): ProvaComum => ({ t, texto, tipo: "codigo", elementos: [], imagem: null });
+  return [
+    ...b.destaques.map((d) => prova(d.t, d.texto)),
+    ...b.sinais.map((s) => prova(s.t, textoDoSinal(s))),
+  ];
+}
+
+const textoDoSinal = (s: BlocoDeIntegridade["sinais"][number]) => (s.detalhe ? `${s.texto}. ${s.detalhe}` : s.texto);
+
+/**
+ * Integridade (#123): o que o navegador registrou (colagem de fora, saídas da janela, jeito de escrever, canário).
+ * Destaque só quando dois sinais independentes se encontram no tempo, ou o canário. Sinal sozinho fica recolhido.
+ * Linguagem de evidência; quem decide é a recrutadora. Não entra na nota.
+ */
+function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar: (t: number, texto: string, chave: number) => ReactNode }) {
+  const { destaques, sinais } = bloco;
+  const resumo = resumoDaIntegridade(sinais);
+  return (
+    <section aria-labelledby="integridade" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2 id="integridade" className="text-[17px] font-medium">
+          {ORIGEM_INTEGRIDADE}
+        </h2>
+        <p className="text-[13px] text-texto-suave">
+          O que a sala registrou além da conversa: colagens, saídas da janela e o jeito de escrever. Não entra na nota; vale conferir na
+          gravação.
+        </p>
+      </div>
+
+      {resumo.length > 0 && (
+        <dl className="flex flex-wrap gap-1.5">
+          {resumo.map(({ nome, valor }) => (
+            <div key={nome} className="flex h-8 items-center gap-1.5 rounded-full bg-superficie-2/70 px-3 text-[13px]">
+              <dt className="text-texto-suave">{nome}</dt>
+              <dd className="numero font-medium text-texto">{valor}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {destaques.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {destaques.map((d, i) => (
+            <li key={`${d.t}-${i}`} className="flex flex-col gap-0.5 rounded-padrao bg-superficie px-4 pt-3 pb-2 shadow-cartao">
+              <span className="text-[12.5px] text-texto-suave">{porQueDestaca(d, sinais)}</span>
+              {desenhar(d.t, d.texto, i) ?? (
+                <p className="flex items-baseline gap-2 py-1 text-corpo">
+                  <span className="numero shrink-0 font-medium">{formatMs(d.t)}</span>
+                  {d.texto}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[14.5px]">{sinais.length ? "Nada a destacar: nenhum sinal se juntou a outro." : "Nenhum sinal registrado nesta entrevista."}</p>
+      )}
+
+      {sinais.length > 0 && (
+        <details className="group rounded-padrao border border-borda">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[14px] font-medium select-none [&::-webkit-details-marker]:hidden">
+            Todos os sinais
+            <span className="flex items-center gap-1 text-sm font-normal text-texto-suave">
+              <span className="numero">{sinais.length}</span>
+              <ChevronDown size={14} strokeWidth={1.75} className="transition-transform duration-150 group-open:rotate-180" aria-hidden />
+            </span>
+          </summary>
+          <div className="border-t border-borda px-4 py-3">
+            {sinais.map((s, i) => {
+              const texto = textoDoSinal(s);
+              return (
+                desenhar(s.t, texto, i) ?? (
+                  <p key={s.id} className="flex items-baseline gap-2 py-1 text-corpo text-texto-suave">
+                    <span className="numero shrink-0 font-medium">{formatMs(s.t)}</span>
+                    {texto}
+                  </p>
+                )
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </section>
+  );
+}
+
+/** O rótulo do destaque: o canário vale sozinho; o resto, porque dois sinais independentes se encontraram. */
+function porQueDestaca(d: BlocoDeIntegridade["destaques"][number], sinais: BlocoDeIntegridade["sinais"]): string {
+  const tipos = d.sinais.map((id) => sinais.find((s) => s.id === id)?.tipo);
+  if (tipos.includes("canario")) return "O enunciado copiado voltou à sala";
+  return "Dois sinais no mesmo momento";
+}
+
+/** Os números do bloco em pílulas: quantas vezes saiu e por quanto tempo no total, quantas colagens de fora. */
+function resumoDaIntegridade(sinais: BlocoDeIntegridade["sinais"]): { nome: string; valor: string }[] {
+  const saidas = sinais.filter((s) => s.tipo === "saida_de_foco");
+  const fora = saidas.reduce((total, s) => total + Math.max(0, (s.fim ?? s.t) - s.t), 0);
+  const colagens = sinais.filter((s) => s.tipo === "colagem_de_fora").length;
+  return [
+    { nome: "Saiu da entrevista", valor: saidas.length ? `${saidas.length === 1 ? "1 vez" : `${saidas.length} vezes`} · ${duracao(fora)}` : "nenhuma vez" },
+    { nome: "Colagens", valor: colagens ? String(colagens) : "nenhuma" },
+  ];
 }
 
 /** Nota geral: o número grande e uma barra de 0 a 4 preenchida até ele. */

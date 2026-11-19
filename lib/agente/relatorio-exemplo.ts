@@ -1,6 +1,7 @@
 // Relatório de exemplo (só em desenvolvimento, em /relatorio/exemplo): para revisar o visual e tirar
 // imagens para o pitch sem precisar rodar uma entrevista inteira. Dados inventados.
 import type { RelatorioVisto } from "./relatorio";
+export { INTEGRIDADE_QUADRO_CONVERGENCIA, INTEGRIDADE_QUADRO_EXEMPLO } from "@/lib/integridade/exemplo";
 
 export const RELATORIO_EXEMPLO: RelatorioVisto = {
   sessaoId: "exemplo",

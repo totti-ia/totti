@@ -13,6 +13,7 @@ const ANALYZED_TRIGGERS = new Set<SessionEvent["type"]>(["pause", "run", "paste"
 const PALAVRAS_PARA_ANALISAR = 12;
 
 export function disparaAnalise(event: SessionEvent, session: SessionState): boolean {
+  if (event.type === "foco" || (event.type === "paste" && event.origem !== undefined && event.origem !== "fora")) return false;
   if (ANALYZED_TRIGGERS.has(event.type)) return true;
   // Antes da primeira linha de código nenhuma pergunta da análise pode sair (lib/agents/policy.ts): analisar a
   // fala ali só gastava uma chamada.

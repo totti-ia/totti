@@ -3,6 +3,9 @@
 // convergem os dois neste tipo, e `components/relatorio/Relatorio.tsx` só sabe desenhar ele.
 // Só tipos e funções puras: serve ao servidor e ao navegador.
 
+import type { BlocoDeIntegridade } from "@/lib/integridade/tipos";
+export type { TipoDeSinal, SinalDeIntegridade, DestaqueDeIntegridade, BlocoDeIntegridade } from "@/lib/integridade/tipos";
+
 export type FormatoDoRelatorio = "system_design" | "live_coding";
 
 export const NOME_DO_FORMATO: Record<FormatoDoRelatorio, string> = {
@@ -116,6 +119,8 @@ export interface GravacaoDoQuadro {
 }
 
 export interface RelatorioComum {
+  /** null: sessão antiga sem dados de integridade. Fora da nota e da recomendação. */
+  integridade: BlocoDeIntegridade | null;
   formato: FormatoDoRelatorio;
   id: string;
   /** Título grande: o problema (quadro) ou a vaga (IDE). */

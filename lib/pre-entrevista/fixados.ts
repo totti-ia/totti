@@ -20,7 +20,7 @@
 import { normalizarTexto } from "./frases";
 import { alinharPesos, type CampoFixado, type Rascunho } from "./rascunho";
 
-const CAMPOS: CampoFixado[] = ["mode", "seniority", "focus", "criteria", "recruiterNotes", "durationMin", "conducao"];
+const CAMPOS: CampoFixado[] = ["mode", "seniority", "focus", "criteria", "recruiterNotes", "durationMin", "conducao", "regraDeIa"];
 const AREAS = ["tecnico", "escala_produto", "pressao", "uso_ia"];
 
 /** Recorte comparável de cada campo (pesos em 2 casas, para a tela e o servidor concordarem). */
@@ -129,6 +129,7 @@ export function reaplicarFixados(base: Rascunho, novo: Rascunho): Rascunho {
   if (fixados.includes("seniority")) r.seniority = base.seniority;
   if (fixados.includes("recruiterNotes")) r.recruiterNotes = base.recruiterNotes;
   if (fixados.includes("durationMin")) r.durationMin = base.durationMin;
+  if (fixados.includes("regraDeIa")) r.regraDeIa = base.regraDeIa;
   if (fixados.includes("conducao")) {
     // A lista dela vale. Do extrator só entra o que ela não tinha e que o automático ainda não tinha produzido antes da
     // edição: linha apagada ou reescrita na revisão está em `conducaoVista` e não volta; instrução nova entra.

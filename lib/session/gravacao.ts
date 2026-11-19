@@ -3,6 +3,8 @@
  * Só servidor. Sai da sessão em memória e fica salva em disco com o relatório (lib/session/reports.ts).
  */
 import type { Gravacao } from "@/lib/contracts";
+import { integridadeDaIde } from "@/lib/integridade/montar";
+import { getProblem } from "@/problems";
 import { ultimoEvento } from "@/lib/session/eventos";
 import type { SessionState } from "@/lib/session/types";
 
@@ -52,5 +54,7 @@ export function gravacaoDaSessao(session: SessionState): Gravacao {
     }
   }
 
-  return { sessionId: session.sessionId, durationMs: fimDaSessao(session), codigo, falas, execucoes, marcos };
+  const starter = getProblem(session.config.problemId).public.starters[session.language] ?? "";
+  return { sessionId: session.sessionId, durationMs: fimDaSessao(session), codigo, falas, execucoes, marcos,
+    integridade: integridadeDaIde(session.sessionId, session.events, starter) };
 }

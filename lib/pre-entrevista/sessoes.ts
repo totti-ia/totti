@@ -386,6 +386,7 @@ export function salvarRevisao(sessao: Sessao, editado: Rascunho, base?: Rascunho
     }
     if (mudados.includes("recruiterNotes")) novo.recruiterNotes = editado.recruiterNotes;
     if (mudados.includes("durationMin")) novo.durationMin = editado.durationMin;
+    if (mudados.includes("regraDeIa")) novo.regraDeIa = editado.regraDeIa;
     // O título não passa pelo automático: não fixa nada.
     if (editado.roleTitle !== base.roleTitle) novo.roleTitle = editado.roleTitle;
     if (mudados.includes("conducao")) novo.conducao = editado.conducao;

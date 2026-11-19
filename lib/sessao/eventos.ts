@@ -1,4 +1,4 @@
-export type TipoEvento = "desenho" | "fala" | "analise" | "analise_falhou" | "pergunta" | "resposta" | "fase";
+export type TipoEvento = "desenho" | "fala" | "analise" | "analise_falhou" | "pergunta" | "resposta" | "fase" | "foco" | "colagem";
 export type EventoLinhaDoTempo = { horario: string; tipo: TipoEvento; dados: unknown };
 
 export function criarLinhaDoTempo(opcoes: {
