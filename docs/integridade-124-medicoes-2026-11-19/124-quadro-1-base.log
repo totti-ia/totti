@@ -1,0 +1,64 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+[featherless] google/gemma-4-26B-A4B-it 3514ms in=6071 out=112 $0.0005
+[featherless] google/gemma-4-26B-A4B-it 2213ms in=6071 out=110 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2469ms in=4848 out=75 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2469,
+  tokens_entrada: 4848,
+  tokens_saida: 75,
+  tokens_cache: 0,
+  custo_usd: 0.00039566,
+  blocos: { conversa: 119, grafo: 807, mudancas: 0, resto: 4491 },
+  foto: 0,
+  falas_no_prompt: 1
+}
+[featherless] google/gemma-4-26B-A4B-it 2474ms in=6071 out=116 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2279ms in=6071 out=107 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2507ms in=6071 out=110 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2870ms in=6071 out=107 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 4087ms in=6071 out=112 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 5628ms in=6071 out=117 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 4194ms in=4889 out=77 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4194,
+  tokens_entrada: 4889,
+  tokens_saida: 77,
+  tokens_cache: 0,
+  custo_usd: 0.00039886,
+  blocos: { conversa: 152, grafo: 807, mudancas: 0, resto: 4623 },
+  foto: 0,
+  falas_no_prompt: 1
+}
+[featherless] google/gemma-4-26B-A4B-it 4562ms in=6071 out=111 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 5239ms in=6071 out=118 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3605ms in=5092 out=75 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3605,
+  tokens_entrada: 5092,
+  tokens_saida: 75,
+  tokens_cache: 0,
+  custo_usd: 0.00041211,
+  blocos: { conversa: 431, grafo: 807, mudancas: 0, resto: 5130 },
+  foto: 0,
+  falas_no_prompt: 4
+}
+[featherless] google/gemma-4-26B-A4B-it 4152ms in=6071 out=112 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 4247ms in=6071 out=110 $0.0004
+{"alvo":"featherless:google/gemma-4-26B-A4B-it","aprovadas":"1/2","erros":0,"p50":4087,"p90":5239,"p95":5628,"acimaDe6s":0,"acimaDe7s":0,"acimaDe8s":0,"chamadas":12,"tokensEntradaMedia":6071,"tokensSaidaMedia":112,"custoUsd":0.0045,"custoTotalUsd":0.0057,"falhas":"só 1 pergunta(s) em 6 análises"}
+┌─────────┬─────────────────────────────────────────┬───────────┬───────┬──────┬──────┬──────┬───────────┬───────────┬───────────┬──────────┬────────────────────┬──────────────────┬──────────┬───────────────┬────────┐
+│ (index) │ alvo                                    │ aprovadas │ erros │ p50  │ p90  │ p95  │ acimaDe6s │ acimaDe7s │ acimaDe8s │ chamadas │ tokensEntradaMedia │ tokensSaidaMedia │ custoUsd │ custoTotalUsd │ falhas │
+├─────────┼─────────────────────────────────────────┼───────────┼───────┼──────┼──────┼──────┼───────────┼───────────┼───────────┼──────────┼────────────────────┼──────────────────┼──────────┼───────────────┼────────┤
+│ 0       │ 'featherless:google/gemma-4-26B-A4B-it' │ '1/2'     │ 0     │ 4087 │ 5239 │ 5628 │ 0         │ 0         │ 0         │ 12       │ 6071               │ 112              │ 0.0045   │ 0.0057        │ 30     │
+└─────────┴─────────────────────────────────────────┴───────────┴───────┴──────┴──────┴──────┴───────────┴───────────┴───────────┴──────────┴────────────────────┴──────────────────┴──────────┴───────────────┴────────┘

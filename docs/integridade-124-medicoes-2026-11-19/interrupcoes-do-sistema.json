@@ -1,0 +1,22 @@
+﻿[
+    {
+        "em":  "2026-11-19T22:54:33.7535222Z",
+        "evento":  507,
+        "mensagem":  "O sistema está saindo do motivo de \r\n\r\nem espera moderna: Lid. "
+    },
+    {
+        "em":  "2026-11-19T21:49:04.9506122Z",
+        "evento":  506,
+        "mensagem":  "O sistema está entrando em modo de espera \r\n\r\nmoderno: Austerity Battery Drain Budget Exceeded. "
+    },
+    {
+        "em":  "2026-11-19T21:49:04.9477798Z",
+        "evento":  507,
+        "mensagem":  "O sistema está saindo do motivo de \r\n\r\nem espera moderna: Austerity Battery Drain Budget Exceeded. "
+    },
+    {
+        "em":  "2026-11-19T21:12:49.5004644Z",
+        "evento":  506,
+        "mensagem":  "O sistema está entrando em modo de espera \r\n\r\nmoderno: Lid. "
+    }
+]

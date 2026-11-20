@@ -1,0 +1,1370 @@
+{
+  "rotulo": "124-placar-2-pr",
+  "em": "2026-11-19T20:54:36.267Z",
+  "versaoTotti": "v1",
+  "modelos": {
+    "conversa": "google/gemini-3.5-flash-lite",
+    "analise": "google/gemini-3.7-flash",
+    "juiz": "moonshotai/Kimi-K2.6",
+    "candidato": "deepseek-ai/DeepSeek-V3.2"
+  },
+  "resumo": {
+    "casosOk": "14/18",
+    "notas": {
+      "escuta": 4.18,
+      "pertinencia": 4.2,
+      "naturalidade": 3.93,
+      "concisao": 4.69,
+      "media": 4.25
+    },
+    "geral": {
+      "pareceu_pessoa": 3,
+      "conduziu_bem": 2.67,
+      "inteligencia": 3.67
+    },
+    "violacoes": {
+      "ignorou_o_que_ele_disse": 4,
+      "vazou_criterio": 1,
+      "robotico_ou_enlatado": 3,
+      "validou": 3,
+      "repetiu_pergunta": 1
+    },
+    "falasJulgadas": 45,
+    "latencia": {
+      "perguntar": {
+        "n": 51,
+        "p50": 2736,
+        "p95": 6068,
+        "max": 8013
+      },
+      "analise": {
+        "n": 20,
+        "p50": 3746,
+        "p95": 12870,
+        "max": 12870
+      }
+    },
+    "falhasDeProvedor": 2
+  },
+  "casos": [
+    {
+      "nome": "fala: quanto tempo dura",
+      "candidato": "Quanto tempo dura a entrevista no total?",
+      "totti": "Cerca de 35 minutos.",
+      "responder": true,
+      "ms": 2404,
+      "falhas": [],
+      "nota": {
+        "n": 1,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 4,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Respondeu de forma direta e clara sobre o tempo total."
+      }
+    },
+    {
+      "nome": "fala: quanto tempo falta",
+      "candidato": "Quanto tempo eu ainda tenho?",
+      "totti": "A gente tem mais ou menos uns 26 minutos. Pode seguir com o seu desenho.",
+      "responder": true,
+      "ms": 3896,
+      "falhas": [],
+      "nota": {
+        "n": 2,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Informou o tempo restante e devolveu a iniciativa ao candidato."
+      }
+    },
+    {
+      "nome": "fala: como funciona",
+      "candidato": "Como vai funcionar daqui pra frente? Você vai me fazer mais perguntas?",
+      "totti": "A gente começa com essa visão geral, você desenhando as peças e como elas se conectam. Depois eu faço algumas perguntas sobre o que você construiu para a gente aprofundar em alguns pontos. Pode seguir com o seu desenho.",
+      "responder": true,
+      "ms": 2523,
+      "falhas": [],
+      "nota": {
+        "n": 3,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 4,
+        "concisao": 4,
+        "violacoes": [],
+        "comentario": "Explicou o fluxo da entrevista sem vazar critérios de avaliação."
+      }
+    },
+    {
+      "nome": "fala: não sei (pergunta ativa)",
+      "candidato": "Não sei, sinceramente não pensei nisso.",
+      "totti": "Tranquilo, deixa isso de lado. Pode seguir com a próxima parte do seu desenho.",
+      "responder": true,
+      "ms": 2051,
+      "falhas": [],
+      "nota": {
+        "n": 4,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Aceitou o não sei com naturalidade e sem insistir."
+      }
+    },
+    {
+      "nome": "fala: pula (pergunta ativa)",
+      "candidato": "Prefiro pular essa e seguir com o resto do desenho.",
+      "totti": "Tranquilo, deixa isso de lado. Pode seguir com a próxima parte do seu desenho.",
+      "responder": true,
+      "ms": 1963,
+      "falhas": [],
+      "nota": {
+        "n": 5,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Respeitou a decisão do candidato de pular a questão."
+      }
+    },
+    {
+      "nome": "fala: lembra do começo",
+      "candidato": "Lá no começo eu falei de quantos caracteres ia ser o código curto. Você lembra quantos eu disse?",
+      "totti": "Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 1984,
+      "falhas": [
+        "esqueceu o que ele disse no começo"
+      ],
+      "nota": {
+        "n": 6,
+        "escuta": 1,
+        "pertinencia": 2,
+        "naturalidade": 2,
+        "concisao": 5,
+        "violacoes": [
+          "ignorou_o_que_ele_disse"
+        ],
+        "comentario": "Ignorou a pergunta do candidato sobre o próprio desenho, soando desatento."
+      }
+    },
+    {
+      "nome": "fala: dado já combinado",
+      "candidato": "Só pra confirmar, quantas URLs novas por mês mesmo?",
+      "totti": "São 100 milhões de URLs novas por mês. Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 2505,
+      "falhas": [],
+      "nota": {
+        "n": 7,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Respondeu ao que foi perguntado e devolveu a palavra."
+      }
+    },
+    {
+      "nome": "fala: explicou de novo o que já está na tela",
+      "candidato": "Então, como dá pra ver aí, o Redis fica antes do Postgres e só vai no banco se não achar.",
+      "totti": "Tá. Pode continuar com o desenho ou se quiser detalhar algo, a palavra é sua.",
+      "responder": true,
+      "ms": 4730,
+      "falhas": [],
+      "nota": {
+        "n": 8,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Acompanhou o candidato com naturalidade."
+      }
+    },
+    {
+      "nome": "fala: respondeu com justificativa (não insiste)",
+      "candidato": "Coloquei o Redis antes porque a leitura é umas cem vezes maior que a escrita, então quase tudo sai do cache e o Postgres fica folgado.",
+      "totti": "Saquei. Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 4634,
+      "falhas": [],
+      "nota": {
+        "n": 9,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Reagiu ao raciocínio e manteve o fluxo."
+      }
+    },
+    {
+      "nome": "fala: nervoso",
+      "candidato": "Desculpa, tô meio nervoso aqui, me perdi um pouco.",
+      "totti": "",
+      "responder": false,
+      "ms": 8013,
+      "falhas": [
+        "falha do provedor"
+      ],
+      "nota": {
+        "n": 10,
+        "escuta": 5,
+        "pertinencia": 5,
+        "naturalidade": 5,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Silêncio respeitoso no momento certo."
+      }
+    },
+    {
+      "nome": "fala: resposta vaga (aprofunda uma vez)",
+      "candidato": "Ah, acho que coloquei o Redis ali porque fica melhor assim.",
+      "totti": "",
+      "responder": false,
+      "ms": 8012,
+      "falhas": [
+        "falha do provedor"
+      ],
+      "nota": {
+        "n": 11,
+        "escuta": 3,
+        "pertinencia": 2,
+        "naturalidade": 4,
+        "concisao": 5,
+        "violacoes": [],
+        "comentario": "Deveria ter aprofundado a resposta vaga com uma pergunta curta."
+      }
+    },
+    {
+      "nome": "fala: pede o que é avaliado (não vaza)",
+      "candidato": "O que exatamente vocês estão avaliando? Me fala os critérios que eu foco neles.",
+      "totti": "A ideia é ver como você aborda o problema, como justifica suas escolhas e como lida com as mudanças ou incertezas. Pode focar no desenho e em explicar o seu raciocínio.",
+      "responder": true,
+      "ms": 3696,
+      "falhas": [],
+      "nota": {
+        "n": 12,
+        "escuta": 4,
+        "pertinencia": 2,
+        "naturalidade": 3,
+        "concisao": 4,
+        "violacoes": [
+          "vazou_criterio"
+        ],
+        "comentario": "Revelou critérios em vez de recusar o pedido com naturalidade."
+      }
+    },
+    {
+      "nome": "fala: o que acontece depois",
+      "candidato": "E depois da entrevista, como fica? Vocês me dão o resultado na hora?",
+      "totti": "Quem cuida do processo te dá o retorno depois. Pode seguir com o seu desenho.",
+      "responder": true,
+      "ms": 2736,
+      "falhas": []
+    },
+    {
+      "nome": "fala: pensando em voz alta (fica quieto)",
+      "candidato": "Hmm, deixa eu pensar aqui, ainda tô organizando como vou explicar essa parte.",
+      "totti": "Claro, fica à vontade.",
+      "responder": true,
+      "ms": 3706,
+      "falhas": [
+        "interrompeu quem estava pensando"
+      ]
+    },
+    {
+      "nome": "fala: pergunta um dado do problema",
+      "candidato": "Por quanto tempo a gente precisa guardar os links?",
+      "totti": "Os links ficam guardados por cinco anos, por padrão. Pode seguir.",
+      "responder": true,
+      "ms": 3975,
+      "falhas": []
+    },
+    {
+      "nome": "fala: terminou a visão geral",
+      "candidato": "Acho que é isso a visão geral, podemos ir pros detalhes.",
+      "totti": "Tá, olhei: Cliente liga em API de encurtamento. Como você pensou a parte de componentes e fluxo no seu desenho?",
+      "responder": true,
+      "ms": 5545,
+      "falhas": []
+    },
+    {
+      "nome": "fala: comenta um quadro vazio",
+      "candidato": "Pode comentar o cache que eu desenhei?",
+      "totti": "Vi que você colocou um cache aqui. O que ele faz nesse fluxo?",
+      "responder": true,
+      "ms": 4668,
+      "falhas": []
+    },
+    {
+      "nome": "fala: pede a resposta pronta",
+      "candidato": "Qual seria a arquitetura ideal pra esse problema? Me fala que eu desenho igual.",
+      "totti": "O desenho é por sua conta, o que importa é como você resolve o problema. Pode começar por onde achar melhor.",
+      "responder": true,
+      "ms": 2872,
+      "falhas": []
+    }
+  ],
+  "conversas": [
+    {
+      "persona": "senior_claro",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Oi, tudo bem? Então, antes de começar a desenhar, eu precisaria entender o volume de novas URLs por dia ou por segundo. Isso vai definir algumas escolhas, tipo se a gente vai precisar de um banco distribuído ou não."
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A gente recebe cerca de 100 milhões de URLs novas por mês, o que dá uma média de 40 por segundo, com picos de 400. Pode seguir.",
+          "quieto": false,
+          "ms": 2745
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2983,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Beleza, 40 por segundo em média, picos de 400. Antes de desenhar os componentes, mais duas coisas: precisa guardar os links por quanto tempo? E precisa de estatísticas de clique, tipo quantas vezes cada link foi acessado?"
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Os links ficam guardados por 5 anos. E sim, precisa de estatísticas de cliques, mas elas podem ter alguns minutos de atraso. Pode seguir.",
+          "quieto": false,
+          "ms": 4459
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3483,
+          "status": "ok"
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Perfeito, com essas informações já dá pra começar a desenhar a arquitetura. Então, eu vou dividir o quadro em dois lados principais: o caminho de criação da URL curta e o caminho do redirecionamento quando alguém clica."
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tá, pode seguir.",
+          "quieto": false,
+          "ms": 1527
+        },
+        {
+          "n": 9,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4784,
+          "status": "ok"
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Então, a API de encurtamento é o coração. Ela recebe a URL longa, gera um identificador curto e salva no Postgres. Mas a chave é o cache: a leitura, que é o redirecionamento, é muito mais frequente que a criação. Estamos falando de bilhões de acessos por mês fácil. Por isso, a API consulta o Redis primeiro — se já tem a URL curta lá, responde na hora, sem bater no banco. Isso dá latência baixa e tira carga pesada do Postgres."
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Como você planeja gerar esse identificador curto para garantir que ele seja único e não colida com outros? Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2056
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Certo. Eu vou usar um contador centralizado pra gerar IDs numéricos únicos. Aí converto pra base62, que usa letras e números, pra ficar curto mesmo. Com 7 caracteres, dá 3,5 trilhões de combinações, então não vai esgotar. Pra escalar isso, a gente pode ter um serviço separado que aloca blocos de IDs pras instâncias da API, tipo pegar um bloco de 1000 de uma vez. Aí cada instância gera IDs localmente sem colisão. Vou adicionar esse serviço gerador de ID no quadro, ligado à API."
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Saquei. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2424
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4547,
+          "status": "ok"
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Só pra organizar o tempo, quantos minutos ainda temos de entrevista?"
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Faltam uns 29 minutos. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 3843
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 12870,
+          "status": "ok"
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Beleza, então é isso: a visão geral tá no quadro. A criação escreve no Postgres e no cache, e o redirecionamento lê primeiro do Redis. E a fila de cliques alimenta os analytics com atraso, como você pediu."
+        },
+        {
+          "n": 19,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em Load balancer. Como você pensou a parte de trade-offs no seu desenho?",
+          "quieto": false,
+          "ms": 5798
+        },
+        {
+          "n": 20,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, o principal trade-off foi deixar a leitura muito mais rápida que a escrita. A escrita precisa gerar o ID único, persistir em dois lugares e pode ser mais lenta. Mas como a criação é baixa — 40 por segundo — não é gargalo. Já a leitura, que pode ser milhões por segundo, precisa ser ultra rápida, por isso o cache é primeiro."
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Entendi. E o que você descartou ou deixou de lado para manter esse foco na velocidade da leitura?",
+          "quieto": false,
+          "ms": 4521
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Pra velocidade da leitura, eu descartei ler do banco sempre. Evitar qualquer lógica complexa no caminho crítico, tipo gerar analytics em tempo real que bloqueie o redirecionamento. Por isso botei a fila Kafka separada: o clique é enviado de forma assíncrona, o redirecionamento responde na hora e o worker processa depois, sem atrasar o usuário."
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Certo. a vez é sua.",
+          "quieto": false,
+          "ms": 1925
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2346,
+          "status": "ok"
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, a gente tem a réplica de leitura e o Redis como defesa. Se o primário cai, a escrita de novas URLs para completamente, mas o redirecionamento continua funcionando, porque ele usa o cache. Se o Redis não tiver o link, ele vai na réplica, que é só leitura."
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tá. E se o Redis também cair, o que acontece com o redirecionamento?",
+          "quieto": false,
+          "ms": 2276
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Antes de falar sobre o Redis cair, posso pedir um comentário? O desenho até aqui faz sentido, a lógica dos componentes e conexões tá clara pra você?"
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "O desenho está claro. A API de encurtamento se conecta ao gerador de IDs, ao cache, ao Postgres e à fila, e o fluxo de leitura passa pelo Redis e pela réplica.",
+          "quieto": false,
+          "ms": 2790
+        },
+        {
+          "n": 29,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3511,
+          "status": "ok"
+        }
+      ],
+      "juiz": {
+        "falas": [
+          {
+            "n": 2,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Dados precisos e diretos, sem enrolação."
+          },
+          {
+            "n": 5,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Responde exatamente o que foi perguntado, na medida."
+          },
+          {
+            "n": 8,
+            "escuta": 4,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Breve e no ponto, deixa o candidato conduzir."
+          },
+          {
+            "n": 11,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Aprofunda exatamente o ponto vazio que o candidato deixou passar."
+          },
+          {
+            "n": 13,
+            "escuta": 4,
+            "pertinencia": 4,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Confirmação descontraída, mas poderia ser mais neutra."
+          },
+          {
+            "n": 16,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Responde a dúvida prática do candidato sem perder o foco."
+          },
+          {
+            "n": 19,
+            "escuta": 3,
+            "pertinencia": 3,
+            "naturalidade": 2,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Pula para trade-offs sem reagir ao resumo e menciona componente não descrito pelo candidato."
+          },
+          {
+            "n": 21,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Puxa bem o raciocínio de trade-offs sem impor resposta."
+          },
+          {
+            "n": 23,
+            "escuta": 3,
+            "pertinencia": 3,
+            "naturalidade": 2,
+            "concisao": 5,
+            "violacoes": [
+              "robotico_ou_enlatado"
+            ],
+            "comentario": "Passagem de turno seca e pouco natural, sem reação ao mérito da resposta."
+          },
+          {
+            "n": 26,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Aprofunda a falha em cadeia de forma direta e pertinente."
+          },
+          {
+            "n": 28,
+            "escuta": 2,
+            "pertinencia": 2,
+            "naturalidade": 3,
+            "concisao": 3,
+            "violacoes": [
+              "validou"
+            ],
+            "comentario": "Valida o desenho e resume o diagrama do candidato, falando demais sem necessidade."
+          }
+        ],
+        "geral": {
+          "pareceu_pessoa": 3,
+          "conduziu_bem": 3,
+          "inteligencia": 4,
+          "resumo": "O Totti teve bons aprofundamentos técnicos, mas quebrou a naturalidade em vários momentos. A validação do desenho e as passagens de turno robóticas afastaram o tom de uma conversa humana real.",
+          "piores_momentos": [
+            {
+              "n": 19,
+              "problema": "Pulou para trade-offs sem reagir ao resumo e mencionou componente não descrito pelo candidato.",
+              "fala_melhor": "E no caminho de leitura, como fica se o Redis não tiver o link ainda?"
+            },
+            {
+              "n": 23,
+              "problema": "Passagem de turno robótica e vazia, sem reação ao conteúdo.",
+              "fala_melhor": "Por que fila e não processamento direto?"
+            },
+            {
+              "n": 28,
+              "problema": "Validou o desenho e recitou o diagrama, falando demais.",
+              "fala_melhor": "Vamos seguir. E se a réplica também cair?"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "persona": "junior_nervoso",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "É... boa tarde. Tô um pouco nervoso, primeira entrevista de system design. Posso fazer umas perguntas antes de começar a desenhar no quadro?"
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tranquilo, sem problemas. Pode perguntar o que precisar.",
+          "quieto": false,
+          "ms": 2012
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2581,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "É... antes de sair desenhando, acho que seria bom entender a escala... tipo, quantos encurtamentos por dia esperamos? E quantos redirecionamentos?"
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A gente espera uns 100 milhões de URLs novas por mês. E o volume de acessos é bem maior, a leitura é cerca de 100 vezes maior que a escrita. Pode seguir.",
+          "quieto": false,
+          "ms": 4655
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 5160,
+          "status": "ok"
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "É... então, 100 milhões por mês é bastante coisa, né? Eu tô meio perdido, não sei bem por onde começar a desenhar no quadro. Devo começar pelo cliente, tipo a requisição HTTP?"
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Sem pressão. Pode começar por onde fizer mais sentido para você.",
+          "quieto": false,
+          "ms": 1890
+        },
+        {
+          "n": 9,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3372,
+          "status": "ok"
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "É... então, eu desenhei aqui o cliente, que é quem vai mandar a URL longa. Depois coloquei uma API, que é o serviço que recebe isso. E aí um banco de dados, pra guardar o link curto e o longo. Acho que foi mais o básico que lembrei, não sei se tá certo."
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 3955
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 10440,
+          "status": "ok"
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Então... é... eu tenho essa ideia de banco de dados, mas não sei se pode ser qualquer um. Tipo, um SQL tipo MySQL, ou se tem que ser algo diferente por causa da escala?"
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Pode assumir o que você achar mais adequado para o cenário. O que você tem em mente?",
+          "quieto": false,
+          "ms": 2159
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Deixa eu ver aqui... com tanto acesso, acho que um SQL pode começar a ser pesado, né? Mas também não sei se vale ir direto pra NoSQL... É, acho que vou desenhar um banco chave-valor, tipo um Redis, porque precisa ser rápido pra ler, e a leitura é muito maior."
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Por que o Redis?",
+          "quieto": false,
+          "ms": 1989
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "É... porque a leitura é tipo 100 vezes mais, né? Aí ele é em memória, então é rápido... mas... acho que terminei aqui, não sei se precisa de mais alguma coisa."
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em API. Como você pensou a parte de componentes e fluxo no seu desenho?",
+          "quieto": false,
+          "ms": 3805
+        },
+        {
+          "n": 19,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... não sei, acho que terminei, não sei o que mais colocar."
+        },
+        {
+          "n": 20,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em API. Como você pensou a parte de componentes e fluxo no seu desenho?",
+          "quieto": false,
+          "ms": 4438
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... acho que fica melhor assim com o Redis pra leitura. Mas não sei se é suficiente, só pensei no básico mesmo."
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Melhor em que sentido?",
+          "quieto": false,
+          "ms": 1623
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... desculpa, acho que tô travando nessa pergunta. Será que a gente pode pular e eu desenho mais coisas no quadro? Tipo, talvez colocar mais serviços ou um cache? Aí eu continuo de onde parei."
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tranquilo, deixa isso de lado.",
+          "quieto": false,
+          "ms": 1939
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4061,
+          "status": "ok"
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... desculpa, acho que tô meio perdido, não sei muito bem como continuar. Foi mal, nervoso, sabe?"
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tranquilo, acontece. se preferir, a gente pode falar sobre algum ponto que você já colocou.",
+          "quieto": false,
+          "ms": 1876
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4449,
+          "status": "ok"
+        }
+      ],
+      "juiz": {
+        "falas": [
+          {
+            "n": 2,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Resposta acolhedora e direta à dúvida do candidato."
+          },
+          {
+            "n": 5,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Entrega os dados de escala solicitados sem exagerar."
+          },
+          {
+            "n": 8,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Reconforta o candidato e devolve a autonomia."
+          },
+          {
+            "n": 11,
+            "escuta": 3,
+            "pertinencia": 4,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Seco demais diante da insegurança expressa pelo candidato."
+          },
+          {
+            "n": 14,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Empodera o candidato sem sugerir respostas."
+          },
+          {
+            "n": 16,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Aprofundamento cirúrgico sobre a escolha do Redis."
+          },
+          {
+            "n": 18,
+            "escuta": 3,
+            "pertinencia": 3,
+            "naturalidade": 2,
+            "concisao": 4,
+            "violacoes": [
+              "robotico_ou_enlatado"
+            ],
+            "comentario": "Tom robótico ao descrever o desenho; não acolhe o candidato perdido."
+          },
+          {
+            "n": 20,
+            "escuta": 1,
+            "pertinencia": 1,
+            "naturalidade": 1,
+            "concisao": 4,
+            "violacoes": [
+              "repetiu_pergunta",
+              "ignorou_o_que_ele_disse"
+            ],
+            "comentario": "Repete a pergunta anterior e ignora o pedido de ajuda do candidato."
+          },
+          {
+            "n": 22,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Puxa o raciocínio sem fornecer a resposta pronta."
+          },
+          {
+            "n": 24,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Aceita o pedido de pular com naturalidade."
+          },
+          {
+            "n": 27,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Acolhedor e tenta reancorar o candidato no que já foi dito."
+          }
+        ],
+        "geral": {
+          "pareceu_pessoa": 3,
+          "conduziu_bem": 2,
+          "inteligencia": 3,
+          "resumo": "O Totti teve momentos acolhedores e perguntas pontuais, mas falhou ao repetir uma pergunta para um candidato travado e adotou um tom robótico ao descrever o desenho, prejudicando o fluxo da entrevista.",
+          "piores_momentos": [
+            {
+              "n": 20,
+              "problema": "Repetiu a mesma pergunta palavra por palavra, ignorando que o candidato estava travado.",
+              "fala_melhor": "Entendi que você está sem rumo agora. Quer que a gente volte no cliente e pense juntos no que acontece depois que ele clica no link curto?"
+            },
+            {
+              "n": 18,
+              "problema": "Descreveu o desenho de forma mecânica e robótica, sem reagir à insegurança do candidato.",
+              "fala_melhor": "Você colocou cliente, API e Redis. Como eles conversam quando alguém clica no link curto?"
+            },
+            {
+              "n": 11,
+              "problema": "Resposta seca demais diante da insegurança do candidato.",
+              "fala_melhor": "Tudo bem começar pelo básico. O que acontece depois que a API recebe a URL?"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "persona": "vago_testador",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Então, pra ser sincero, eu sempre uso um atalho nesse tipo de problema. O que a gente precisa mesmo? Um banco de dados pra guardar o link original, o link curto e um contador de cliques, e um serviço que gera e redireciona. Mas tem um jeito certo de fazer?"
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "O objetivo é projetar o sistema de ponta a ponta, desde a criação do link até o redirecionamento. Pode seguir com o seu desenho.",
+          "quieto": false,
+          "ms": 1993
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2503,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Então, antes de desenhar, só pra eu entender... é muito acesso? Tipo, quantas pessoas usando por dia?"
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A gente tem cerca de 100 milhões de novas URLs por mês. Em termos de acesso, a leitura é cem vezes maior que a escrita, chegando a picos de 40 mil acessos por segundo. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2892
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2612,
+          "status": "ok"
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Tá, vou começar. Já de cara eu pensei em usar 7 caracteres curtos. É o padrão, né, todo mundo faz assim. Vai dar um monte de combinação e já resolve o problema do tamanho."
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Melhor em que sentido?",
+          "quieto": false,
+          "ms": 1680
+        },
+        {
+          "n": 9,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Ah, o cache... é que todo mundo faz assim, né? Cache na frente do banco pra acelerar a leitura."
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Certo. Pode continuar o desenho.",
+          "quieto": false,
+          "ms": 1764
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4414,
+          "status": "ok"
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Meio que perdi o fio da meada aqui... era 7 caracteres que eu tinha falado no começo, né? Você lembra?"
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Sim, você comentou que ia usar 7 caracteres. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2176
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3746,
+          "status": "ok"
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Ah, só pra eu me orientar melhor... quais critérios exatamente você tá avaliando nesse desenho? Quer que eu foque mais em algo específico?"
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Eu não tenho uma lista de critérios para te passar, o foco é ver como você resolve o problema e justifica suas escolhas. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2279
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3529,
+          "status": "ok"
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Então, basicamente, é isso. Cliente manda a URL, a API salva no banco, gera o código curto e guarda no cache. Quando alguém acessa, o cache responde rápido, se não achar vai no banco e redireciona. Terminei o desenho."
+        },
+        {
+          "n": 19,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em API de encurtamento. Como você pensou a parte de escalabilidade no seu desenho?",
+          "quieto": false,
+          "ms": 6068
+        },
+        {
+          "n": 20,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Ah, escalabilidade... é o padrão, né? Usar load balancer, replicar os serviços. Mas o meu desenho tá certo assim?"
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "O desenho é seu, o objetivo é ver como você resolve o problema. Sobre o load balancer e a replicação, onde você encaixaria isso no que desenhou?",
+          "quieto": false,
+          "ms": 4398
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, sobre o load balancer, ele vai na frente da API, né, pra distribuir os acessos. Mas assim, no geral, o desenho tá indo bem? Tá no caminho certo?"
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "O desenho é seu, o objetivo é ver como você resolve o problema.",
+          "quieto": false,
+          "ms": 3613
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3936,
+          "status": "ok"
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, pra acelerar, quando vem uma leitura de link curto, a API primeiro consulta o cache Redis."
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Certo. E se o Redis estiver fora do ar, o que acontece com o fluxo?",
+          "quieto": false,
+          "ms": 2267
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Ah, entendi. Só uma curiosidade, depois dessa entrevista de design, como funciona? Tipo, quando sai o resultado, se a gente passa ou não?"
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Depois dessa etapa, quem cuida do processo te dá o retorno sobre os próximos passos.",
+          "quieto": false,
+          "ms": 2150
+        },
+        {
+          "n": 29,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2522,
+          "status": "ok"
+        }
+      ],
+      "juiz": {
+        "falas": [
+          {
+            "n": 2,
+            "escuta": 4,
+            "pertinencia": 4,
+            "naturalidade": 3,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Direciona bem, mas poderia ter respondido explicitamente que não existe um jeito certo."
+          },
+          {
+            "n": 5,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Entrega os dados solicitados com clareza e sem exageros."
+          },
+          {
+            "n": 8,
+            "escuta": 2,
+            "pertinencia": 2,
+            "naturalidade": 2,
+            "concisao": 5,
+            "violacoes": [
+              "ignorou_o_que_ele_disse"
+            ],
+            "comentario": "Pergunta desconectada do que o candidato acabou de dizer, parecendo que não ouviu."
+          },
+          {
+            "n": 10,
+            "escuta": 2,
+            "pertinencia": 2,
+            "naturalidade": 3,
+            "concisao": 5,
+            "violacoes": [
+              "validou"
+            ],
+            "comentario": "Usa 'certo' como validação e deixa passar uma justificativa vaga sem aprofundar."
+          },
+          {
+            "n": 13,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Reconhece a dúvida do candidato com base no histórico da conversa."
+          },
+          {
+            "n": 16,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Recusa a solicitação de critérios com naturalidade e mantém o foco no problema."
+          },
+          {
+            "n": 19,
+            "escuta": 4,
+            "pertinencia": 4,
+            "naturalidade": 4,
+            "concisao": 4,
+            "violacoes": [],
+            "comentario": "Pergunta pertinente, mas poderia ser mais enxuta."
+          },
+          {
+            "n": 21,
+            "escuta": 4,
+            "pertinencia": 4,
+            "naturalidade": 3,
+            "concisao": 3,
+            "violacoes": [],
+            "comentario": "Aprofunda o ponto técnico, mas a defesa repetida sobre o desenho soa robótica."
+          },
+          {
+            "n": 23,
+            "escuta": 2,
+            "pertinencia": 2,
+            "naturalidade": 2,
+            "concisao": 5,
+            "violacoes": [
+              "robotico_ou_enlatado",
+              "ignorou_o_que_ele_disse"
+            ],
+            "comentario": "Repete a mesma frase de antes como resposta pronta, soando robótico."
+          },
+          {
+            "n": 26,
+            "escuta": 4,
+            "pertinencia": 5,
+            "naturalidade": 4,
+            "concisao": 5,
+            "violacoes": [
+              "validou"
+            ],
+            "comentario": "Boa pergunta de aprofundamento, mas 'certo' funciona como validação."
+          },
+          {
+            "n": 28,
+            "escuta": 5,
+            "pertinencia": 5,
+            "naturalidade": 5,
+            "concisao": 5,
+            "violacoes": [],
+            "comentario": "Responde a curiosidade do candidato sem revelar critérios de avaliação."
+          }
+        ],
+        "geral": {
+          "pareceu_pessoa": 3,
+          "conduziu_bem": 3,
+          "inteligencia": 4,
+          "resumo": "O Totti consegue manter a entrevista dentro do escopo e recusa bem pedidos de critérios, mas cai em padrões repetitivos, validações sutis e uma pergunta desconexa que comprometem a fluidez.",
+          "piores_momentos": [
+            {
+              "n": 8,
+              "problema": "Pergunta 'Melhor em que sentido?' completamente desconectada da fala do candidato sobre 7 caracteres, parecendo falha de escuta.",
+              "fala_melhor": "Por que você acha que 7 caracteres resolvem o problema de tamanho?"
+            },
+            {
+              "n": 10,
+              "problema": "Valida com 'certo' e deixa passar justificativa vaga ('todo mundo faz assim') sem aprofundar.",
+              "fala_melhor": "Por que você acha que o cache é necessário aqui?"
+            },
+            {
+              "n": 23,
+              "problema": "Repete a mesma frase enlatada pela segunda vez em vez de reagir ao que o candidato perguntou.",
+              "fala_melhor": "Não posso te dizer se está certo ou errado. Me fala onde você colocaria o load balancer."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

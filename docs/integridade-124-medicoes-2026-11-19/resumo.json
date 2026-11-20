@@ -1,0 +1,661 @@
+{
+  "inicio": "2026-11-19T19:30:00.083Z",
+  "fim": "2026-11-20T01:21:07.692Z",
+  "quantidade": 20,
+  "versoes": {
+    "A": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-base-medicao",
+      "commit": "c91d3ce65c802dfd40f342c88f456a118d4f8f40"
+    },
+    "B": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa",
+      "commit": "78b30d28407e3cd2f08b74b51c45e174808bfcc8"
+    }
+  },
+  "execucoes": [
+    {
+      "id": "124-conversa-1-base",
+      "versao": "A",
+      "instrumento": "conversa",
+      "inicio": "2026-11-19T19:30:00.252Z",
+      "fim": "2026-11-19T19:30:59.938Z",
+      "duracaoMs": 59682,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-conversa-1-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "p50": 3010,
+        "p95": 8269,
+        "acertos": 10,
+        "casos": 14
+      }
+    },
+    {
+      "id": "124-conversa-2-pr",
+      "versao": "B",
+      "instrumento": "conversa",
+      "inicio": "2026-11-19T19:30:59.940Z",
+      "fim": "2026-11-19T19:31:52.928Z",
+      "duracaoMs": 52987,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-conversa-2-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "p50": 3539,
+        "p95": 7781,
+        "acertos": 10,
+        "casos": 14
+      }
+    },
+    {
+      "id": "124-conversa-3-pr",
+      "versao": "B",
+      "instrumento": "conversa",
+      "inicio": "2026-11-19T19:31:52.929Z",
+      "fim": "2026-11-19T19:32:53.095Z",
+      "duracaoMs": 60165,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-conversa-3-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "p50": 4116,
+        "p95": 8011,
+        "acertos": 8,
+        "casos": 14
+      }
+    },
+    {
+      "id": "124-conversa-4-base",
+      "versao": "A",
+      "instrumento": "conversa",
+      "inicio": "2026-11-19T19:32:53.097Z",
+      "fim": "2026-11-19T19:33:36.809Z",
+      "duracaoMs": 43711,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-conversa-4-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "p50": 2966,
+        "p95": 6468,
+        "acertos": 10,
+        "casos": 14
+      }
+    },
+    {
+      "id": "124-quadro-1-base",
+      "versao": "A",
+      "instrumento": "quadro",
+      "inicio": "2026-11-19T19:33:36.810Z",
+      "fim": "2026-11-19T19:34:31.902Z",
+      "duracaoMs": 55091,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-quadro-1-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "alvo": "featherless:google/gemma-4-26B-A4B-it",
+        "aprovadas": "1/2",
+        "erros": 0,
+        "p50": 4087,
+        "p90": 5239,
+        "p95": 5628,
+        "acimaDe6s": 0,
+        "acimaDe7s": 0,
+        "acimaDe8s": 0,
+        "chamadas": 12,
+        "tokensEntradaMedia": 6071,
+        "tokensSaidaMedia": 112,
+        "custoUsd": 0.0045,
+        "custoTotalUsd": 0.0057,
+        "falhas": "só 1 pergunta(s) em 6 análises"
+      }
+    },
+    {
+      "id": "124-quadro-2-pr",
+      "versao": "B",
+      "instrumento": "quadro",
+      "inicio": "2026-11-19T19:34:31.904Z",
+      "fim": "2026-11-19T19:35:12.787Z",
+      "duracaoMs": 40882,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-quadro-2-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "alvo": "featherless:google/gemma-4-26B-A4B-it",
+        "aprovadas": "1/2",
+        "erros": 0,
+        "p50": 2381,
+        "p90": 2748,
+        "p95": 5228,
+        "acimaDe6s": 0,
+        "acimaDe7s": 0,
+        "acimaDe8s": 0,
+        "chamadas": 12,
+        "tokensEntradaMedia": 6071,
+        "tokensSaidaMedia": 113,
+        "custoUsd": 0.0044,
+        "custoTotalUsd": 0.006,
+        "falhas": "pergunta 2 insiste no assunto da 1 depois do \"não sei\""
+      }
+    },
+    {
+      "id": "124-quadro-3-pr",
+      "versao": "B",
+      "instrumento": "quadro",
+      "inicio": "2026-11-19T19:35:12.789Z",
+      "fim": "2026-11-19T19:36:18.188Z",
+      "duracaoMs": 65398,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-quadro-3-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "alvo": "featherless:google/gemma-4-26B-A4B-it",
+        "aprovadas": "0/2",
+        "erros": 2,
+        "p50": 2868,
+        "p90": 2987,
+        "p95": 2987,
+        "acimaDe6s": 0,
+        "acimaDe7s": 0,
+        "acimaDe8s": 0,
+        "chamadas": 10,
+        "tokensEntradaMedia": 6071,
+        "tokensSaidaMedia": 112,
+        "custoUsd": 0.0036,
+        "custoTotalUsd": 0.0048,
+        "falhas": "só 1 pergunta(s) em 6 análises | pergunta 2 insiste no assunto da 1 depois do \"não sei\""
+      }
+    },
+    {
+      "id": "124-quadro-4-base",
+      "versao": "A",
+      "instrumento": "quadro",
+      "inicio": "2026-11-19T19:36:18.189Z",
+      "fim": "2026-11-19T19:37:05.148Z",
+      "duracaoMs": 46958,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-quadro-4-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": {
+        "alvo": "featherless:google/gemma-4-26B-A4B-it",
+        "aprovadas": "2/2",
+        "erros": 0,
+        "p50": 3083,
+        "p90": 4020,
+        "p95": 4154,
+        "acimaDe6s": 0,
+        "acimaDe7s": 0,
+        "acimaDe8s": 0,
+        "chamadas": 12,
+        "tokensEntradaMedia": 6071,
+        "tokensSaidaMedia": 111,
+        "custoUsd": 0.0044,
+        "custoTotalUsd": 0.006,
+        "falhas": ""
+      }
+    },
+    {
+      "id": "124-transcricao-1-pr",
+      "versao": "B",
+      "instrumento": "transcricao",
+      "inicio": "2026-11-19T19:37:05.149Z",
+      "fim": "2026-11-19T19:37:05.973Z",
+      "duracaoMs": 823,
+      "statusProcesso": "erro",
+      "codigo": 1,
+      "manifesto": "execucoes.json",
+      "log": "124-transcricao-1-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": null
+    },
+    {
+      "id": "124-transcricao-2-base",
+      "versao": "A",
+      "instrumento": "transcricao",
+      "inicio": "2026-11-19T19:37:05.975Z",
+      "fim": "2026-11-19T19:37:06.847Z",
+      "duracaoMs": 870,
+      "statusProcesso": "erro",
+      "codigo": 1,
+      "manifesto": "execucoes.json",
+      "log": "124-transcricao-2-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": null
+    },
+    {
+      "id": "124-rascunho-1-base",
+      "versao": "A",
+      "instrumento": "rascunho",
+      "inicio": "2026-11-19T19:37:06.848Z",
+      "fim": "2026-11-19T19:38:45.057Z",
+      "duracaoMs": 98208,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-rascunho-1-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": [
+        {
+          "area": "Sala de system design",
+          "pares": 7,
+          "normal": "2842 / 3772",
+          "antecipado": "4 / 726",
+          "ganhoP50": "2838",
+          "usoRascunho": "100%",
+          "erros": 1
+        },
+        {
+          "area": "Live coding (IDE)",
+          "pares": 8,
+          "normal": "2472 / 4517",
+          "antecipado": "159 / 1240",
+          "ganhoP50": "2313",
+          "usoRascunho": "100%",
+          "erros": 0
+        }
+      ]
+    },
+    {
+      "id": "124-rascunho-2-pr",
+      "versao": "B",
+      "instrumento": "rascunho",
+      "inicio": "2026-11-19T19:38:45.058Z",
+      "fim": "2026-11-19T19:40:11.587Z",
+      "duracaoMs": 86528,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-rascunho-2-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": [
+        {
+          "area": "Sala de system design",
+          "pares": 8,
+          "normal": "2080 / 2671",
+          "antecipado": "3 / 290",
+          "ganhoP50": "2077",
+          "usoRascunho": "100%",
+          "erros": 0
+        },
+        {
+          "area": "Live coding (IDE)",
+          "pares": 8,
+          "normal": "2170 / 3453",
+          "antecipado": "1 / 6016",
+          "ganhoP50": "2169",
+          "usoRascunho": "88%",
+          "erros": 0
+        }
+      ]
+    },
+    {
+      "id": "124-rascunho-3-pr",
+      "versao": "B",
+      "instrumento": "rascunho",
+      "inicio": "2026-11-19T19:40:11.588Z",
+      "fim": "2026-11-19T19:41:31.242Z",
+      "duracaoMs": 79653,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-rascunho-3-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": [
+        {
+          "area": "Sala de system design",
+          "pares": 8,
+          "normal": "1916 / 2421",
+          "antecipado": "3 / 10",
+          "ganhoP50": "1913",
+          "usoRascunho": "100%",
+          "erros": 0
+        },
+        {
+          "area": "Live coding (IDE)",
+          "pares": 8,
+          "normal": "2442 / 3648",
+          "antecipado": "5 / 200",
+          "ganhoP50": "2437",
+          "usoRascunho": "100%",
+          "erros": 0
+        }
+      ]
+    },
+    {
+      "id": "124-rascunho-4-base",
+      "versao": "A",
+      "instrumento": "rascunho",
+      "inicio": "2026-11-19T19:41:31.243Z",
+      "fim": "2026-11-19T19:43:06.055Z",
+      "duracaoMs": 94811,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-rascunho-4-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [],
+      "metricas": [
+        {
+          "area": "Sala de system design",
+          "pares": 8,
+          "normal": "2215 / 2797",
+          "antecipado": "3 / 5341",
+          "ganhoP50": "2212",
+          "usoRascunho": "88%",
+          "erros": 0
+        },
+        {
+          "area": "Live coding (IDE)",
+          "pares": 8,
+          "normal": "2325 / 3466",
+          "antecipado": "1 / 7269",
+          "ganhoP50": "2324",
+          "usoRascunho": "88%",
+          "erros": 0
+        }
+      ]
+    },
+    {
+      "id": "124-placar-1-base",
+      "versao": "A",
+      "instrumento": "placar",
+      "inicio": "2026-11-19T19:43:06.057Z",
+      "fim": "2026-11-19T20:17:02.166Z",
+      "duracaoMs": 2036108,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "execucoes.json",
+      "log": "124-placar-1-base.log",
+      "ambienteInterrompido": false,
+      "artefatos": [
+        "2026-11-19-20-17-124-placar-1-base.json",
+        "2026-11-19-20-17-124-placar-1-base.md"
+      ],
+      "metricas": {
+        "arquivo": "2026-11-19-20-17-124-placar-1-base.json",
+        "resumo": {
+          "casosOk": "15/18",
+          "notas": {
+            "escuta": 4.22,
+            "pertinencia": 4.25,
+            "naturalidade": 3.8,
+            "concisao": 4.8,
+            "media": 4.27
+          },
+          "geral": {
+            "pareceu_pessoa": 3,
+            "conduziu_bem": 2.67,
+            "inteligencia": 3
+          },
+          "violacoes": {
+            "ignorou_o_que_ele_disse": 4,
+            "validou": 1,
+            "robotico_ou_enlatado": 2,
+            "mais_de_uma_pergunta": 1,
+            "vazou_criterio": 1
+          },
+          "falasJulgadas": 51,
+          "latencia": {
+            "perguntar": {
+              "n": 51,
+              "p50": 2642,
+              "p95": 8006,
+              "max": 9466
+            },
+            "analise": {
+              "n": 25,
+              "p50": 5345,
+              "p95": 15010,
+              "max": 15016
+            }
+          },
+          "falhasDeProvedor": 6
+        },
+        "casosSemNota": 0,
+        "conversasSemJuiz": 0
+      }
+    },
+    {
+      "id": "124-placar-2-pr",
+      "versao": "B",
+      "instrumento": "placar",
+      "inicio": "2026-11-19T20:17:02.173Z",
+      "fim": "2026-11-19T20:54:36.310Z",
+      "duracaoMs": 2254136,
+      "statusProcesso": "erro",
+      "codigo": 1,
+      "manifesto": "execucoes.json",
+      "log": "124-placar-2-pr.log",
+      "ambienteInterrompido": false,
+      "artefatos": [
+        "2026-11-19-20-54-124-placar-2-pr.json",
+        "2026-11-19-20-54-124-placar-2-pr.md",
+        "2026-11-19T20-18-13-435Z-124-placar-2-pr-incompleto.json"
+      ],
+      "metricas": {
+        "arquivo": "2026-11-19-20-54-124-placar-2-pr.json",
+        "resumo": {
+          "casosOk": "14/18",
+          "notas": {
+            "escuta": 4.18,
+            "pertinencia": 4.2,
+            "naturalidade": 3.93,
+            "concisao": 4.69,
+            "media": 4.25
+          },
+          "geral": {
+            "pareceu_pessoa": 3,
+            "conduziu_bem": 2.67,
+            "inteligencia": 3.67
+          },
+          "violacoes": {
+            "ignorou_o_que_ele_disse": 4,
+            "vazou_criterio": 1,
+            "robotico_ou_enlatado": 3,
+            "validou": 3,
+            "repetiu_pergunta": 1
+          },
+          "falasJulgadas": 45,
+          "latencia": {
+            "perguntar": {
+              "n": 51,
+              "p50": 2736,
+              "p95": 6068,
+              "max": 8013
+            },
+            "analise": {
+              "n": 20,
+              "p50": 3746,
+              "p95": 12870,
+              "max": 12870
+            }
+          },
+          "falhasDeProvedor": 2
+        },
+        "casosSemNota": 6,
+        "conversasSemJuiz": 0
+      }
+    },
+    {
+      "id": "124-placar-3-pr",
+      "versao": "B",
+      "instrumento": "placar",
+      "inicio": "2026-11-19T20:54:36.316Z",
+      "fim": "2026-11-19T21:49:06.165Z",
+      "duracaoMs": 3269849,
+      "statusProcesso": "limite_excedido",
+      "codigo": 1,
+      "manifesto": "execucoes.json",
+      "log": "124-placar-3-pr.log",
+      "ambienteInterrompido": true,
+      "artefatos": [
+        "2026-11-19T20-55-45-134Z-124-placar-3-pr-incompleto.json"
+      ],
+      "metricas": null
+    },
+    {
+      "id": "124-placar-4-base",
+      "versao": "A",
+      "instrumento": "placar",
+      "inicio": "2026-11-19T21:49:06.172Z",
+      "fim": "2026-11-19T22:54:35.064Z",
+      "duracaoMs": 3928891,
+      "statusProcesso": "limite_excedido",
+      "codigo": 1,
+      "manifesto": "execucoes.json",
+      "log": "124-placar-4-base.log",
+      "ambienteInterrompido": true,
+      "artefatos": [],
+      "metricas": null
+    },
+    {
+      "id": "124-placar-5-pr-retomada",
+      "versao": "B",
+      "instrumento": "placar",
+      "inicio": "2026-11-20T00:17:50.926Z",
+      "fim": "2026-11-20T00:49:35.269Z",
+      "duracaoMs": 1904341,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "retomada.json",
+      "log": "124-placar-5-pr-retomada.log",
+      "ambienteInterrompido": false,
+      "artefatos": [
+        "2026-11-20-00-49-124-placar-5-pr-retomada.json",
+        "2026-11-20-00-49-124-placar-5-pr-retomada.md"
+      ],
+      "metricas": {
+        "arquivo": "2026-11-20-00-49-124-placar-5-pr-retomada.json",
+        "resumo": {
+          "casosOk": "15/18",
+          "notas": {
+            "escuta": 4.13,
+            "pertinencia": 4.17,
+            "naturalidade": 3.89,
+            "concisao": 4.72,
+            "media": 4.23
+          },
+          "geral": {
+            "pareceu_pessoa": 3,
+            "conduziu_bem": 3,
+            "inteligencia": 3.33
+          },
+          "violacoes": {
+            "ignorou_o_que_ele_disse": 2,
+            "vazou_criterio": 1,
+            "validou": 3,
+            "robotico_ou_enlatado": 5,
+            "repetiu_pergunta": 1,
+            "insistiu_apos_nao_sei": 1
+          },
+          "falasJulgadas": 53,
+          "latencia": {
+            "perguntar": {
+              "n": 51,
+              "p50": 2528,
+              "p95": 8014,
+              "max": 8050
+            },
+            "analise": {
+              "n": 24,
+              "p50": 4207,
+              "p95": 9419,
+              "max": 15017
+            }
+          },
+          "falhasDeProvedor": 5
+        },
+        "casosSemNota": 0,
+        "conversasSemJuiz": 0
+      }
+    },
+    {
+      "id": "124-placar-6-base-retomada",
+      "versao": "A",
+      "instrumento": "placar",
+      "inicio": "2026-11-20T00:49:35.273Z",
+      "fim": "2026-11-20T01:21:07.689Z",
+      "duracaoMs": 1892416,
+      "statusProcesso": "terminou",
+      "codigo": 0,
+      "manifesto": "retomada.json",
+      "log": "124-placar-6-base-retomada.log",
+      "ambienteInterrompido": false,
+      "artefatos": [
+        "2026-11-20-01-21-124-placar-6-base-retomada.json",
+        "2026-11-20-01-21-124-placar-6-base-retomada.md"
+      ],
+      "metricas": {
+        "arquivo": "2026-11-20-01-21-124-placar-6-base-retomada.json",
+        "resumo": {
+          "casosOk": "15/18",
+          "notas": {
+            "escuta": 4.2,
+            "pertinencia": 4.16,
+            "naturalidade": 3.84,
+            "concisao": 4.73,
+            "media": 4.23
+          },
+          "geral": {
+            "pareceu_pessoa": 2.33,
+            "conduziu_bem": 2.67,
+            "inteligencia": 3
+          },
+          "violacoes": {
+            "ignorou_o_que_ele_disse": 5,
+            "vazou_criterio": 3,
+            "inventou_fato": 1,
+            "repetiu_pergunta": 3,
+            "robotico_ou_enlatado": 4
+          },
+          "falasJulgadas": 51,
+          "latencia": {
+            "perguntar": {
+              "n": 51,
+              "p50": 2596,
+              "p95": 5591,
+              "max": 6815
+            },
+            "analise": {
+              "n": 24,
+              "p50": 4669,
+              "p95": 10051,
+              "max": 14866
+            }
+          },
+          "falhasDeProvedor": 0
+        },
+        "casosSemNota": 0,
+        "conversasSemJuiz": 0
+      }
+    }
+  ]
+}

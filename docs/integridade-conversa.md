@@ -20,8 +20,8 @@ Na IDE, o fim vem da fila de falas; no quadro, dos players já usados por `lib/s
 
 ## Validação e pendências
 
-Permitidos nesta etapa: TypeScript e testes de `lib/integridade/`, com rede simulada nos testes que usam os agentes. A suíte cobre sinais, caso honesto, pedido de tempo, dados inválidos, captura anterior ao parcial, interrupção, sobreposição, áudio ausente, substituição/retry e persistência nas duas gravações.
+TypeScript e os 57 testes de `lib/integridade/` passaram, com rede simulada nos testes que usam os agentes. A suíte cobre sinais, caso honesto, pedido de tempo, dados inválidos, captura anterior ao parcial, interrupção, sobreposição, áudio ausente, substituição/retry e persistência nas duas gravações.
 
-Ainda não foram executados os benchmarks, placar, medições de transcrição e rascunho nem validação em navegador: a comparação do PR #146 reservou a máquina e a conta da Featherless. Só executar após liberação explícita. Comparar a base e esta implementação em ordem alternada, publicar todas as execuções e barrar qualquer piora. Falta também conferir `latenciaMs` contra a gravação real das duas salas.
+Após a liberação da máquina, foram registradas 20 execuções, em sequência e ordem alternada: benchmarks de conversa e quadro, rascunho nas duas salas, tentativas de transcrição e placares. Uma rodada de placares foi interrompida pela espera moderna do Windows; os originais foram preservados e o par foi retomado após autorização para continuar. O [relatório completo e os logs](integridade-124-medicoes-2026-11-19/resultado.md) mostram pioras observadas e falhas, portanto o critério de ausência de piora não foi atendido. A transcrição não pôde ser medida por falta do corpus de áudio. Falta também conferir `latenciaMs` contra gravações reais das duas salas; esta issue não está pronta para merge.
 
 Quando o PR #146 entrar na main, rebasear esta branch; se ele for barrado, esta issue aguarda junto. Sem push, PR ou tag até ordem do Nícolas.

@@ -1,0 +1,42 @@
+{
+  "node": "v24.16.0",
+  "platform": "win32",
+  "arch": "x64",
+  "arquivos": [
+    {
+      "file": "scripts/bench-conversa.ts",
+      "A": "7087b8c8804bb6cb5a6e280edee3990f3cc97fbf5c852429d5d3cb5fd6a85e9e",
+      "B": "7087b8c8804bb6cb5a6e280edee3990f3cc97fbf5c852429d5d3cb5fd6a85e9e"
+    },
+    {
+      "file": "scripts/bench-quadro.ts",
+      "A": "812290765c669e3d464af2fd97ebf080adae19c7c7f28aeeba4a1a9129aa3bb0",
+      "B": "812290765c669e3d464af2fd97ebf080adae19c7c7f28aeeba4a1a9129aa3bb0"
+    },
+    {
+      "file": "scripts/medir-transcricao.ts",
+      "A": "a53ef1d8c8aa965670f55c7bff9042569e37bafbdb2dcb1c24023b3f0032b468",
+      "B": "a53ef1d8c8aa965670f55c7bff9042569e37bafbdb2dcb1c24023b3f0032b468"
+    },
+    {
+      "file": "scripts/medir-rascunho.ts",
+      "A": "63bfbf95a29caf29dffc71560dbfc4a3843bb5fbb4c951b30a5022f63f44098a",
+      "B": "63bfbf95a29caf29dffc71560dbfc4a3843bb5fbb4c951b30a5022f63f44098a"
+    },
+    {
+      "file": "scripts/placar-quadro/index.ts",
+      "A": "d10f59c183470bd8b2f547a87f4c168bd1d32b318a5bb60ad1bf2c12c5473623",
+      "B": "d10f59c183470bd8b2f547a87f4c168bd1d32b318a5bb60ad1bf2c12c5473623"
+    },
+    {
+      "file": "scripts/placar-quadro/juiz.ts",
+      "A": "5278309bc3bda57a3f6c4ae8a05edfb3a7067df744485c0100b933fb13d1d66a",
+      "B": "5278309bc3bda57a3f6c4ae8a05edfb3a7067df744485c0100b933fb13d1d66a"
+    },
+    {
+      "file": "package-lock.json",
+      "A": "4f39184bdd0f3217e69c32cbae1560cc46c8a4d0a501049e218bc54f87bad622",
+      "B": "4f39184bdd0f3217e69c32cbae1560cc46c8a4d0a501049e218bc54f87bad622"
+    }
+  ]
+}

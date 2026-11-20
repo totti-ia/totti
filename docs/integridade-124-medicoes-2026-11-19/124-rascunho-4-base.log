@@ -1,0 +1,525 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+Medição da resposta antecipada: áreas sala, ide, antecedência 2600 ms, rodadas 1, até Infinity falas por área
+
+== Sala de system design (sala) ==
+[featherless] google/gemma-4-26B-A4B-it 2763ms in=4644 out=58 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '903388ef-8c7f-4b99-b2ef-6c0cf9459629',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2763,
+  tokens_entrada: 4644,
+  tokens_saida: 58,
+  tokens_cache: 5105,
+  custo_usd: 0.00027497,
+  blocos: { conversa: 155, grafo: 807, mudancas: 0, resto: 3598 },
+  foto: 0,
+  falas_no_prompt: 2
+}
+[agente] rota_perguntar {
+  sessao_id: '903388ef-8c7f-4b99-b2ef-6c0cf9459629',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2784
+}
+[featherless] google/gemma-4-26B-A4B-it 1893ms in=4644 out=58 $0.0003
+[agente] perguntar_llm {
+  sessao_id: 'aeea6d00-84d9-45c9-83e5-cd96b41876bd',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1893,
+  tokens_entrada: 4644,
+  tokens_saida: 58,
+  tokens_cache: 5105,
+  custo_usd: 0.00027497,
+  blocos: { conversa: 155, grafo: 807, mudancas: 0, resto: 3598 },
+  foto: 0,
+  falas_no_prompt: 2
+}
+[agente] rascunho_perguntar {
+  sessao_id: 'aeea6d00-84d9-45c9-83e5-cd96b41876bd',
+  ok: true,
+  ms: 1898
+}
+[agente] rota_perguntar {
+  sessao_id: 'aeea6d00-84d9-45c9-83e5-cd96b41876bd',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 0
+}
+  rodada 1 fala 1: normal 2797 ms | antecipado 3 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2389ms in=4682 out=81 $0.0003
+[agente] perguntar_llm {
+  sessao_id: 'e83ff2ae-7c99-4fe8-830e-f115009158a9',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2389,
+  tokens_entrada: 4682,
+  tokens_saida: 81,
+  tokens_cache: 5149,
+  custo_usd: 0.00028499,
+  blocos: { conversa: 289, grafo: 807, mudancas: 0, resto: 3631 },
+  foto: 0,
+  falas_no_prompt: 4
+}
+[agente] rascunho_perguntar {
+  sessao_id: 'e83ff2ae-7c99-4fe8-830e-f115009158a9',
+  ok: true,
+  ms: 2393
+}
+[agente] rota_perguntar {
+  sessao_id: 'e83ff2ae-7c99-4fe8-830e-f115009158a9',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2583ms in=4682 out=90 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '9eb371ea-6c39-4739-8a02-06f6cc19bd9f',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2583,
+  tokens_entrada: 4682,
+  tokens_saida: 90,
+  tokens_cache: 5149,
+  custo_usd: 0.00028805,
+  blocos: { conversa: 289, grafo: 807, mudancas: 0, resto: 3631 },
+  foto: 0,
+  falas_no_prompt: 4
+}
+[agente] rota_perguntar {
+  sessao_id: '9eb371ea-6c39-4739-8a02-06f6cc19bd9f',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2587
+}
+  rodada 1 fala 2: normal 2588 ms | antecipado 4 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2122ms in=4768 out=79 $0.0004
+[agente] perguntar_llm {
+  sessao_id: '6f7766fb-9e6b-4ad4-96bf-d34713d14de1',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2122,
+  tokens_entrada: 4768,
+  tokens_saida: 79,
+  tokens_cache: 0,
+  custo_usd: 0.0003931,
+  blocos: { conversa: 500, grafo: 807, mudancas: 0, resto: 3756 },
+  foto: 0,
+  falas_no_prompt: 6
+}
+[agente] rota_perguntar {
+  sessao_id: '6f7766fb-9e6b-4ad4-96bf-d34713d14de1',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2124
+}
+[featherless] google/gemma-4-26B-A4B-it 4511ms in=4768 out=88 $0.0003
+[agente] perguntar_llm {
+  sessao_id: 'ff878d54-4e40-416c-83e6-3beef559cab6',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4511,
+  tokens_entrada: 4768,
+  tokens_saida: 88,
+  tokens_cache: 5232,
+  custo_usd: 0.00029152,
+  blocos: { conversa: 500, grafo: 807, mudancas: 0, resto: 3756 },
+  foto: 0,
+  falas_no_prompt: 6
+}
+[agente] rascunho_perguntar {
+  sessao_id: 'ff878d54-4e40-416c-83e6-3beef559cab6',
+  ok: true,
+  ms: 4514
+}
+[featherless] google/gemma-4-26B-A4B-it 3835ms in=4768 out=74 $0.0003
+[agente] perguntar_llm {
+  sessao_id: 'ff878d54-4e40-416c-83e6-3beef559cab6',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3835,
+  tokens_entrada: 4768,
+  tokens_saida: 74,
+  tokens_cache: 5232,
+  custo_usd: 0.00028676,
+  blocos: { conversa: 500, grafo: 807, mudancas: 0, resto: 3756 },
+  foto: 0,
+  falas_no_prompt: 6
+}
+[agente] rota_perguntar {
+  sessao_id: 'ff878d54-4e40-416c-83e6-3beef559cab6',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 5339
+}
+  rodada 1 fala 3: normal 2126 ms | antecipado 5341 ms | rascunho novo
+[featherless] google/gemma-4-26B-A4B-it 2940ms in=4849 out=64 $0.0004
+[agente] perguntar_llm {
+  sessao_id: '3f2f510e-a00f-4d68-b66f-35e212bdb287',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2940,
+  tokens_entrada: 4849,
+  tokens_saida: 64,
+  tokens_cache: 0,
+  custo_usd: 0.00039402,
+  blocos: { conversa: 711, grafo: 807, mudancas: 0, resto: 3874 },
+  foto: 0,
+  falas_no_prompt: 8
+}
+[agente] rascunho_perguntar {
+  sessao_id: '3f2f510e-a00f-4d68-b66f-35e212bdb287',
+  ok: true,
+  ms: 2942
+}
+[agente] rota_perguntar {
+  sessao_id: '3f2f510e-a00f-4d68-b66f-35e212bdb287',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 329
+}
+[featherless] google/gemma-4-26B-A4B-it 2211ms in=4849 out=64 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '9cd63ab9-f3c7-4bb0-a5e5-c97567db3031',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2211,
+  tokens_entrada: 4849,
+  tokens_saida: 64,
+  tokens_cache: 5318,
+  custo_usd: 0.00028766,
+  blocos: { conversa: 711, grafo: 807, mudancas: 0, resto: 3874 },
+  foto: 0,
+  falas_no_prompt: 8
+}
+[agente] rota_perguntar {
+  sessao_id: '9cd63ab9-f3c7-4bb0-a5e5-c97567db3031',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2215
+}
+  rodada 1 fala 4: normal 2215 ms | antecipado 331 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2060ms in=4904 out=65 $0.0004
+[agente] perguntar_llm {
+  sessao_id: 'bb8247c9-3008-4bc5-a1b0-3071f60a3c98',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2060,
+  tokens_entrada: 4904,
+  tokens_saida: 65,
+  tokens_cache: 0,
+  custo_usd: 0.00039821,
+  blocos: { conversa: 864, grafo: 807, mudancas: 0, resto: 3938 },
+  foto: 0,
+  falas_no_prompt: 10
+}
+[agente] rota_perguntar {
+  sessao_id: 'bb8247c9-3008-4bc5-a1b0-3071f60a3c98',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2062
+}
+[featherless] google/gemma-4-26B-A4B-it 1985ms in=4904 out=63 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '2c345857-0c92-44d4-9275-30f58dd3a5da',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1985,
+  tokens_entrada: 4904,
+  tokens_saida: 63,
+  tokens_cache: 5373,
+  custo_usd: 0.00029007,
+  blocos: { conversa: 864, grafo: 807, mudancas: 0, resto: 3938 },
+  foto: 0,
+  falas_no_prompt: 10
+}
+[agente] rascunho_perguntar {
+  sessao_id: '2c345857-0c92-44d4-9275-30f58dd3a5da',
+  ok: true,
+  ms: 1988
+}
+[agente] rota_perguntar {
+  sessao_id: '2c345857-0c92-44d4-9275-30f58dd3a5da',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 0
+}
+  rodada 1 fala 5: normal 2064 ms | antecipado 2 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2484ms in=4958 out=63 $0.0004
+[agente] perguntar_llm {
+  sessao_id: '758fd6b2-bb18-4080-9b3a-a2767ee8b218',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2484,
+  tokens_entrada: 4958,
+  tokens_saida: 63,
+  tokens_cache: 0,
+  custo_usd: 0.00040166,
+  blocos: { conversa: 1019, grafo: 807, mudancas: 0, resto: 4000 },
+  foto: 0,
+  falas_no_prompt: 12
+}
+[agente] rascunho_perguntar {
+  sessao_id: '758fd6b2-bb18-4080-9b3a-a2767ee8b218',
+  ok: true,
+  ms: 2486
+}
+[agente] rota_perguntar {
+  sessao_id: '758fd6b2-bb18-4080-9b3a-a2767ee8b218',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 1903ms in=4958 out=63 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '49fde782-8c16-4013-bcf1-26a9673532af',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1903,
+  tokens_entrada: 4958,
+  tokens_saida: 63,
+  tokens_cache: 5432,
+  custo_usd: 0.00029302,
+  blocos: { conversa: 1019, grafo: 807, mudancas: 0, resto: 4000 },
+  foto: 0,
+  falas_no_prompt: 12
+}
+[agente] rota_perguntar {
+  sessao_id: '49fde782-8c16-4013-bcf1-26a9673532af',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 1905
+}
+  rodada 1 fala 6: normal 1907 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2190ms in=4990 out=74 $0.0004
+[agente] perguntar_llm {
+  sessao_id: '27994b2f-7d49-4236-8ab3-146993167575',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2190,
+  tokens_entrada: 4990,
+  tokens_saida: 74,
+  tokens_cache: 0,
+  custo_usd: 0.00040764,
+  blocos: { conversa: 1169, grafo: 807, mudancas: 0, resto: 3986 },
+  foto: 0,
+  falas_no_prompt: 14
+}
+[agente] rota_perguntar {
+  sessao_id: '27994b2f-7d49-4236-8ab3-146993167575',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2193
+}
+[featherless] google/gemma-4-26B-A4B-it 1963ms in=4990 out=74 $0.0003
+[agente] perguntar_llm {
+  sessao_id: 'bb972752-0cae-4daa-9d5c-2af78eeb94b8',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1963,
+  tokens_entrada: 4990,
+  tokens_saida: 74,
+  tokens_cache: 5464,
+  custo_usd: 0.00029836,
+  blocos: { conversa: 1169, grafo: 807, mudancas: 0, resto: 3986 },
+  foto: 0,
+  falas_no_prompt: 14
+}
+[agente] rascunho_perguntar {
+  sessao_id: 'bb972752-0cae-4daa-9d5c-2af78eeb94b8',
+  ok: true,
+  ms: 1964
+}
+[agente] rota_perguntar {
+  sessao_id: 'bb972752-0cae-4daa-9d5c-2af78eeb94b8',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 1
+}
+  rodada 1 fala 7: normal 2194 ms | antecipado 2 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2168ms in=5045 out=63 $0.0004
+[agente] perguntar_llm {
+  sessao_id: '459bbef7-6469-43a0-822b-118c2f46e0fd',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2168,
+  tokens_entrada: 5045,
+  tokens_saida: 63,
+  tokens_cache: 0,
+  custo_usd: 0.00040789,
+  blocos: { conversa: 1336, grafo: 807, mudancas: 0, resto: 4037 },
+  foto: 0,
+  falas_no_prompt: 16
+}
+[agente] rascunho_perguntar {
+  sessao_id: '459bbef7-6469-43a0-822b-118c2f46e0fd',
+  ok: true,
+  ms: 2170
+}
+[agente] rota_perguntar {
+  sessao_id: '459bbef7-6469-43a0-822b-118c2f46e0fd',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: true,
+  ms_perguntar: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2233ms in=5045 out=63 $0.0003
+[agente] perguntar_llm {
+  sessao_id: '3fd58f51-a622-479d-85b4-2e879e1a0d03',
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2233,
+  tokens_entrada: 5045,
+  tokens_saida: 63,
+  tokens_cache: 5521,
+  custo_usd: 0.00029747,
+  blocos: { conversa: 1336, grafo: 807, mudancas: 0, resto: 4037 },
+  foto: 0,
+  falas_no_prompt: 16
+}
+[agente] rota_perguntar {
+  sessao_id: '3fd58f51-a622-479d-85b4-2e879e1a0d03',
+  fase: 'ALTO_NIVEL',
+  responder: true,
+  seguimento: false,
+  encerrar: false,
+  substitui: false,
+  rascunho: false,
+  ms_perguntar: 2235
+}
+  rodada 1 fala 8: normal 2237 ms | antecipado 2 ms | rascunho usado
+
+| rodada | # | fala | normal (ms) | antecipado (ms) | rascunho usado | erros |
+|---|---|---|---|---|---|---|
+| 1 | 1 | Então, eu começaria pelo cliente mandando a URL... | 2797 | 3 | sim | - |
+| 1 | 2 | Para gerar o id curto eu usaria base62 em cima ... | 2588 | 4 | sim | - |
+| 1 | 3 | Para leitura, o cache Redis na frente do banco ... | 2126 | 5341 | não | - |
+| 1 | 4 | Acho que a réplica de leitura segura o pico de ... | 2215 | 331 | sim | - |
+| 1 | 5 | Os cliques eu mandaria para uma fila e processa... | 2064 | 2 | sim | - |
+| 1 | 6 | Se o banco cair, ainda dá para redirecionar pel... | 1907 | 1 | sim | - |
+| 1 | 7 | Não sei muito bem como dimensionar o Redis, nun... | 2194 | 2 | sim | - |
+| 1 | 8 | Acho que o load balancer distribui entre as ins... | 2237 | 2 | sim | - |
+
+== Live coding (IDE) (ide) ==
+[featherless] google/gemma-4-26B-A4B-it 2308ms in=7229 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2385ms in=7229 out=75 $0.0004
+  rodada 1 fala 1: normal 2317 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2363ms in=7247 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2324ms in=7247 out=75 $0.0004
+  rodada 1 fala 2: normal 2325 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2029ms in=7266 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3587ms in=7266 out=75 $0.0004
+  rodada 1 fala 3: normal 2029 ms | antecipado 973 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2298ms in=7285 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3465ms in=7285 out=75 $0.0004
+  rodada 1 fala 4: normal 3466 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2164ms in=7303 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2183ms in=7303 out=75 $0.0004
+  rodada 1 fala 5: normal 2166 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 3661ms in=7404 out=108 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+[featherless] google/gemma-4-26B-A4B-it 3954ms in=7404 out=108 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+[featherless] google/gemma-4-26B-A4B-it 2488ms in=7404 out=98 $0.0004
+  rodada 1 fala 6: normal 2490 ms | antecipado 7269 ms | rascunho novo
+[featherless] google/gemma-4-26B-A4B-it 2615ms in=7362 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2260ms in=7362 out=75 $0.0004
+  rodada 1 fala 7: normal 2615 ms | antecipado 1 ms | rascunho usado
+[featherless] google/gemma-4-26B-A4B-it 2412ms in=7380 out=75 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2302ms in=7380 out=75 $0.0004
+  rodada 1 fala 8: normal 2303 ms | antecipado 1 ms | rascunho usado
+
+| rodada | # | fala | normal (ms) | antecipado (ms) | rascunho usado | erros |
+|---|---|---|---|---|---|---|
+| 1 | 1 | Vou começar percorrendo a string com dois ponte... | 2317 | 1 | sim | - |
+| 1 | 2 | Acho que um dicionário para contar as letras re... | 2325 | 1 | sim | - |
+| 1 | 3 | Não tenho certeza se precisa tratar o caso da l... | 2029 | 973 | sim | - |
+| 1 | 4 | Vou fazer uma versão simples primeiro e depois ... | 3466 | 1 | sim | - |
+| 1 | 5 | A complexidade fica em O(n), porque percorre um... | 2166 | 1 | sim | - |
+| 1 | 6 | Pode ser que eu esteja errado, mas acho que o l... | 2490 | 7269 | não | - |
+| 1 | 7 | Vou testar com a entrada de exemplo antes de mu... | 2615 | 1 | sim | - |
+| 1 | 8 | Tá, vou trocar para um set, deve ficar mais ráp... | 2303 | 1 | sim | - |
+
+## Resposta antecipada: ganho medido (antecedência 2600 ms, 1 rodada(s))
+
+| Área | n | normal p50 / p95 (ms) | antecipado p50 / p95 (ms) | ganho p50 (ms) | rascunho usado | falas com erro |
+|---|---|---|---|---|---|---|
+| Sala de system design | 8 | 2215 / 2797 | 3 / 5341 | 2212 | 88% | 0 |
+| Live coding (IDE) | 8 | 2325 / 3466 | 1 / 7269 | 2324 | 88% | 0 |

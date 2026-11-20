@@ -1,0 +1,21 @@
+{
+  "base": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-base-medicao",
+  "artefatosConferidos": [
+    {
+      "file": "2026-11-19-20-17-124-placar-1-base.json",
+      "sha256": "427c541e02ade98dc148d434142db4c973202a7a7c58882136a8f2c8c14dfb5a"
+    },
+    {
+      "file": "2026-11-19-20-17-124-placar-1-base.md",
+      "sha256": "ded09d22035e96a8951b5aa793faff7d7b112e3434d902b0dc8df57df18f0c55"
+    },
+    {
+      "file": "2026-11-20-01-21-124-placar-6-base-retomada.json",
+      "sha256": "29ee6862af55e01425815ede2159aca9d4748c9aac85b2c6fa2c73da19aa6a90"
+    },
+    {
+      "file": "2026-11-20-01-21-124-placar-6-base-retomada.md",
+      "sha256": "9311c95c3d0e7289899e594881c84791b4600563d169a15a8c02821347121c9b"
+    }
+  ]
+}

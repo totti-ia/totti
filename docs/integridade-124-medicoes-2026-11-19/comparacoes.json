@@ -1,0 +1,19 @@
+{
+  "chamadasDeLlm": 0,
+  "pares": [
+    {
+      "id": "comparacao-inicial",
+      "a": "124-placar-1-base",
+      "b": "124-placar-2-pr",
+      "codigo": 1,
+      "log": "comparacao-inicial.log"
+    },
+    {
+      "id": "comparacao-retomada",
+      "a": "124-placar-6-base-retomada",
+      "b": "124-placar-5-pr-retomada",
+      "codigo": 0,
+      "log": "comparacao-retomada.log"
+    }
+  ]
+}

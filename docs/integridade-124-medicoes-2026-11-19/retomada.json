@@ -1,0 +1,84 @@
+{
+  "protocolo": "retomada.md",
+  "inicio": "2026-11-20T00:17:50.837Z",
+  "versoes": {
+    "A": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-base-medicao",
+      "commit": "c91d3ce65c802dfd40f342c88f456a118d4f8f40"
+    },
+    "B": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa",
+      "commit": "78b30d28407e3cd2f08b74b51c45e174808bfcc8"
+    }
+  },
+  "ambiente": {
+    "arquivo": ".env.local do clone principal (conteúdo privado)",
+    "ARMAZENAMENTO": "memoria"
+  },
+  "execucoes": [
+    {
+      "ordem": 1,
+      "id": "124-placar-5-pr-retomada",
+      "instrumento": "placar",
+      "versao": "B",
+      "inicio": "2026-11-20T00:17:50.926Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-5-pr-retomada"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-5-pr-retomada.log",
+      "status": "terminou",
+      "fim": "2026-11-20T00:49:35.269Z",
+      "duracaoMs": 1904341,
+      "code": 0,
+      "signal": null,
+      "interrupcao": null,
+      "artefatos": [
+        "2026-11-20-00-49-124-placar-5-pr-retomada.json",
+        "2026-11-20-00-49-124-placar-5-pr-retomada.md"
+      ]
+    },
+    {
+      "ordem": 2,
+      "id": "124-placar-6-base-retomada",
+      "instrumento": "placar",
+      "versao": "A",
+      "inicio": "2026-11-20T00:49:35.273Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-6-base-retomada"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-6-base-retomada.log",
+      "status": "terminou",
+      "fim": "2026-11-20T01:21:07.689Z",
+      "duracaoMs": 1892416,
+      "code": 0,
+      "signal": null,
+      "interrupcao": null,
+      "artefatos": [
+        "2026-11-20-01-21-124-placar-6-base-retomada.json",
+        "2026-11-20-01-21-124-placar-6-base-retomada.md"
+      ]
+    }
+  ],
+  "fim": "2026-11-20T01:21:07.692Z",
+  "interrompido": false
+}
