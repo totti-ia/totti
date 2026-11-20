@@ -1,0 +1,4 @@
+scripts/bench-conversa.ts: 49 módulos; alterados pelo PR no grafo: lib/contracts.ts
+scripts/bench-quadro.ts: 49 módulos; alterados pelo PR no grafo: lib/contracts.ts
+scripts/placar-quadro/index.ts: 54 módulos; alterados pelo PR no grafo: lib/contracts.ts
+scripts/medir-rascunho.ts: 144 módulos; alterados pelo PR no grafo: lib/contracts.ts

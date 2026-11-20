@@ -1,7 +1,7 @@
 [
   {
     "file": ".gitattributes",
-    "sha256": "52cf0eaebf95be56cf00183fdbf23637e59def9e2a8884e40c227969d3ae76e9"
+    "sha256": "0bc6b44d8444224d0453fc25a49607eb84cef863786f872863eaeddf40ce96cb"
   },
   {
     "file": "124-conversa-1-base.log",
@@ -128,8 +128,20 @@
     "sha256": "181302492846c3a51f5a3624ad6eaa9889f929210b8653e724cfe3248c3ca155"
   },
   {
+    "file": "analise-para-revisao.md",
+    "sha256": "d930dec34f7522fb13e371210df76f3d25ed163620423cbe1d09b46674120b6e"
+  },
+  {
+    "file": "auditar.mjs",
+    "sha256": "eb2bd386a3c9d2c6026f23811f89668337a22345c488bf1e5869d9f25db1dc35"
+  },
+  {
     "file": "backup-do-worktree.json",
     "sha256": "a0f6d6541fc4187d60eb4254c066d3dd00fe97e4f6435d73d13e46fa018ac2aa"
+  },
+  {
+    "file": "cinco-falhas.json",
+    "sha256": "92ecb74ad9ef7ac8eb01e44da73fe8f289f93b896a96fa2e0ae9aead207c5744"
   },
   {
     "file": "comparacao-inicial.log",
@@ -149,7 +161,15 @@
   },
   {
     "file": "consolidar.mjs",
-    "sha256": "42ce8c883358b3e8fb456632a21a67afbd927badf8b2b307a822355e4eddba34"
+    "sha256": "f7b4745466d43e8ac582c71138a9a874298a64a53732151d9c164d18de7a3178"
+  },
+  {
+    "file": "estatistica-exploratoria.json",
+    "sha256": "1d99a667f589936526cd572f98afaa1feccfabbf0c8619b1b9255495edcfac87"
+  },
+  {
+    "file": "estatistica-exploratoria.mjs",
+    "sha256": "5d88bce533f921b563ea71193da80d287f51a8738481e5ebcafdaaa7fb14ade7"
   },
   {
     "file": "execucoes.json",
@@ -164,8 +184,16 @@
     "sha256": "e987dbb056902aa844b81f9d5b4c86d406e64be1a55350900665f6b90bc84caf"
   },
   {
+    "file": "grafo-imports.log",
+    "sha256": "aa8416e684c915189dab8bf434675e48d792776399bb56fb7ed18b0bc248c1bb"
+  },
+  {
+    "file": "grafo-imports.mjs",
+    "sha256": "f5eb4039968151d8f6160060a8c76191c9da1c09d8e329aa04b008b610c9b3ee"
+  },
+  {
     "file": "indice.md",
-    "sha256": "4a0ff52421584acd96c6cb63c9ee91cdce81c892c51f0aea993cfcf14ecf8108"
+    "sha256": "236b2a7bfce3e167329f62844a2d28d91b75801866f1292b19fa347ef14a0029"
   },
   {
     "file": "interrupcoes-do-sistema.json",
@@ -176,8 +204,12 @@
     "sha256": "39d84fbb5d0c8e5e149ae6a7d83eda6e356c828781d024e1669e9735d88fd660"
   },
   {
+    "file": "rebase-e-validacao.json",
+    "sha256": "6e3954b74fed184953cb42214d7baee89d8ee7132ffe69fa2245097e681ed1c8"
+  },
+  {
     "file": "resultado.md",
-    "sha256": "040dbf021ef68b1696280e9a8df422658c948c2c5ec1602caed29182e304cc28"
+    "sha256": "43d7feaa246e3bc9152dc206299198fb5f34318a4dbab81164f99ea69755202f"
   },
   {
     "file": "resumo.json",
@@ -190,5 +222,9 @@
   {
     "file": "retomada.md",
     "sha256": "1c3a45a5adef23f5169827e05eda664acc9ba1830e7b1ac8d149f75d0c854f3f"
+  },
+  {
+    "file": "solicitacao-revisao.md",
+    "sha256": "a4da2ab953ffe2fa3159188a7c9c78967fb06a849183613bf84af2aa93872714"
   }
 ]

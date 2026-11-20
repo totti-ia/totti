@@ -6,3 +6,5 @@
 20*.md -whitespace
 executor-*.mjs -whitespace
 interrupcoes-do-sistema.json -whitespace
+grafo-imports.mjs -whitespace
+solicitacao-revisao.md -whitespace

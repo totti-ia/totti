@@ -1,0 +1,27 @@
+{
+  "main": "0f4efec3d6546569f8e68942fd72052b64271bc5",
+  "baseMedida": "c91d3ce65c802dfd40f342c88f456a118d4f8f40",
+  "arvoreBase": "ff85b66208d06ac63ca1de2cdef306834087e983",
+  "arvoreMain": "ff85b66208d06ac63ca1de2cdef306834087e983",
+  "codigoAntes": "78b30d28407e3cd2f08b74b51c45e174808bfcc8",
+  "codigoDepois": "ff7558c865a35f646c80b089d6ff2e448438e342",
+  "arvoreCodigoAntes": "de81557db8669dabf32bdc657f01228f3a1a0e61",
+  "arvoreCodigoDepois": "de81557db8669dabf32bdc657f01228f3a1a0e61",
+  "documentacaoAntes": "e5a0bc2",
+  "documentacaoDepois": "aa60087",
+  "arvoreDocumentacaoAntes": "7efd2040ccd4b75bd5add6f83caf96a3e2076192",
+  "arvoreDocumentacaoDepois": "7efd2040ccd4b75bd5add6f83caf96a3e2076192",
+  "validacaoDepoisDoRebase": {
+    "testIntegridade": {
+      "comando": "npm run test:integridade",
+      "codigo": 0,
+      "testes": 72,
+      "falhas": 0,
+      "redeSimulada": true
+    },
+    "typescript": {
+      "comando": "node node_modules/typescript/bin/tsc --noEmit --incremental false",
+      "codigo": 0
+    }
+  }
+}

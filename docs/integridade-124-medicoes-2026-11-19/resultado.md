@@ -4,6 +4,8 @@
 
 Todas as tentativas, inclusive erros e interrupções, estão no [índice com logs completos](indice.md), no [manifesto original](execucoes.json), no [manifesto da retomada](retomada.json) e no [resumo estruturado](resumo.json). Nenhum resultado anterior foi substituído.
 
+A [análise para revisão](analise-para-revisao.md) separa alcance causal do código, diagnóstico das cinco falhas, Fisher unilateral e bootstrap exploratório, com suas limitações e lacunas. Não foram feitas novas chamadas de LLM para essa análise.
+
 ## Referência e método
 
 O protocolo foi escrito antes das execuções em [protocolo.md](protocolo.md). A é a base `c91d3ce` (`123-integridade`, PR #146); B é a implementação `78b30d2`. A main não foi usada nem houve rebase, porque o #146 ainda aguardava decisão.
@@ -91,9 +93,9 @@ O script mostra melhora em algumas medidas e piora em outras. A regra da issue e
 
 ## Validação e entrega local
 
-- Implementação: 57 testes de `lib/integridade/` e TypeScript aprovados antes das medições. Nenhuma alteração posterior no código do produto.
+- Implementação: 57 testes de `lib/integridade/` e TypeScript aprovados antes das medições. Após o rebase, o script completo `test:integridade` passou com 72 testes e o TypeScript passou novamente. Nenhuma alteração posterior no conteúdo do produto.
 - Logs completos, JSON, Markdown, progresso interrompido, executores, metadados e comparações preservados no índice. Os hashes em `sha256.json` conferem os bytes; a pasta desativa conversão de fim de linha para conservar as saídas.
 - Comparações por `--comparar` só leem os placares e não fazem novas chamadas de LLM. A comparação inicial recusada também foi preservada.
 - Os quatro artefatos finais gerados na referência foram conferidos por hash contra as cópias desta pasta (`backup-do-worktree.json`). Depois de verificar que a referência estava limpa, foram removidos somente sua junction de dependências e o worktree temporário. O worktree da implementação foi preservado.
 - O corpus de transcrição e as gravações reais das duas salas continuam necessários. Nenhum caminho adicional de áudio foi informado.
-- Branch mantida sobre `123-integridade`, sem push, PR, tag ou alteração de issue remota. A integração da #146 e a ordem do Nícolas continuam sendo condições para avançar.
+- O PR #146 entrou na main com a mesma árvore da base medida. Após o aviso de liberação, foi feito rebase sem conflito e sem mudança de árvore do produto. Branch local preservada, sem push, PR, tag ou alteração de issue remota; o critério não atendido continua impedindo declarar a #124 pronta.

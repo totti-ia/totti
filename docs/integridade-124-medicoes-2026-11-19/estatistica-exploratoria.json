@@ -1,0 +1,236 @@
+{
+  "natureza": "Análise exploratória pedida após as execuções; não altera critérios de aceitação.",
+  "fisher": {
+    "alternativa": "H1: taxa de acerto da implementação B menor que a da base A",
+    "unilateral": true,
+    "ajusteMultiplo": false
+  },
+  "bootstrap": {
+    "seed": 20261119,
+    "repeticoes": 20000,
+    "intervalo": "percentil 2,5%–97,5%",
+    "delta": "B menos A, em ms",
+    "reamostragem": "independente por chamada, com reposição; exploratório, sem correção de dependência entre turnos ou multiplicidade"
+  },
+  "conversa": [
+    {
+      "rodada": 1,
+      "A": {
+        "p50": 3010,
+        "p95": 8269,
+        "acertos": 10,
+        "casos": 14
+      },
+      "B": {
+        "p50": 3539,
+        "p95": 7781,
+        "acertos": 10,
+        "casos": 14
+      },
+      "fisherUnilateral": 0.6611916264090176,
+      "bootstrap": null,
+      "motivo": "bench-conversa roda silencioso e só imprime agregados; os ms de cada caso não foram persistidos. Tempos do provedor não equivalem ao tempo total do caso."
+    },
+    {
+      "rodada": 2,
+      "A": {
+        "p50": 2966,
+        "p95": 6468,
+        "acertos": 10,
+        "casos": 14
+      },
+      "B": {
+        "p50": 4116,
+        "p95": 8011,
+        "acertos": 8,
+        "casos": 14
+      },
+      "fisherUnilateral": 0.3472921434019832,
+      "bootstrap": null,
+      "motivo": "bench-conversa roda silencioso e só imprime agregados; os ms de cada caso não foram persistidos. Tempos do provedor não equivalem ao tempo total do caso."
+    },
+    {
+      "rodada": "agrupadas",
+      "A": {
+        "acertos": 20,
+        "casos": 28
+      },
+      "B": {
+        "acertos": 18,
+        "casos": 28
+      },
+      "fisherUnilateral": 0.38766137789747
+    }
+  ],
+  "quadro": [
+    {
+      "rodada": 1,
+      "A": {
+        "acertos": 1,
+        "casos": 2,
+        "chamadasConcluidas": 12
+      },
+      "B": {
+        "acertos": 1,
+        "casos": 2,
+        "chamadasConcluidas": 12
+      },
+      "fisherUnilateral": 0.8333333333333333,
+      "bootstrap": {
+        "p50": {
+          "deltaBmenosA": -1706,
+          "ic95": [
+            -2182,
+            -116
+          ]
+        },
+        "p95": {
+          "deltaBmenosA": -400,
+          "ic95": [
+            -3144,
+            666
+          ]
+        }
+      }
+    },
+    {
+      "rodada": 2,
+      "A": {
+        "acertos": 2,
+        "casos": 2,
+        "chamadasConcluidas": 12
+      },
+      "B": {
+        "acertos": 0,
+        "casos": 2,
+        "chamadasConcluidas": 10
+      },
+      "fisherUnilateral": 0.16666666666666666,
+      "bootstrap": {
+        "p50": {
+          "deltaBmenosA": -215,
+          "ic95": [
+            -829,
+            389
+          ]
+        },
+        "p95": {
+          "deltaBmenosA": -1167,
+          "ic95": [
+            -1248,
+            -445
+          ]
+        }
+      }
+    },
+    {
+      "rodada": "agrupadas",
+      "A": {
+        "acertos": 3,
+        "casos": 4
+      },
+      "B": {
+        "acertos": 1,
+        "casos": 4
+      },
+      "fisherUnilateral": 0.24285714285714285
+    }
+  ],
+  "vetoresQuadro": {
+    "124-quadro-1-base": [
+      3514,
+      2213,
+      2474,
+      2279,
+      2507,
+      2870,
+      4087,
+      5628,
+      4562,
+      5239,
+      4152,
+      4247
+    ],
+    "124-quadro-2-pr": [
+      5228,
+      2748,
+      2381,
+      2408,
+      2279,
+      2298,
+      2391,
+      2173,
+      2182,
+      2296,
+      2484,
+      2380
+    ],
+    "124-quadro-3-pr": [
+      2695,
+      2259,
+      2405,
+      2906,
+      2987,
+      2868,
+      2372,
+      2967,
+      2768,
+      2900
+    ],
+    "124-quadro-4-base": [
+      4020,
+      3083,
+      2263,
+      2651,
+      2266,
+      3412,
+      3118,
+      2733,
+      2511,
+      2266,
+      4154,
+      3597
+    ]
+  },
+  "validarConversaIde": {
+    "executado": false,
+    "motivo": "Não fazia parte do protocolo original; passou a ser pedido na revisão, que proíbe novas chamadas de LLM até análise."
+  },
+  "placarRetomada": {
+    "A": "124-placar-6-base-retomada",
+    "B": "124-placar-5-pr-retomada",
+    "fisherCasos": 0.6709258483452032,
+    "perguntar": {
+      "p50": {
+        "deltaBmenosA": -68,
+        "ic95": [
+          -718,
+          392
+        ]
+      },
+      "p95": {
+        "deltaBmenosA": 2423,
+        "ic95": [
+          -829,
+          3251
+        ]
+      }
+    },
+    "analise": {
+      "p50": {
+        "deltaBmenosA": -462,
+        "ic95": [
+          -1161,
+          464
+        ]
+      },
+      "p95": {
+        "deltaBmenosA": -632,
+        "ic95": [
+          -7138,
+          9389
+        ]
+      }
+    }
+  }
+}

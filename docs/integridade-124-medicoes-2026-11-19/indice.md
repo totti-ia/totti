@@ -26,3 +26,5 @@ A = base `c91d3ce`; B = implementação `78b30d2`. Um processo de medição por 
 | 20 | [124-placar-6-base-retomada](124-placar-6-base-retomada.log) | A | terminou | 1892.4 | [JSON](2026-11-20-01-21-124-placar-6-base-retomada.json), [Markdown](2026-11-20-01-21-124-placar-6-base-retomada.md) |
 
 [Manifesto original](execucoes.json) · [Manifesto da retomada](retomada.json) · [Resumo estruturado](resumo.json) · [Hashes do ambiente](ambiente.json) · [Eventos de espera moderna](interrupcoes-do-sistema.json)
+
+[Análise para revisão](analise-para-revisao.md) · [Estatística exploratória](estatistica-exploratoria.json) · [Grafo de imports](grafo-imports.log) · [Cinco falhas](cinco-falhas.json) · [Rebase e validação](rebase-e-validacao.json) · [Hashes dos arquivos](sha256.json)
