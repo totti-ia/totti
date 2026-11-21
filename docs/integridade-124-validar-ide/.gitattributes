@@ -1,1 +1,4 @@
-grafo.mjs -text
+* -text
+*.log -whitespace
+eventos-de-energia.json -whitespace
+validar-conversa-ide.fonte.txt -whitespace

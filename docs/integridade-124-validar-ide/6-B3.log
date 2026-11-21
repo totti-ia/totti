@@ -1,0 +1,39 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+[featherless] google/gemma-4-26B-A4B-it 2293ms in=7275 out=75 $0.0004
+{"caso":"pensando em voz alta","ms":2300,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 1922ms in=7266 out=75 $0.0004
+{"caso":"murmúrio","ms":1924,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 1987ms in=7270 out=75 $0.0004
+{"caso":"falando sozinho do erro","ms":1988,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2118ms in=7348 out=86 $0.0004
+{"caso":"dúvida do enunciado","ms":2123,"silent":false,"end":true,"despedida":false,"reply":"O enunciado garante que sempre existe exatamente uma resposta válida.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2561ms in=7347 out=101 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"pede a estrutura","ms":4381,"silent":false,"end":true,"despedida":false,"reply":"Não vou te dar uma resposta pronta agora: tenta implementar e rodar os testes, que eles te mostram o que funciona.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2474ms in=7342 out=120 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: timeout após 1.8s
+{"caso":"pede validação","ms":4291,"silent":false,"end":false,"despedida":false,"reply":"Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia?","commands":[{"type":"highlight_range","startLine":3,"endLine":4}]}
+[featherless] google/gemma-4-26B-A4B-it 3882ms in=7354 out=105 $0.0004
+{"caso":"explica e pergunta","ms":3883,"silent":false,"end":true,"despedida":false,"reply":"Sim, os dois loops aninhados deixam o custo de tempo nesse patamar.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2483ms in=7246 out=107 $0.0004
+{"caso":"conta o plano antes de codar","ms":2485,"silent":false,"end":false,"despedida":false,"reply":"Saquei. Por que começar por aí?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 1968ms in=7234 out=75 $0.0004
+{"caso":"lendo o enunciado","ms":1968,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[interviewer] falha no LLM: chamada LLM abortada
+{"caso":"pede para encerrar","ms":4520,"silent":false,"end":false,"despedida":false,"reply":"Desculpa, me perdi aqui. Pode repetir?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 3825ms in=7272 out=113 $0.0004
+[interviewer] travas {
+  travas: [ 'eco' ],
+  antes: 'Beleza, terminei a primeira versão e os testes passaram. Esse loop duplo aí, qual é o custo de tempo dele?'
+}
+[spoilerFilter] filtro de fala indisponível, deixando passar: timeout após 0s
+{"caso":"terminou a etapa","ms":7021,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[interviewer] falha no LLM: chamada LLM abortada
+{"caso":"pediu para olhar","ms":4511,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[interviewer] falha no LLM: chamada LLM abortada
+{"caso":"resposta no balão","ms":4515,"silent":false,"end":false,"despedida":false,"reply":"Desculpa, me perdi aqui. Pode repetir?","commands":[]}
+p50 3883 ms, máx 7021 ms
+pede para encerrar: devia encerrar; pede para encerrar: devia ficar quieto
+
+2 !== 0
+

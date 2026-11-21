@@ -1,0 +1,2008 @@
+{
+  "protocolo": {
+    "commit": "fe053605022dd6e4f4ecf37e5ba318ad6772f8ae",
+    "sha256": "90dd76ccd9596f0f6f324a94b192b12b2c211243acfff7e8f6f7c535aadb6a09",
+    "criterioAntesDaPrimeiraExecucao": true
+  },
+  "completas": true,
+  "execucoes": [
+    {
+      "id": "1-A1",
+      "versao": "A",
+      "rodada": 1,
+      "inicio": "2026-11-21T18:22:57.355Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "1-A1.stdout.log",
+      "stderr": "1-A1.stderr.log",
+      "combinado": "1-A1.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 13208,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:23:50.004Z",
+      "duracaoMs": 52648,
+      "interrupcao": null,
+      "sha256": {
+        "1-A1.stdout.log": "a44213b0886f7c89de203d41ff37df3456f94c891a40eb812ff5ecfb0eb04bc8",
+        "1-A1.stderr.log": "a400e9bfa2ed1c5096cea70f9cdcba644fdfba25bdd3a1deb71fff0dfeb4ed3d",
+        "1-A1.log": "e21a7ce28a22984cbd72784fc208085dfb4fcbb4ba82fcba94a6589027a5c128"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 3902,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 2584,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 2070,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2106,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, o enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 4077,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dizer qual usar, mas você pode testar diferentes opções e ver como elas afetam o desempenho. O que você está pensando em tentar primeiro?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 5086,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia por trás?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 3,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 2833,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, os dois loops aninhados levam a esse custo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 2960,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 2138,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 4416,
+          "silent": false,
+          "end": false,
+          "despedida": true,
+          "reply": "Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 6889,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 7004,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4447,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "E esse loop aí, qual o custo de tempo dele?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 4,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 12,
+      "p50": 3902,
+      "p95": 7004,
+      "maximo": 7004,
+      "filtroIndisponivel": 5,
+      "falhasLlmEntrevistador": 0
+    },
+    {
+      "id": "2-B1",
+      "versao": "B",
+      "rodada": 1,
+      "inicio": "2026-11-21T18:23:50.021Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "2-B1.stdout.log",
+      "stderr": "2-B1.stderr.log",
+      "combinado": "2-B1.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 25664,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:24:36.635Z",
+      "duracaoMs": 46613,
+      "interrupcao": null,
+      "sha256": {
+        "2-B1.stdout.log": "16c363b8b6d5ec139425f3ba9508581c7b2b64d36e34d77e67ab4a880fd031e9",
+        "2-B1.stderr.log": "8307fb7c1201a1aa4fa26190ea7bc54e364d86c0fc61f9a4b6c97318f3363e45",
+        "2-B1.log": "e9bebc408b66ea381a1cf75856216887c4a77392c6487c52b27dd151131d4a29"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 2711,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 2047,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 1922,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2104,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, o enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 4360,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dizer qual estrutura usar, mas você pode testar o que acha que funciona melhor. Esse par de loops aí, qual é a ideia?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 4677,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse laço com i e j aí, qual é a ideia?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 2342,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, os dois loops aninhados levam a essa complexidade.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 3214,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 2109,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 2549,
+          "silent": false,
+          "end": false,
+          "despedida": true,
+          "reply": "Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 6161,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 6137,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4027,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "E esse loop aí, qual o custo de tempo dele?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 4,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 12,
+      "p50": 2711,
+      "p95": 6161,
+      "maximo": 6161,
+      "filtroIndisponivel": 4,
+      "falhasLlmEntrevistador": 0
+    },
+    {
+      "id": "3-B2",
+      "versao": "B",
+      "rodada": 2,
+      "inicio": "2026-11-21T18:24:36.711Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "3-B2.stdout.log",
+      "stderr": "3-B2.stderr.log",
+      "combinado": "3-B2.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 11188,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:25:27.474Z",
+      "duracaoMs": 50735,
+      "interrupcao": null,
+      "sha256": {
+        "3-B2.stdout.log": "a9c55c6f6673ea087074bd4e0978cc970e77b11cc415efbd14d8f08d809f15d0",
+        "3-B2.stderr.log": "95189f8292166d90cc1e4a6dffd4e531e9cfa13e0c877e474afc9ab0b55ada03",
+        "3-B2.log": "503e41b2018cd8305bf0aec9b9ca32f488d9f980c0126ba52bb46da9513b589e"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 2716,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 2303,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 2156,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2170,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "O enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 3959,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Não vou te dar uma resposta pronta agora: implementa e roda os testes, que eles te mostram.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 4313,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse laço duplo aí, qual é a ideia?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 2431,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Pelo que você escreveu, os dois loops aninhados realmente indicam esse custo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 2388,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 4516,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Desculpa, me perdi aqui. Pode repetir?",
+          "commands": [],
+          "motivos": [
+            "lendo o enunciado: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 4516,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Desculpa, me perdi aqui. Pode repetir?",
+          "commands": [],
+          "motivos": [
+            "pede para encerrar: devia encerrar",
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 7012,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 6529,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4082,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "E esse loop aí, qual o custo de tempo dele?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 4,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "lendo o enunciado: devia ficar quieto",
+        "pede para encerrar: devia encerrar",
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 11,
+      "p50": 3959,
+      "p95": 7012,
+      "maximo": 7012,
+      "filtroIndisponivel": 5,
+      "falhasLlmEntrevistador": 2
+    },
+    {
+      "id": "4-A2",
+      "versao": "A",
+      "rodada": 2,
+      "inicio": "2026-11-21T18:25:27.485Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "4-A2.stdout.log",
+      "stderr": "4-A2.stderr.log",
+      "combinado": "4-A2.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 7208,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:26:12.048Z",
+      "duracaoMs": 44562,
+      "interrupcao": null,
+      "sha256": {
+        "4-A2.stdout.log": "964065618411531f959c7ae0d46206a5a9ba9acd82ccebe30548477ba1555e8d",
+        "4-A2.stderr.log": "a400e9bfa2ed1c5096cea70f9cdcba644fdfba25bdd3a1deb71fff0dfeb4ed3d",
+        "4-A2.log": "de17e15840edadcdb8dfcc2c9a74e2c294ca35e0f9bf8b4ae3e173e21f9a227c"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 2582,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 1999,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 1925,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2039,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, o enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 4113,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dizer qual usar, mas você pode testar o que acha que funciona melhor. Esse par de loops aí, qual é a ideia?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 4969,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 3,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 2444,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, os dois loops aninhados levam a esse custo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 2715,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 1964,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 1975,
+          "silent": false,
+          "end": false,
+          "despedida": true,
+          "reply": "Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 6478,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 6626,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4105,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "E esse loop aí, qual o custo de tempo dele?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 4,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 12,
+      "p50": 2582,
+      "p95": 6626,
+      "maximo": 6626,
+      "filtroIndisponivel": 5,
+      "falhasLlmEntrevistador": 0
+    },
+    {
+      "id": "5-A3",
+      "versao": "A",
+      "rodada": 3,
+      "inicio": "2026-11-21T18:26:12.058Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "5-A3.stdout.log",
+      "stderr": "5-A3.stderr.log",
+      "combinado": "5-A3.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 17104,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:26:57.104Z",
+      "duracaoMs": 45046,
+      "interrupcao": null,
+      "sha256": {
+        "5-A3.stdout.log": "e8d596df3c327bd86257be8374e5e414c6c0579ef8a7f79c3bfca25df82c9bd1",
+        "5-A3.stderr.log": "78651f9a17ea53f3a7a28856d29760151397aeb75ed3db0569c1412c8200448a",
+        "5-A3.log": "b6fc3add6179ac7a16eaaf4d645b25402b8904bc7b9a2035a2fe618e69666bab"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 2435,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 1913,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 2313,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2779,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, o enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 4014,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Não vou te dar uma resposta pronta, mas você pode testar diferentes opções e ver qual se encaixa melhor no seu plano.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 4325,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 3,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 2305,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, os dois loops aninhados levam a essa complexidade.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 2467,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 2027,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 1960,
+          "silent": false,
+          "end": false,
+          "despedida": true,
+          "reply": "Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 6304,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 7016,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4668,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "E esse loop aí, qual o custo de tempo dessa abordagem?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 3,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 12,
+      "p50": 2467,
+      "p95": 7016,
+      "maximo": 7016,
+      "filtroIndisponivel": 5,
+      "falhasLlmEntrevistador": 0
+    },
+    {
+      "id": "6-B3",
+      "versao": "B",
+      "rodada": 3,
+      "inicio": "2026-11-21T18:26:57.118Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "6-B3.stdout.log",
+      "stderr": "6-B3.stderr.log",
+      "combinado": "6-B3.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 20868,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:27:43.576Z",
+      "duracaoMs": 46447,
+      "interrupcao": null,
+      "sha256": {
+        "6-B3.stdout.log": "3256a09bdd476a786a2111a534aa985417bdc554068a687bbf02f023835eec97",
+        "6-B3.stderr.log": "e9adc70330ec36ba7e06e989efe085b0485556078b8adafcd79c5857de4cfb86",
+        "6-B3.log": "90fdaa90d68a451688474c20a0a82cd8f46e75c7d02fa94ce4ec77340e95aa9f"
+      },
+      "completa": true,
+      "casos": [
+        {
+          "caso": "pensando em voz alta",
+          "ms": 2300,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "murmúrio",
+          "ms": 1924,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "falando sozinho do erro",
+          "ms": 1988,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "dúvida do enunciado",
+          "ms": 2123,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "O enunciado garante que sempre existe exatamente uma resposta válida.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede a estrutura",
+          "ms": 4381,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Não vou te dar uma resposta pronta agora: tenta implementar e rodar os testes, que eles te mostram o que funciona.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede validação",
+          "ms": 4291,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 3,
+              "endLine": 4
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "explica e pergunta",
+          "ms": 3883,
+          "silent": false,
+          "end": true,
+          "despedida": false,
+          "reply": "Sim, os dois loops aninhados deixam o custo de tempo nesse patamar.",
+          "commands": [
+            {
+              "type": "clear_highlights"
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "conta o plano antes de codar",
+          "ms": 2485,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Saquei. Por que começar por aí?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "lendo o enunciado",
+          "ms": 1968,
+          "silent": true,
+          "end": false,
+          "despedida": false,
+          "reply": "",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pede para encerrar",
+          "ms": 4520,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Desculpa, me perdi aqui. Pode repetir?",
+          "commands": [],
+          "motivos": [
+            "pede para encerrar: devia encerrar",
+            "pede para encerrar: devia ficar quieto"
+          ],
+          "ok": false
+        },
+        {
+          "caso": "terminou a etapa",
+          "ms": 7021,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "pediu para olhar",
+          "ms": 4511,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Olhei a linha 2: count = len(nums). Como você pensou essa decisão?",
+          "commands": [
+            {
+              "type": "highlight_range",
+              "startLine": 2,
+              "endLine": 2
+            }
+          ],
+          "motivos": [],
+          "ok": true
+        },
+        {
+          "caso": "resposta no balão",
+          "ms": 4515,
+          "silent": false,
+          "end": false,
+          "despedida": false,
+          "reply": "Desculpa, me perdi aqui. Pode repetir?",
+          "commands": [],
+          "motivos": [],
+          "ok": true
+        }
+      ],
+      "motivos": [
+        "pede para encerrar: devia encerrar",
+        "pede para encerrar: devia ficar quieto"
+      ],
+      "acertos": 12,
+      "p50": 3883,
+      "p95": 7021,
+      "maximo": 7021,
+      "filtroIndisponivel": 3,
+      "falhasLlmEntrevistador": 3
+    }
+  ],
+  "pares": [
+    {
+      "rodada": 1,
+      "uso": "somente descritivo",
+      "A": {
+        "acertos": 12,
+        "total": 13,
+        "p50": 3902,
+        "p95": 7004
+      },
+      "B": {
+        "acertos": 12,
+        "total": 13,
+        "p50": 2711,
+        "p95": 6161
+      },
+      "fisherUnilateral": 0.76,
+      "bootstrap": {
+        "p50": {
+          "deltaBmenosA": -1191,
+          "ic95": [
+            -1867,
+            283
+          ]
+        },
+        "p95": {
+          "deltaBmenosA": -843,
+          "ic95": [
+            -867,
+            -409
+          ]
+        }
+      },
+      "grupos": [
+        {
+          "nome": "pensando em voz alta",
+          "A": [
+            3902
+          ],
+          "B": [
+            2711
+          ]
+        },
+        {
+          "nome": "murmúrio",
+          "A": [
+            2584
+          ],
+          "B": [
+            2047
+          ]
+        },
+        {
+          "nome": "falando sozinho do erro",
+          "A": [
+            2070
+          ],
+          "B": [
+            1922
+          ]
+        },
+        {
+          "nome": "dúvida do enunciado",
+          "A": [
+            2106
+          ],
+          "B": [
+            2104
+          ]
+        },
+        {
+          "nome": "pede a estrutura",
+          "A": [
+            4077
+          ],
+          "B": [
+            4360
+          ]
+        },
+        {
+          "nome": "pede validação",
+          "A": [
+            5086
+          ],
+          "B": [
+            4677
+          ]
+        },
+        {
+          "nome": "explica e pergunta",
+          "A": [
+            2833
+          ],
+          "B": [
+            2342
+          ]
+        },
+        {
+          "nome": "conta o plano antes de codar",
+          "A": [
+            2960
+          ],
+          "B": [
+            3214
+          ]
+        },
+        {
+          "nome": "lendo o enunciado",
+          "A": [
+            2138
+          ],
+          "B": [
+            2109
+          ]
+        },
+        {
+          "nome": "pede para encerrar",
+          "A": [
+            4416
+          ],
+          "B": [
+            2549
+          ]
+        },
+        {
+          "nome": "terminou a etapa",
+          "A": [
+            6889
+          ],
+          "B": [
+            6161
+          ]
+        },
+        {
+          "nome": "pediu para olhar",
+          "A": [
+            7004
+          ],
+          "B": [
+            6137
+          ]
+        },
+        {
+          "nome": "resposta no balão",
+          "A": [
+            4447
+          ],
+          "B": [
+            4027
+          ]
+        }
+      ]
+    },
+    {
+      "rodada": 2,
+      "uso": "somente descritivo",
+      "A": {
+        "acertos": 12,
+        "total": 13,
+        "p50": 2582,
+        "p95": 6626
+      },
+      "B": {
+        "acertos": 11,
+        "total": 13,
+        "p50": 3959,
+        "p95": 7012
+      },
+      "fisherUnilateral": 0.5,
+      "bootstrap": {
+        "p50": {
+          "deltaBmenosA": 1377,
+          "ic95": [
+            -327,
+            2314
+          ]
+        },
+        "p95": {
+          "deltaBmenosA": 386,
+          "ic95": [
+            -453,
+            534
+          ]
+        }
+      },
+      "grupos": [
+        {
+          "nome": "pensando em voz alta",
+          "A": [
+            2582
+          ],
+          "B": [
+            2716
+          ]
+        },
+        {
+          "nome": "murmúrio",
+          "A": [
+            1999
+          ],
+          "B": [
+            2303
+          ]
+        },
+        {
+          "nome": "falando sozinho do erro",
+          "A": [
+            1925
+          ],
+          "B": [
+            2156
+          ]
+        },
+        {
+          "nome": "dúvida do enunciado",
+          "A": [
+            2039
+          ],
+          "B": [
+            2170
+          ]
+        },
+        {
+          "nome": "pede a estrutura",
+          "A": [
+            4113
+          ],
+          "B": [
+            3959
+          ]
+        },
+        {
+          "nome": "pede validação",
+          "A": [
+            4969
+          ],
+          "B": [
+            4313
+          ]
+        },
+        {
+          "nome": "explica e pergunta",
+          "A": [
+            2444
+          ],
+          "B": [
+            2431
+          ]
+        },
+        {
+          "nome": "conta o plano antes de codar",
+          "A": [
+            2715
+          ],
+          "B": [
+            2388
+          ]
+        },
+        {
+          "nome": "lendo o enunciado",
+          "A": [
+            1964
+          ],
+          "B": [
+            4516
+          ]
+        },
+        {
+          "nome": "pede para encerrar",
+          "A": [
+            1975
+          ],
+          "B": [
+            4516
+          ]
+        },
+        {
+          "nome": "terminou a etapa",
+          "A": [
+            6478
+          ],
+          "B": [
+            7012
+          ]
+        },
+        {
+          "nome": "pediu para olhar",
+          "A": [
+            6626
+          ],
+          "B": [
+            6529
+          ]
+        },
+        {
+          "nome": "resposta no balão",
+          "A": [
+            4105
+          ],
+          "B": [
+            4082
+          ]
+        }
+      ]
+    },
+    {
+      "rodada": 3,
+      "uso": "somente descritivo",
+      "A": {
+        "acertos": 12,
+        "total": 13,
+        "p50": 2467,
+        "p95": 7016
+      },
+      "B": {
+        "acertos": 12,
+        "total": 13,
+        "p50": 3883,
+        "p95": 7021
+      },
+      "fisherUnilateral": 0.76,
+      "bootstrap": {
+        "p50": {
+          "deltaBmenosA": 1416,
+          "ic95": [
+            -479,
+            2044
+          ]
+        },
+        "p95": {
+          "deltaBmenosA": 5,
+          "ic95": [
+            -2501,
+            717
+          ]
+        }
+      },
+      "grupos": [
+        {
+          "nome": "pensando em voz alta",
+          "A": [
+            2435
+          ],
+          "B": [
+            2300
+          ]
+        },
+        {
+          "nome": "murmúrio",
+          "A": [
+            1913
+          ],
+          "B": [
+            1924
+          ]
+        },
+        {
+          "nome": "falando sozinho do erro",
+          "A": [
+            2313
+          ],
+          "B": [
+            1988
+          ]
+        },
+        {
+          "nome": "dúvida do enunciado",
+          "A": [
+            2779
+          ],
+          "B": [
+            2123
+          ]
+        },
+        {
+          "nome": "pede a estrutura",
+          "A": [
+            4014
+          ],
+          "B": [
+            4381
+          ]
+        },
+        {
+          "nome": "pede validação",
+          "A": [
+            4325
+          ],
+          "B": [
+            4291
+          ]
+        },
+        {
+          "nome": "explica e pergunta",
+          "A": [
+            2305
+          ],
+          "B": [
+            3883
+          ]
+        },
+        {
+          "nome": "conta o plano antes de codar",
+          "A": [
+            2467
+          ],
+          "B": [
+            2485
+          ]
+        },
+        {
+          "nome": "lendo o enunciado",
+          "A": [
+            2027
+          ],
+          "B": [
+            1968
+          ]
+        },
+        {
+          "nome": "pede para encerrar",
+          "A": [
+            1960
+          ],
+          "B": [
+            4520
+          ]
+        },
+        {
+          "nome": "terminou a etapa",
+          "A": [
+            6304
+          ],
+          "B": [
+            7021
+          ]
+        },
+        {
+          "nome": "pediu para olhar",
+          "A": [
+            7016
+          ],
+          "B": [
+            4511
+          ]
+        },
+        {
+          "nome": "resposta no balão",
+          "A": [
+            4668
+          ],
+          "B": [
+            4515
+          ]
+        }
+      ]
+    }
+  ],
+  "agregado": {
+    "A": {
+      "acertos": 36,
+      "total": 39,
+      "p50": 2779,
+      "p95": 7004
+    },
+    "B": {
+      "acertos": 35,
+      "total": 39,
+      "p50": 3214,
+      "p95": 7012
+    },
+    "fisherUnilateral": 0.5,
+    "bootstrap": {
+      "p50": {
+        "deltaBmenosA": 435,
+        "ic95": [
+          -327,
+          1377
+        ]
+      },
+      "p95": {
+        "deltaBmenosA": 8,
+        "ic95": [
+          -867,
+          534
+        ]
+      }
+    },
+    "grupos": [
+      {
+        "nome": "pensando em voz alta",
+        "A": [
+          3902,
+          2582,
+          2435
+        ],
+        "B": [
+          2711,
+          2716,
+          2300
+        ]
+      },
+      {
+        "nome": "murmúrio",
+        "A": [
+          2584,
+          1999,
+          1913
+        ],
+        "B": [
+          2047,
+          2303,
+          1924
+        ]
+      },
+      {
+        "nome": "falando sozinho do erro",
+        "A": [
+          2070,
+          1925,
+          2313
+        ],
+        "B": [
+          1922,
+          2156,
+          1988
+        ]
+      },
+      {
+        "nome": "dúvida do enunciado",
+        "A": [
+          2106,
+          2039,
+          2779
+        ],
+        "B": [
+          2104,
+          2170,
+          2123
+        ]
+      },
+      {
+        "nome": "pede a estrutura",
+        "A": [
+          4077,
+          4113,
+          4014
+        ],
+        "B": [
+          4360,
+          3959,
+          4381
+        ]
+      },
+      {
+        "nome": "pede validação",
+        "A": [
+          5086,
+          4969,
+          4325
+        ],
+        "B": [
+          4677,
+          4313,
+          4291
+        ]
+      },
+      {
+        "nome": "explica e pergunta",
+        "A": [
+          2833,
+          2444,
+          2305
+        ],
+        "B": [
+          2342,
+          2431,
+          3883
+        ]
+      },
+      {
+        "nome": "conta o plano antes de codar",
+        "A": [
+          2960,
+          2715,
+          2467
+        ],
+        "B": [
+          3214,
+          2388,
+          2485
+        ]
+      },
+      {
+        "nome": "lendo o enunciado",
+        "A": [
+          2138,
+          1964,
+          2027
+        ],
+        "B": [
+          2109,
+          4516,
+          1968
+        ]
+      },
+      {
+        "nome": "pede para encerrar",
+        "A": [
+          4416,
+          1975,
+          1960
+        ],
+        "B": [
+          2549,
+          4516,
+          4520
+        ]
+      },
+      {
+        "nome": "terminou a etapa",
+        "A": [
+          6889,
+          6478,
+          6304
+        ],
+        "B": [
+          6161,
+          7012,
+          7021
+        ]
+      },
+      {
+        "nome": "pediu para olhar",
+        "A": [
+          7004,
+          6626,
+          7016
+        ],
+        "B": [
+          6137,
+          6529,
+          4511
+        ]
+      },
+      {
+        "nome": "resposta no balão",
+        "A": [
+          4447,
+          4105,
+          4668
+        ],
+        "B": [
+          4027,
+          4082,
+          4515
+        ]
+      }
+    ]
+  },
+  "pioras": {
+    "acertos": false,
+    "p50": false,
+    "p95": false
+  },
+  "bootstrap": {
+    "algoritmo": "Mulberry32",
+    "seed": 20261121,
+    "repeticoes": 20000,
+    "reamostragem": "13 grupos de casos com reposição; A/B juntos; agregado preserva três rodadas de cada caso",
+    "ic": "percentil 2,5–97,5; v[min(n−1,floor(n*p))]"
+  },
+  "conclusao": "sem piora detectada com este tamanho de amostra"
+}

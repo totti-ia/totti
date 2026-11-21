@@ -1,0 +1,34 @@
+[featherless] google/gemma-4-26B-A4B-it 2704ms in=7275 out=75 $0.0004
+{"caso":"pensando em voz alta","ms":2711,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2045ms in=7266 out=75 $0.0004
+{"caso":"murmúrio","ms":2047,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 1921ms in=7270 out=75 $0.0004
+{"caso":"falando sozinho do erro","ms":1922,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2101ms in=7348 out=88 $0.0004
+{"caso":"dúvida do enunciado","ms":2104,"silent":false,"end":true,"despedida":false,"reply":"Sim, o enunciado garante que sempre existe exatamente uma resposta válida.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2554ms in=7347 out=118 $0.0004
+{"caso":"pede a estrutura","ms":4360,"silent":false,"end":false,"despedida":false,"reply":"Não vou te dizer qual estrutura usar, mas você pode testar o que acha que funciona melhor. Esse par de loops aí, qual é a ideia?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2867ms in=7342 out=124 $0.0004
+{"caso":"pede validação","ms":4677,"silent":false,"end":false,"despedida":false,"reply":"Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse laço com i e j aí, qual é a ideia?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2342ms in=7354 out=102 $0.0004
+{"caso":"explica e pergunta","ms":2342,"silent":false,"end":true,"despedida":false,"reply":"Sim, os dois loops aninhados levam a essa complexidade.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 3212ms in=7246 out=107 $0.0004
+{"caso":"conta o plano antes de codar","ms":3214,"silent":false,"end":false,"despedida":false,"reply":"Saquei. Por que começar por aí?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2109ms in=7234 out=75 $0.0004
+{"caso":"lendo o enunciado","ms":2109,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2547ms in=7269 out=118 $0.0004
+{"caso":"pede para encerrar","ms":2549,"silent":false,"end":false,"despedida":true,"reply":"Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2068ms in=7272 out=94 $0.0004
+[interviewer] travas {
+  travas: [ 'eco' ],
+  antes: 'Beleza, terminei a primeira versão. O que você pensou para melhorar esse código?'
+}
+[featherless] google/gemma-4-26B-A4B-it 2274ms in=7315 out=110 $0.0004
+{"caso":"terminou a etapa","ms":6161,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[featherless] google/gemma-4-26B-A4B-it 2390ms in=7271 out=107 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2404ms in=7314 out=107 $0.0004
+[featherless] google/gemma-4-31B-it 1338ms in=2100 out=20 $0.0002
+{"caso":"pediu para olhar","ms":6137,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[featherless] google/gemma-4-26B-A4B-it 2205ms in=7467 out=99 $0.0004
+{"caso":"resposta no balão","ms":4027,"silent":false,"end":false,"despedida":false,"reply":"E esse loop aí, qual o custo de tempo dele?","commands":[{"type":"highlight_range","startLine":4,"endLine":4}]}
+p50 2711 ms, máx 6161 ms

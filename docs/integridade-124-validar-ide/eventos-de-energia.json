@@ -1,0 +1,25 @@
+{
+    "inicio":  "2026-11-21T18:22:56.750Z",
+    "fim":  "2026-11-21T18:27:43.588Z",
+    "consultaValida":  true,
+    "consulta":  {
+                     "log":  "System",
+                     "ids":  [
+                                 42,
+                                 107,
+                                 506,
+                                 507,
+                                 1
+                             ],
+                     "provedores":  [
+                                        "Microsoft-Windows-Kernel-Power",
+                                        "Microsoft-Windows-Power-Troubleshooter"
+                                    ]
+                 },
+    "eventos":  [
+
+                ],
+    "lacunasDeMonitor":  [
+
+                         ]
+}

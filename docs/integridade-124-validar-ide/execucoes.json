@@ -1,0 +1,251 @@
+{
+  "protocolo": {
+    "commit": "fe053605022dd6e4f4ecf37e5ba318ad6772f8ae",
+    "sha256": "90dd76ccd9596f0f6f324a94b192b12b2c211243acfff7e8f6f7c535aadb6a09",
+    "criterioAntesDaPrimeiraExecucao": true
+  },
+  "inicio": "2026-11-21T18:22:56.750Z",
+  "node": "v24.16.0",
+  "npm": "11.13.0",
+  "ambiente": {
+    "AGENTE_FAKE": "0",
+    "ANALISE_CODIGO_FEATHERLESS_MODEL": "google/gemma-4-26B-A4B-it",
+    "ANALISE_CODIGO_MODEL": "google/gemini-3.7-flash",
+    "ANALISE_QUADRO_FEATHERLESS_MODEL": "google/gemma-4-26B-A4B-it",
+    "ANALISE_QUADRO_MODEL": "google/gemini-3.7-flash",
+    "ANALYST_FALLBACK_MODEL": "z-ai/glm-5.3-flash",
+    "ANALYST_MODEL": "zai-org/GLM-5.3-Flash",
+    "ARMAZENAMENTO": "memoria",
+    "CONVERSA_AO_VIVO_MODEL": "google/gemini-3.5-flash-lite",
+    "CONVERSA_AO_VIVO_RESERVA_MODEL": "zai-org/GLM-5.3-Flash",
+    "CONVERSA_FALLBACK_MODEL": "google/gemini-2.5-flash-lite",
+    "CONVERSA_FEATHERLESS_MODEL": "google/gemma-4-26B-A4B-it",
+    "CONVERSA_MODEL": "google/gemma-4-26B-A4B-it",
+    "EVALUATOR_FALLBACK_MODEL": "z-ai/glm-5.2",
+    "EVALUATOR_MODEL": "zai-org/GLM-5.2",
+    "EXTRACTOR_FALLBACK_MODEL": "google/gemini-2.5-flash-lite",
+    "EXTRACTOR_MODEL": "zai-org/GLM-5.2",
+    "FAST_FALLBACK_MODEL": "openai/gpt-oss-120b",
+    "FAST_FEATHERLESS_MODEL": "google/gemma-4-26B-A4B-it",
+    "FAST_MODEL": "google/gemma-4-31B-it",
+    "FILTRO_MODEL": "google/gemini-3.5-flash-lite",
+    "FILTRO_RESERVA_MODEL": "google/gemma-4-31B-it",
+    "INTERVIEWER_FALLBACK_MODEL": "z-ai/glm-5.3-flash",
+    "INTERVIEWER_MODEL": "zai-org/GLM-5.3-Flash",
+    "RELATORIO_FALLBACK_MODEL": "z-ai/glm-5.2",
+    "RELATORIO_MODEL": "zai-org/GLM-5.2",
+    "FEATHERLESS_CONCURRENCY": "2",
+    "PAGO": "0"
+  },
+  "openrouterDesligada": true,
+  "versoes": {
+    "A": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-ide-base-medicao",
+      "commit": "0f4efec3d6546569f8e68942fd72052b64271bc5",
+      "tree": "ff85b66208d06ac63ca1de2cdef306834087e983",
+      "sha256": {
+        "scripts/validar-conversa-ide.ts": "95f736ba9c5c890f2677ffd2cd3b3c8ca3cb5f9788ce3b877064a49cbcbc0063",
+        "scripts/validar-conversa.ts": "df3ba0ed6d80c0bb5a76ca5fe1e993987b6ec732366c72e0896501b5ae342678",
+        "scripts/_gasto.ts": "dfdfd93be7d6c3a3855b0ce24eeb1addf35df2541079af5d2f5762cf7c4a75f3",
+        "package-lock.json": "4f39184bdd0f3217e69c32cbae1560cc46c8a4d0a501049e218bc54f87bad622",
+        "package.json": "e26c20323f4a38e2af5d5fb0ed5e6fcc8f2406755bdf389554f0fd57132bd830",
+        "tsconfig.json": "86c4fd7c9e5b33668b0166e7109016504850b69eb5fdfb095068662be17cd034",
+        "lib/llm/index.ts": "d0a44791e93b6576c68a5d88fe3837b509a191745cb3d775ef35ad3761dc26ab",
+        "lib/agents/interviewer.ts": "d895019c05ef41eed17f37eda5964b64cf306296aaf87386079d8a2092947180"
+      }
+    },
+    "B": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-ide-pr-medicao",
+      "commit": "ff7558c865a35f646c80b089d6ff2e448438e342",
+      "tree": "de81557db8669dabf32bdc657f01228f3a1a0e61",
+      "sha256": {
+        "scripts/validar-conversa-ide.ts": "95f736ba9c5c890f2677ffd2cd3b3c8ca3cb5f9788ce3b877064a49cbcbc0063",
+        "scripts/validar-conversa.ts": "df3ba0ed6d80c0bb5a76ca5fe1e993987b6ec732366c72e0896501b5ae342678",
+        "scripts/_gasto.ts": "dfdfd93be7d6c3a3855b0ce24eeb1addf35df2541079af5d2f5762cf7c4a75f3",
+        "package-lock.json": "4f39184bdd0f3217e69c32cbae1560cc46c8a4d0a501049e218bc54f87bad622",
+        "package.json": "e26c20323f4a38e2af5d5fb0ed5e6fcc8f2406755bdf389554f0fd57132bd830",
+        "tsconfig.json": "86c4fd7c9e5b33668b0166e7109016504850b69eb5fdfb095068662be17cd034",
+        "lib/llm/index.ts": "d0a44791e93b6576c68a5d88fe3837b509a191745cb3d775ef35ad3761dc26ab",
+        "lib/agents/interviewer.ts": "d895019c05ef41eed17f37eda5964b64cf306296aaf87386079d8a2092947180"
+      }
+    }
+  },
+  "execucoes": [
+    {
+      "id": "1-A1",
+      "versao": "A",
+      "rodada": 1,
+      "inicio": "2026-11-21T18:22:57.355Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "1-A1.stdout.log",
+      "stderr": "1-A1.stderr.log",
+      "combinado": "1-A1.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 13208,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:23:50.004Z",
+      "duracaoMs": 52648,
+      "interrupcao": null,
+      "sha256": {
+        "1-A1.stdout.log": "a44213b0886f7c89de203d41ff37df3456f94c891a40eb812ff5ecfb0eb04bc8",
+        "1-A1.stderr.log": "a400e9bfa2ed1c5096cea70f9cdcba644fdfba25bdd3a1deb71fff0dfeb4ed3d",
+        "1-A1.log": "e21a7ce28a22984cbd72784fc208085dfb4fcbb4ba82fcba94a6589027a5c128"
+      }
+    },
+    {
+      "id": "2-B1",
+      "versao": "B",
+      "rodada": 1,
+      "inicio": "2026-11-21T18:23:50.021Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "2-B1.stdout.log",
+      "stderr": "2-B1.stderr.log",
+      "combinado": "2-B1.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 25664,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:24:36.635Z",
+      "duracaoMs": 46613,
+      "interrupcao": null,
+      "sha256": {
+        "2-B1.stdout.log": "16c363b8b6d5ec139425f3ba9508581c7b2b64d36e34d77e67ab4a880fd031e9",
+        "2-B1.stderr.log": "8307fb7c1201a1aa4fa26190ea7bc54e364d86c0fc61f9a4b6c97318f3363e45",
+        "2-B1.log": "e9bebc408b66ea381a1cf75856216887c4a77392c6487c52b27dd151131d4a29"
+      }
+    },
+    {
+      "id": "3-B2",
+      "versao": "B",
+      "rodada": 2,
+      "inicio": "2026-11-21T18:24:36.711Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "3-B2.stdout.log",
+      "stderr": "3-B2.stderr.log",
+      "combinado": "3-B2.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 11188,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:25:27.474Z",
+      "duracaoMs": 50735,
+      "interrupcao": null,
+      "sha256": {
+        "3-B2.stdout.log": "a9c55c6f6673ea087074bd4e0978cc970e77b11cc415efbd14d8f08d809f15d0",
+        "3-B2.stderr.log": "95189f8292166d90cc1e4a6dffd4e531e9cfa13e0c877e474afc9ab0b55ada03",
+        "3-B2.log": "503e41b2018cd8305bf0aec9b9ca32f488d9f980c0126ba52bb46da9513b589e"
+      }
+    },
+    {
+      "id": "4-A2",
+      "versao": "A",
+      "rodada": 2,
+      "inicio": "2026-11-21T18:25:27.485Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "4-A2.stdout.log",
+      "stderr": "4-A2.stderr.log",
+      "combinado": "4-A2.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 7208,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:26:12.048Z",
+      "duracaoMs": 44562,
+      "interrupcao": null,
+      "sha256": {
+        "4-A2.stdout.log": "964065618411531f959c7ae0d46206a5a9ba9acd82ccebe30548477ba1555e8d",
+        "4-A2.stderr.log": "a400e9bfa2ed1c5096cea70f9cdcba644fdfba25bdd3a1deb71fff0dfeb4ed3d",
+        "4-A2.log": "de17e15840edadcdb8dfcc2c9a74e2c294ca35e0f9bf8b4ae3e173e21f9a227c"
+      }
+    },
+    {
+      "id": "5-A3",
+      "versao": "A",
+      "rodada": 3,
+      "inicio": "2026-11-21T18:26:12.058Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "5-A3.stdout.log",
+      "stderr": "5-A3.stderr.log",
+      "combinado": "5-A3.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 17104,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:26:57.104Z",
+      "duracaoMs": 45046,
+      "interrupcao": null,
+      "sha256": {
+        "5-A3.stdout.log": "e8d596df3c327bd86257be8374e5e414c6c0579ef8a7f79c3bfca25df82c9bd1",
+        "5-A3.stderr.log": "78651f9a17ea53f3a7a28856d29760151397aeb75ed3db0569c1412c8200448a",
+        "5-A3.log": "b6fc3add6179ac7a16eaaf4d645b25402b8904bc7b9a2035a2fe618e69666bab"
+      }
+    },
+    {
+      "id": "6-B3",
+      "versao": "B",
+      "rodada": 3,
+      "inicio": "2026-11-21T18:26:57.118Z",
+      "limiteMs": 600000,
+      "status": "erro_ou_assercao",
+      "stdout": "6-B3.stdout.log",
+      "stderr": "6-B3.stderr.log",
+      "combinado": "6-B3.log",
+      "comando": [
+        "node",
+        "--import",
+        "tsx",
+        "--env-file-if-exists=<clone>/.env.local",
+        "scripts/validar-conversa-ide.ts"
+      ],
+      "pid": 20868,
+      "code": 1,
+      "signal": null,
+      "fim": "2026-11-21T18:27:43.576Z",
+      "duracaoMs": 46447,
+      "interrupcao": null,
+      "sha256": {
+        "6-B3.stdout.log": "3256a09bdd476a786a2111a534aa985417bdc554068a687bbf02f023835eec97",
+        "6-B3.stderr.log": "e9adc70330ec36ba7e06e989efe085b0485556078b8adafcd79c5857de4cfb86",
+        "6-B3.log": "90fdaa90d68a451688474c20a0a82cd8f46e75c7d02fa94ce4ec77340e95aa9f"
+      }
+    }
+  ],
+  "fim": "2026-11-21T18:27:43.588Z",
+  "interrompido": false
+}
