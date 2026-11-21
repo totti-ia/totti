@@ -1,0 +1,55 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import assert from 'node:assert/strict';
+
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const ler = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+const c = ler('comparacao.json');
+assert.ok(c.voz, 'Aguardar também o fim da suíte de voz');
+const rotulos = ['01-tempo-124', '02-tempo-124', '03-tempo-base', '04-voz-124'];
+const execucoes = rotulos.map((r) => ({ rotulo: r, ...ler(r + '/execucao.json') }));
+assert.ok(execucoes.every((r) => r.fim));
+const m = execucoes.find((r) => r.rotulo === '02-tempo-124');
+const b = execucoes.find((r) => r.rotulo === '03-tempo-base');
+for (const f of ['e2e/tempo-de-resposta.spec.ts', 'e2e/helpers/voz-falsa.ts', 'e2e/helpers/scribe-falso.ts', 'e2e/playwright.tempo-de-resposta.config.ts']) assert.equal(m.fontes[f], b.fontes[f], f + ': fontes devem ser idênticas');
+let md = '# E2E da conversa — #124\n\n';
+md += `**Spec novo: 6/6 na #124 e 6/6 na base; contagens de POSTs ${c.contagensIguais ? 'iguais' : 'diferentes'} por rota nos seis cenários.** A suíte de voz existente teve ${c.voz.passaram} acertos e ${c.voz.falharam} falhas; correspondência com a referência: ${c.voz.mesmasFalhas ? 'mesmos testes e mesmas asserções' : 'há diferença a investigar'}.\n\n`;
+md += 'O commit `5343db3`, criado sobre a main na branch de correção dos testes, foi trazido para a branch como `1147fa3`, sem conflito. Atualiza apenas as âncoras da abertura: “pensa em voz alta” na IDE e `[data-janela-chamada][data-fase="REQUISITOS"]` no quadro. O spec novo usa essas âncoras. O commit local `fd9e3b6` registra essa atualização no spec e a correção da comparação do relatório. Nenhum código de produto ou prompt foi alterado nesta etapa.\n\n';
+md += `Base medida: **${b.commit}**, commit \`5343db3\` diretamente sobre \`0f4efec\`, checkout destacado separado, com cópia apenas do spec novo, sua config e os dois helpers. Implementação: **${m.commit}**. Os quatro arquivos copiados têm SHA-256 idênticos entre as execuções; as configurações usam o mesmo servidor falso, microfone silencioso e um worker. A base roda com \`TEMPO_RESPOSTA_BASE=1\`.\n\n`;
+md += '## Todas as execuções\n\n| Execução | Suíte / versão | Passaram | Falharam | Saída |\n| --- | --- | --- | --- | --- |\n';
+for (const e of execucoes) md += `| [${e.rotulo}](${e.rotulo}/execucao.log) | ${e.suite} / ${e.versao} | ${e.stats.expected} | ${e.stats.unexpected} | ${e.code} |\n`;
+md += '\nA primeira tentativa foi preservada: 5/6 passaram. O cenário natural do quadro já havia conferido latência e gravação e falhou ao comparar o cabeçalho do relatório: o teste capturava `innerText`, mas a asserção usava `textContent`, cujo espaçamento é diferente. A correção adiciona `useInnerText: true`, mantendo o conteúdo esperado. O spec completo foi repetido na #124 e, depois, copiado sem diferenças para a base. Não houve alteração de produto para obter aprovação.\n\n';
+md += '## Captura e POSTs\n\n| Cenário | #124 / base | `latenciaMs` na resposta da #124 | Campo na base? | POSTs iguais? |\n| --- | --- | --- | --- | --- |\n';
+for (const t of c.comparacao) md += `| ${t.nome} | ${t.statusPr} / ${t.statusBase} | ${t.campoNa124 ? `${t.latenciaMs} ms` : 'ausente'} | ${t.campoNaBase ? 'sim' : 'não'} | ${t.igual ? 'sim' : 'não'} |\n`;
+md += '\nFim natural: o áudio falso é terminado pelo teste, a escuta reativa e aguarda-se mais 1.500 ms antes da fala falsa. Compara-se a medida às marcas do relógio no navegador, com tolerância de 700 ms. O corte manual usa Escape. A sobreposição usa Scribe/WebSocket local e PCM injetado no callback do processador, atravessando o detector real e os callbacks das duas salas. Confere-se também `speech_interrupted.by` na IDE.\n\n';
+md += 'Na IDE, a resposta foi conferida no evento `speech` enviado. No quadro, no lote `fala` e no adaptador real que monta a gravação. O campo não aparece no corpo de `/api/chat` ou `/perguntar`, incluindo rascunhos, nos cenários capturados.\n\n';
+md += '| Sala (cada um dos três cenários) | Rota POST | Base | #124 |\n| --- | --- | --- | --- |\n';
+for (const sala of ['ide', 'quadro']) {
+  const t = c.comparacao.find((t) => t.nome.startsWith(sala + ':'));
+  for (const r of t.contagem) md += `| ${sala} | \`${r.rota}\` | ${r.base} | ${r.pr} |\n`;
+}
+md += `\nOs totais acima valem individualmente para fim natural, corte e sobreposição: os anexos dos seis cenários foram comparados, não apenas uma amostra. **Total nas seis janelas: ${c.totalBase} POSTs na base e ${c.totalPr} na #124.** A janela começa na navegação e termina 1.200 ms após a fala confirmada aparecer no evento; a renderização estática do relatório fica depois dessa janela. A contagem inclui criação, pré-síntese, rascunhos e lotes de eventos que ocorreram nela. IDs de sessão do quadro são normalizados no nome da rota. Não se afirma contagem de toda a vida da página, incluindo desmontagem/telemetria final. Os JSONs preservam corpos e eventos completos.\n\n`;
+md += 'Na primeira tentativa, o corte manual do quadro teve quatro lotes de eventos em vez de três. Conferi os corpos: são os mesmos oito eventos, na mesma ordem (`fase`, `fala`, `fala`, `fase`, `fala`, `fala`, `fala`, `fala`); na primeira tentativa a segunda `fase` foi enviada sozinha, e na execução 02 veio no primeiro lote. A linha do tempo envia o que está pendente a cada cinco segundos. Esse resultado permanece publicado. A comparação solicitada usa o mesmo spec corrigido nas duas versões (execuções 02 e 03), que teve três lotes em cada cenário e igualdade em todas as rotas, sem nova mudança ou repetição após olhar a contagem da base.\n\n';
+md += '## Relatório\n\nO cenário natural do quadro usa os eventos capturados para montar Integridade e renderiza o componente de relatório de produção com/sem `latenciaMs`. A tabela de perguntas técnicas mostra a mediana coletada; nota geral **3,3/4**, critérios e recomendação permanecem iguais. Também se compara o cabeçalho renderizado. É uma conferência estática complementar no navegador, sem avaliador LLM: não cobre leitura de um relatório salvo nem hidratação da rota.\n\n';
+md += '## Suíte de voz após a extração\n\n';
+md += 'Referência: [log de `5343db3`](referencia-voz-5343db3.log), fornecido pelo revisor. Nova execução: [log](04-voz-124/execucao.log) e [JSON](04-voz-124/playwright.json). A comparação é por nome de teste e asserção, pois os números de linha mudaram ao extrair o helper.\n\n| Teste | Estado |\n| --- | --- |\n';
+for (const t of c.voz.testes) md += `| ${t.nome} | ${t.status} |\n`;
+md += '\nAs falhas conhecidas são a pergunta não falada na IDE, pedido de licença, texto de despedida da IDE, heading de encerramento do quadro, instrução antiga antes do início no quadro e quantidade de gestos. Elas já constam na referência da main corrigida. O helper extraído mantém os métodos e rotas originais; esta etapa não tenta reparar comportamentos/expectativas fora do escopo da #124.\n\n';
+md += '## Evidência e limites\n\n[Comparação estruturada](comparacao.json) · [Índice](indice.md) · [Executor](executar.mjs) · [Comparador](comparar.mjs) · [Hashes](sha256.json). Cada execução contém JSON original do Playwright, log, comando/horários/commit, hashes e cópia dos testes usados. Os anexos de POSTs estão em arquivos próprios e no JSON original. Os vídeos, screenshots e traces de falha ficam em `.cate/evidencias-124-e2e/<execução>` no clone principal, com os caminhos completos no manifesto/JSON; não foram sobrescritos.\n\n';
+md += 'A [comparação textual da extração](extracao-verificada.json) confirma que os nove testes e os métodos do harness são os mesmos de `5343db3`, além dos exports e fim de arquivo. A [checagem de tipos](checks.json) passou com `tsc --noEmit --incremental false`; o código de produto continua igual ao commit `ff7558c`.\n\n';
+md += 'Uma execução por vez. Voz, reconhecimento/transcrição e agente são falsos: sem chamada nova de LLM ou uso de crédito ElevenLabs. A validação exercita a integração do navegador sob esses estímulos; a entrevista com áudio real nas duas salas permanece pendente por falta de crédito. Nenhum push, PR ou tag.\n';
+fs.writeFileSync(path.join(dir, 'resultado.md'), md);
+let indice = '# Índice — e2e da #124\n\n[Resultado e limites](resultado.md) · [Comparação por cenário/rota](comparacao.json)\n\n';
+for (const e of execucoes) indice += `- ${e.rotulo}: [log](${e.rotulo}/execucao.log), [Playwright JSON](${e.rotulo}/playwright.json), [manifesto](${e.rotulo}/execucao.json).\n`;
+indice += '\nTodas as tentativas estão preservadas. Os arquivos `*-posts.json` de cada execução contêm os anexos de POSTs/eventos sem edição; a tentativa 01 usa `posts-1.json` a `posts-6.json`, extraídos dos corpos base64 no JSON original. `*-erro.md` é o contexto original da falha quando disponível.\n';
+fs.writeFileSync(path.join(dir, 'indice.md'), indice);
+process.loadEnvFile('C:/Users/Nicolas/PROJETOS/totti/.env.local');
+const segredos = Object.entries(process.env).filter(([k,v]) => /API_KEY|TOKEN|SECRET|PASSWORD|SERVICE_ROLE/.test(k) && v && v.length >= 12);
+const arquivos = [];
+function listar(pasta) { for (const d of fs.readdirSync(pasta, { withFileTypes: true })) { const f = path.join(pasta, d.name); if (d.isDirectory()) listar(f); else if (d.name !== 'sha256.json') arquivos.push(path.relative(dir, f).replaceAll('\\','/')); } }
+listar(dir);
+for (const f of arquivos) for (const [k,v] of segredos) if (fs.readFileSync(path.join(dir,f),'utf8').includes(v)) throw new Error(`${k} encontrado em ${f}`);
+fs.writeFileSync(path.join(dir, 'sha256.json'), JSON.stringify(Object.fromEntries(arquivos.map((f) => [f, createHash('sha256').update(fs.readFileSync(path.join(dir,f))).digest('hex')])), null, 2) + '\n');
+console.log(`Relatório/índice gerados; ${arquivos.length} hashes; auditoria sem valores de segredos.`);

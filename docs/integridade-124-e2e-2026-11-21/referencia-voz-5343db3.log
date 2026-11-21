@@ -1,0 +1,285 @@
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Nicolas\PROJETOS\totti\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\package-lock.json
+[WebServer] 
+
+
+Running 9 tests using 1 worker
+
+[1/9] [chromium] › e2e\voz.spec.ts:106:5 › recrutadora dita a vaga e conversa com Totti sem repetir voz no polling
+[2/9] [chromium] › e2e\voz.spec.ts:140:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha
+  1) [chromium] › e2e\voz.spec.ts:140:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected value: "O que você está montando nesse loop?"
+    Received array: ["Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."]
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      180 |   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);
+      181 |   expect(pedidos[0].messages.some((m) => m.role === "agent" && m.text.includes("pensa em voz alta"))).toBe(true);
+    > 182 |   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);
+          |                                                             ^
+      183 |   await expect(page.getByRole("complementary")).toHaveCount(0);
+      184 |   await expect.poll(() => grifos(page)).toBeGreaterThan(0);
+      185 |   await expect.poll(() => ouvindo(page)).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:182:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[3/9] [chromium] › e2e\voz.spec.ts:203:5 › IDE: fala livre com pedido de feedback é respondida por voz e o grifo sai depois
+[4/9] [chromium] › e2e\voz.spec.ts:226:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta
+  2) [chromium] › e2e\voz.spec.ts:226:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      253 |     await page.waitForTimeout(3000);
+      254 |   }
+    > 255 |   await expect.poll(pediuLicenca, { timeout: 10_000 }).toBe(true);
+          |                                                        ^
+      256 |   expect(pedidosDoBalao.length).toBe(0);
+      257 |   await expect.poll(() => ouvindo(page)).toBe(true);
+      258 |   await emitir(page, "espera um pouquinho");
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:255:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[5/9] [chromium] › e2e\voz.spec.ts:265:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar
+  3) [chromium] › e2e\voz.spec.ts:265:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 8000ms exceeded while waiting on the predicate
+
+      289 |   await emitir(page, "Fica linear, porque cada caractere entra e sai da pilha uma vez.");
+      290 |   await expect.poll(() => falas(page), { timeout: 8000 }).toContain("Valeu, era isso.");
+    > 291 |   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith("Combinado, vamos encerrar por aqui")), { timeout: 8000 }).toBe(true);
+          |                                                                                                                                         ^
+      292 |   await expect.poll(() => eventos, { timeout: 8000 }).toContain("session_ended");
+      293 | });
+      294 |
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:291:137
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[6/9] [chromium] › e2e\voz.spec.ts:295:5 › quadro encaminha transcrição para a conversa da sessão
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '0bcbd868-175a-4d1f-b0e4-8e8c03eacea8',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+  4) [chromium] › e2e\voz.spec.ts:295:5 › quadro encaminha transcrição para a conversa da sessão ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Entrevista encerrada' })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms
+      - waiting for getByRole('heading', { name: 'Entrevista encerrada' })
+
+
+      305 |   await page.getByRole("button", { name: "Encerrar entrevista", exact: true }).click();
+      306 |   await page.getByRole("button", { name: "Encerrar", exact: true }).click();
+    > 307 |   await expect(page.getByRole("heading", { name: "Entrevista encerrada" })).toBeVisible();
+          |                                                                             ^
+      308 |   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias
+      309 |     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === "ended"))).toBe(true);
+      310 | });
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:307:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[7/9] [chromium] › e2e\voz.spec.ts:312:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '91a4b6b4-e1c9-44f7-9bdc-44de4b04b479',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+  5) [chromium] › e2e\voz.spec.ts:312:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Quando terminar uma etapa ou quiser um comentário/)
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms
+      - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)
+
+
+      325 |   });
+      326 |   await page.goto("/entrevista/system-design");
+    > 327 |   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();
+          |                                                                                     ^
+      328 |   await page.getByRole("button", { name: "Começar", exact: true }).click();
+      329 |   await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
+      330 |   expect((await falas(page)).some((f) => f.includes("é só me avisar"))).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:327:85
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[8/9] [chromium] › e2e\voz.spec.ts:357:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '29fa6978-b32b-44bf-8914-8057309954bd',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+  6) [chromium] › e2e\voz.spec.ts:357:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 1
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      378 |   await expect.poll(() => ouvindo(page)).toBe(true);
+      379 |   await emitir(page, "Pode destacar o componente?");
+    > 380 |   await expect.poll(async () => (await gestos()).length).toBe(3);
+          |                                                          ^
+      381 |   await expect.poll(async () => (await gestos()).some((e) => e.texto === "Como chega a solicitação?")).toBe(true);
+      382 |   await page.screenshot({ path: "test-results/gestos-no-quadro.png" });
+      383 |   await expect.poll(() => ouvindo(page)).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\e2e-voz\e2e\voz.spec.ts:380:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[9/9] [chromium] › e2e\voz.spec.ts:394:5 › abrir o microfone enquanto o Totti prepara a voz cancela a fala, que não toca depois do ditado
+  6 failed
+    [chromium] › e2e\voz.spec.ts:140:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha 
+    [chromium] › e2e\voz.spec.ts:226:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta 
+    [chromium] › e2e\voz.spec.ts:265:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar 
+    [chromium] › e2e\voz.spec.ts:295:5 › quadro encaminha transcrição para a conversa da sessão ────
+    [chromium] › e2e\voz.spec.ts:312:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala 
+    [chromium] › e2e\voz.spec.ts:357:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato 
+  3 passed (4.8m)

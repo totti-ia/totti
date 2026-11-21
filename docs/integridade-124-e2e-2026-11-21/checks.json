@@ -1,0 +1,9 @@
+{
+  "typescript": {
+    "comando": "node node_modules/typescript/bin/tsc --noEmit --incremental false",
+    "codigo": 0
+  },
+  "produtoSemMudancaDesde": "ff7558c",
+  "backupDosQuatroArquivosDaBaseConferido": true,
+  "em": "2026-11-21T18:58:23.980Z"
+}

@@ -1,0 +1,90 @@
+[WebServer] (node:23972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Nicolas\PROJETOS\totti\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\package-lock.json
+[WebServer] 
+
+[WebServer] (node:13984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 1 worker
+
+(node:22088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/6] [chromium] › e2e\tempo-de-resposta.spec.ts:106:7 › ide: fim natural mede a primeira fala sem criar um envio de medida
+[2/6] [chromium] › e2e\tempo-de-resposta.spec.ts:143:7 › ide: corte manual não envia latência
+[3/6] [chromium] › e2e\tempo-de-resposta.spec.ts:160:7 › ide: voz sobreposta dispara o detector e não envia latência
+[4/6] [chromium] › e2e\tempo-de-resposta.spec.ts:106:7 › quadro: fim natural mede a primeira fala sem criar um envio de medida
+  1) [chromium] › e2e\tempo-de-resposta.spec.ts:106:7 › quadro: fim natural mede a primeira fala sem criar um envio de medida 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('header[data-secao="cabeçalho"]')
+    Timeout: 15000ms
+    - Expected  - 9
+    + Received  + 1
+
+    - Desenvolvedor(a) Backend Pleno · relatório da entrevista de Live Coding
+    -
+    - 32 min
+    -
+    - O Totti recomenda
+    - Avançar
+    - Nota geral3,3/46 de 6 critérios com prova
+    -
+    - Entendeu o problema antes de codar e chegou na solução O(n) com o dicionário, explicando o custo. Adaptou-se à mudança em menos de 3 minutos, com uma dica. Ponto de atenção: cita casos de borda, mas não os transforma em teste sem ser provocada.
+    + Desenvolvedor(a) Backend Pleno · relatório da entrevista de Live Coding32 minO Totti recomendaAvançarNota geral3,3/46 de 6 critérios com provaEntendeu o problema antes de codar e chegou na solução O(n) com o dicionário, explicando o custo. Adaptou-se à mudança em menos de 3 minutos, com uma dica. Ponto de atenção: cita casos de borda, mas não os transforma em teste sem ser provocada.
+
+    Call log:
+      - Expect "toHaveText" locator('header[data-secao="cabeçalho"]') with timeout 15000ms
+      - waiting for locator('header[data-secao="cabeçalho"]')
+        33 × locator resolved to <header data-secao="cabeçalho" class="flex flex-col gap-4">…</header>
+           - unexpected value "Desenvolvedor(a) Backend Pleno · relatório da entrevista de Live Coding32 minO Totti recomendaAvançarNota geral3,3/46 de 6 critérios com provaEntendeu o problema antes de codar e chegou na solução O(n) com o dicionário, explicando o custo. Adaptou-se à mudança em menos de 3 minutos, com uma dica. Ponto de atenção: cita casos de borda, mas não os transforma em teste sem ser provocada."
+
+
+      208 |   const cabecalhoSemMedida = await page.locator('header[data-secao="cabeçalho"]').innerText();
+      209 |   await page.setContent(render(r));
+    > 210 |   await expect(page.locator('header[data-secao="cabeçalho"]')).toHaveText(cabecalhoSemMedida);
+          |                                                                ^
+      211 |   await expect(integridade.getByRole("table")).toBeVisible();
+      212 |   const linha = integridade.getByRole("row", { name: /Técnicas/ });
+      213 |   await expect(linha).toBeVisible();
+        at conferirRelatorio (C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\tempo-de-resposta.spec.ts:210:64)
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\tempo-de-resposta.spec.ts:140:37
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\01-tempo-124\tempo-de-resposta-quadro-f-37086-em-criar-um-envio-de-medida-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\01-tempo-124\tempo-de-resposta-quadro-f-37086-em-criar-um-envio-de-medida-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\01-tempo-124\tempo-de-resposta-quadro-f-37086-em-criar-um-envio-de-medida-chromium\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\01-tempo-124\tempo-de-resposta-quadro-f-37086-em-criar-um-envio-de-medida-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\01-tempo-124\tempo-de-resposta-quadro-f-37086-em-criar-um-envio-de-medida-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:14180) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/6] [chromium] › e2e\tempo-de-resposta.spec.ts:143:7 › quadro: corte manual não envia latência
+[6/6] [chromium] › e2e\tempo-de-resposta.spec.ts:160:7 › quadro: voz sobreposta dispara o detector e não envia latência
+  1 failed
+    [chromium] › e2e\tempo-de-resposta.spec.ts:106:7 › quadro: fim natural mede a primeira fala sem criar um envio de medida 
+  5 passed (3.9m)

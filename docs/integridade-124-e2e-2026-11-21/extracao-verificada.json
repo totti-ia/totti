@@ -1,0 +1,10 @@
+{
+  "base": "5343db3",
+  "harnessIdenticoExcetoExportsEFimDeArquivo": true,
+  "corposDosNoveTestesIdenticos": true,
+  "comparacaoNormalizaCRLF": true,
+  "sha256Arquivos": {
+    "e2e/voz.spec.ts": "3e6908e3e959488ec89faea07c62f097495251b67332ee86da40e6c99fa9b757",
+    "e2e/helpers/voz-falsa.ts": "390154790d767117ebf963d74022c3f74ea3ea9f98fcaf3ae195dcb33bd0a188"
+  }
+}

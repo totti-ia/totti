@@ -1,0 +1,305 @@
+{
+  "versao": "124",
+  "porRota": {
+    "/api/sessoes": 1,
+    "/api/falar": 3,
+    "/api/sessoes/:id/perguntar": 4,
+    "/api/sessoes/:id/eventos": 3
+  },
+  "pedidos": [
+    {
+      "rota": "/api/sessoes",
+      "corpo": {
+        "avaliacao_id": "demo",
+        "candidato_id": "demo"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto.",
+        "velocidade": 1,
+        "sessao_id": "tempo-e2e",
+        "contexto": "quadro"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar.",
+        "texto_anterior": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto.",
+        "velocidade": 1.1,
+        "sessao_id": "tempo-e2e",
+        "contexto": "quadro"
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/perguntar",
+      "corpo": {
+        "sessao_id": "tempo-e2e",
+        "fase": "REQUISITOS",
+        "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+        "grafo": "COMPONENTES\nCONEXÕES",
+        "conversa_do_quadro": [
+          {
+            "quem": "agente",
+            "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+          },
+          {
+            "quem": "agente",
+            "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+          },
+          {
+            "quem": "candidato",
+            "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          }
+        ],
+        "requisitos": [],
+        "gestos_recentes": [],
+        "desenho_parado_ha_s": 3,
+        "rascunho": true
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/eventos",
+      "corpo": {
+        "eventos": [
+          {
+            "horario": "2026-11-21T18:47:14.726Z",
+            "tipo": "fase",
+            "dados": {
+              "fase": "APRESENTACAO"
+            }
+          },
+          {
+            "horario": "2026-11-21T18:47:14.727Z",
+            "tipo": "fala",
+            "dados": {
+              "quem": "agente",
+              "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+            }
+          },
+          {
+            "horario": "2026-11-21T18:47:15.122Z",
+            "tipo": "fala",
+            "dados": {
+              "quem": "agente",
+              "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+            }
+          },
+          {
+            "horario": "2026-11-21T18:47:15.974Z",
+            "tipo": "fase",
+            "dados": {
+              "fase": "REQUISITOS"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/perguntar",
+      "corpo": {
+        "sessao_id": "tempo-e2e",
+        "fase": "REQUISITOS",
+        "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+        "grafo": "COMPONENTES\nCONEXÕES",
+        "conversa_do_quadro": [
+          {
+            "quem": "agente",
+            "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+          },
+          {
+            "quem": "agente",
+            "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+          },
+          {
+            "quem": "candidato",
+            "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          }
+        ],
+        "requisitos": [],
+        "gestos_recentes": [],
+        "desenho_parado_ha_s": 5
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Como funciona a busca nesse algoritmo?",
+        "texto_anterior": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar.",
+        "velocidade": 1.1,
+        "sessao_id": "tempo-e2e",
+        "contexto": "quadro"
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/perguntar",
+      "corpo": {
+        "sessao_id": "tempo-e2e",
+        "fase": "REQUISITOS",
+        "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+        "grafo": "COMPONENTES\nCONEXÕES",
+        "conversa_do_quadro": [
+          {
+            "quem": "agente",
+            "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+          },
+          {
+            "quem": "agente",
+            "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+          },
+          {
+            "quem": "candidato",
+            "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          },
+          {
+            "quem": "agente",
+            "texto": "Como funciona a busca nesse algoritmo?"
+          },
+          {
+            "quem": "candidato",
+            "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação."
+          }
+        ],
+        "requisitos": [],
+        "gestos_recentes": [],
+        "desenho_parado_ha_s": 7,
+        "rascunho": true
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/eventos",
+      "corpo": {
+        "eventos": [
+          {
+            "horario": "2026-11-21T18:47:19.450Z",
+            "tipo": "fala",
+            "dados": {
+              "quem": "candidato",
+              "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+              "latenciaMs": 1329
+            }
+          },
+          {
+            "horario": "2026-11-21T18:47:19.451Z",
+            "tipo": "fala",
+            "dados": {
+              "quem": "agente",
+              "texto": "Como funciona a busca nesse algoritmo?"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/perguntar",
+      "corpo": {
+        "sessao_id": "tempo-e2e",
+        "fase": "REQUISITOS",
+        "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+        "grafo": "COMPONENTES\nCONEXÕES",
+        "conversa_do_quadro": [
+          {
+            "quem": "agente",
+            "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+          },
+          {
+            "quem": "agente",
+            "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+          },
+          {
+            "quem": "candidato",
+            "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          },
+          {
+            "quem": "agente",
+            "texto": "Como funciona a busca nesse algoritmo?"
+          },
+          {
+            "quem": "candidato",
+            "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação."
+          }
+        ],
+        "requisitos": [],
+        "gestos_recentes": [],
+        "desenho_parado_ha_s": 9
+      }
+    },
+    {
+      "rota": "/api/sessoes/:id/eventos",
+      "corpo": {
+        "eventos": [
+          {
+            "horario": "2026-11-21T18:47:23.305Z",
+            "tipo": "fala",
+            "dados": {
+              "quem": "candidato",
+              "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+              "latenciaMs": 1578
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "eventosIde": [],
+  "eventosQuadro": [
+    {
+      "horario": "2026-11-21T18:47:14.726Z",
+      "tipo": "fase",
+      "dados": {
+        "fase": "APRESENTACAO"
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:14.727Z",
+      "tipo": "fala",
+      "dados": {
+        "quem": "agente",
+        "texto": "A entrevista tem uns 33 minutos. Primeiro você entende o problema e pode me perguntar o que precisar sobre os requisitos; depois desenha a visão geral no quadro, e no fim a gente aprofunda em algumas partes. Pensa em voz alta e, se não souber alguma coisa, é só dizer que a gente segue para o próximo ponto."
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:15.122Z",
+      "tipo": "fala",
+      "dados": {
+        "quem": "agente",
+        "texto": "Desenhe uma API. O enunciado está no quadro: dá uma lida com calma. Quando terminar uma etapa ou quiser um comentário sobre o desenho, é só me avisar."
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:15.974Z",
+      "tipo": "fase",
+      "dados": {
+        "fase": "REQUISITOS"
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:19.450Z",
+      "tipo": "fala",
+      "dados": {
+        "quem": "candidato",
+        "texto": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+        "latenciaMs": 1329
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:19.451Z",
+      "tipo": "fala",
+      "dados": {
+        "quem": "agente",
+        "texto": "Como funciona a busca nesse algoritmo?"
+      }
+    },
+    {
+      "horario": "2026-11-21T18:47:23.305Z",
+      "tipo": "fala",
+      "dados": {
+        "quem": "candidato",
+        "texto": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+        "latenciaMs": 1578
+      }
+    }
+  ]
+}

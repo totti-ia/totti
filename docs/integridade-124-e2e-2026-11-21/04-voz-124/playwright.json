@@ -1,0 +1,727 @@
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\Nicolas\\PROJETOS\\totti\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--config",
+      "e2e/playwright.voz.config.ts",
+      "--output",
+      "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124",
+      "--reporter=line,json"
+    ],
+    "configFile": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\playwright.voz.config.ts",
+    "rootDir": "C:/Users/Nicolas/PROJETOS/totti/.cate/worktrees/124-conversa/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/Nicolas/PROJETOS/totti/.cate/evidencias-124-e2e/04-voz-124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/Nicolas/PROJETOS/totti/.cate/worktrees/124-conversa/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "voz.spec.ts"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e",
+        "snapshotDir": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e",
+        "testIgnore": [],
+        "testMatch": "voz.spec.ts",
+        "timeout": 90000,
+        "use": {
+          "baseURL": "http://localhost:3017",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "locale": "pt-BR",
+          "permissions": [
+            "camera",
+            "microphone"
+          ],
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "video": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "launchOptions": {
+            "args": [
+              "--mute-audio",
+              "--use-fake-ui-for-media-stream",
+              "--use-fake-device-for-media-stream",
+              "--use-file-for-fake-audio-capture=C:\\Users\\Nicolas\\AppData\\Local\\Temp\\converge-e2e\\silencio.wav"
+            ]
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev -- --port 3017",
+      "url": "http://localhost:3017/entrevista/system-design",
+      "env": {
+        "NEXT_PUBLIC_USAR_SERVIDOR": "1",
+        "AGENTE_FAKE": "1",
+        "NEXT_PUBLIC_E2E": "1"
+      },
+      "reuseExistingServer": false,
+      "timeout": 180000,
+      "stdout": "ignore",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "voz.spec.ts",
+      "file": "voz.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "recrutadora dita a vaga e conversa com Totti sem repetir voz no polling",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24916,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:51:46.032Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-63cfa011746a492f453d",
+          "file": "voz.spec.ts",
+          "line": 15,
+          "column": 5
+        },
+        {
+          "title": "IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 39146,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"O que você está montando nesse loop?\"\u001b[39m\nReceived array: \u001b[31m[\"Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.\"]\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"O que você está montando nesse loop?\"\u001b[39m\nReceived array: \u001b[31m[\"Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.\"]\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:91:61",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 61,
+                      "line": 91
+                    },
+                    "snippet": "  89 |   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);\n  90 |   expect(pedidos[0].messages.some((m) => m.role === \"agent\" && m.text.includes(\"pensa em voz alta\"))).toBe(true);\n> 91 |   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);\n     |                                                             ^\n  92 |   await expect(page.getByRole(\"complementary\")).toHaveCount(0);\n  93 |   await expect.poll(() => grifos(page)).toBeGreaterThan(0);\n  94 |   await expect.poll(() => ouvindo(page)).toBe(true);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 61,
+                        "line": 91
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"O que você está montando nesse loop?\"\u001b[39m\nReceived array: \u001b[31m[\"Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.\"]\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  89 |   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);\n  90 |   expect(pedidos[0].messages.some((m) => m.role === \"agent\" && m.text.includes(\"pensa em voz alta\"))).toBe(true);\n> 91 |   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);\n     |                                                             ^\n  92 |   await expect(page.getByRole(\"complementary\")).toHaveCount(0);\n  93 |   await expect.poll(() => grifos(page)).toBeGreaterThan(0);\n  94 |   await expect.poll(() => ouvindo(page)).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:91:61"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:52:11.192Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 61,
+                    "line": 91
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-f4524c389ca68ae05953",
+          "file": "voz.spec.ts",
+          "line": 49,
+          "column": 5
+        },
+        {
+          "title": "IDE: fala livre com pedido de feedback é respondida por voz e o grifo sai depois",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8260,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:52:52.256Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-b4ac0fb0c680e621e23d",
+          "file": "voz.spec.ts",
+          "line": 112,
+          "column": 5
+        },
+        {
+          "title": "IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 56025,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:164:56",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 56,
+                      "line": 164
+                    },
+                    "snippet": "  162 |     await page.waitForTimeout(3000);\n  163 |   }\n> 164 |   await expect.poll(pediuLicenca, { timeout: 10_000 }).toBe(true);\n      |                                                        ^\n  165 |   expect(pedidosDoBalao.length).toBe(0);\n  166 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  167 |   await emitir(page, \"espera um pouquinho\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 56,
+                        "line": 164
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate\n\n  162 |     await page.waitForTimeout(3000);\n  163 |   }\n> 164 |   await expect.poll(pediuLicenca, { timeout: 10_000 }).toBe(true);\n      |                                                        ^\n  165 |   expect(pedidosDoBalao.length).toBe(0);\n  166 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  167 |   await emitir(page, \"espera um pouquinho\");\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:164:56"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:53:00.666Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 56,
+                    "line": 164
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-3938b3432186d233507b",
+          "file": "voz.spec.ts",
+          "line": 135,
+          "column": 5
+        },
+        {
+          "title": "IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 27603,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 8000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 8000ms exceeded while waiting on the predicate\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:200:137",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 137,
+                      "line": 200
+                    },
+                    "snippet": "  198 |   await emitir(page, \"Fica linear, porque cada caractere entra e sai da pilha uma vez.\");\n  199 |   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(\"Valeu, era isso.\");\n> 200 |   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith(\"Combinado, vamos encerrar por aqui\")), { timeout: 8000 }).toBe(true);\n      |                                                                                                                                         ^\n  201 |   await expect.poll(() => eventos, { timeout: 8000 }).toContain(\"session_ended\");\n  202 | });\n  203 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 137,
+                        "line": 200
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 8000ms exceeded while waiting on the predicate\n\n  198 |   await emitir(page, \"Fica linear, porque cada caractere entra e sai da pilha uma vez.\");\n  199 |   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(\"Valeu, era isso.\");\n> 200 |   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith(\"Combinado, vamos encerrar por aqui\")), { timeout: 8000 }).toBe(true);\n      |                                                                                                                                         ^\n  201 |   await expect.poll(() => eventos, { timeout: 8000 }).toContain(\"session_ended\");\n  202 | });\n  203 |\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:200:137"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:54:00.196Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 137,
+                    "line": 200
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-29d8701653e304cd7b1a",
+          "file": "voz.spec.ts",
+          "line": 174,
+          "column": 5
+        },
+        {
+          "title": "quadro encaminha transcrição para a conversa da sessão",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 42759,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Entrevista encerrada' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Entrevista encerrada' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Entrevista encerrada' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Entrevista encerrada' })\u001b[22m\n\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:216:77",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 77,
+                      "line": 216
+                    },
+                    "snippet": "  214 |   await page.getByRole(\"button\", { name: \"Encerrar entrevista\", exact: true }).click();\n  215 |   await page.getByRole(\"button\", { name: \"Encerrar\", exact: true }).click();\n> 216 |   await expect(page.getByRole(\"heading\", { name: \"Entrevista encerrada\" })).toBeVisible();\n      |                                                                             ^\n  217 |   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias\n  218 |     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === \"ended\"))).toBe(true);\n  219 | });"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 77,
+                        "line": 216
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Entrevista encerrada' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Entrevista encerrada' })\u001b[22m\n\n\n  214 |   await page.getByRole(\"button\", { name: \"Encerrar entrevista\", exact: true }).click();\n  215 |   await page.getByRole(\"button\", { name: \"Encerrar\", exact: true }).click();\n> 216 |   await expect(page.getByRole(\"heading\", { name: \"Entrevista encerrada\" })).toBeVisible();\n      |                                                                             ^\n  217 |   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias\n  218 |     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === \"ended\"))).toBe(true);\n  219 | });\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:216:77"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:54:43.603Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 77,
+                    "line": 216
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-85d91d602cf5a3e644ee",
+          "file": "voz.spec.ts",
+          "line": 204,
+          "column": 5
+        },
+        {
+          "title": "quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 28874,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Quando terminar uma etapa ou quiser um comentário/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Quando terminar uma etapa ou quiser um comentário/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)\u001b[22m\n\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:236:85",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 85,
+                      "line": 236
+                    },
+                    "snippet": "  234 |   });\n  235 |   await page.goto(\"/entrevista/system-design\");\n> 236 |   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();\n      |                                                                                     ^\n  237 |   await page.getByRole(\"button\", { name: \"Começar\", exact: true }).click();\n  238 |   await expect(page.locator('[data-janela-chamada][data-fase=\"REQUISITOS\"]')).toBeVisible({ timeout: 45000 });\n  239 |   expect((await falas(page)).some((f) => f.includes(\"é só me avisar\"))).toBe(true);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 85,
+                        "line": 236
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Quando terminar uma etapa ou quiser um comentário/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)\u001b[22m\n\n\n  234 |   });\n  235 |   await page.goto(\"/entrevista/system-design\");\n> 236 |   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();\n      |                                                                                     ^\n  237 |   await page.getByRole(\"button\", { name: \"Começar\", exact: true }).click();\n  238 |   await expect(page.locator('[data-janela-chamada][data-fase=\"REQUISITOS\"]')).toBeVisible({ timeout: 45000 });\n  239 |   expect((await falas(page)).some((f) => f.includes(\"é só me avisar\"))).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:236:85"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:55:28.182Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 85,
+                    "line": 236
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-a778512642f96ce49fce",
+          "file": "voz.spec.ts",
+          "line": 221,
+          "column": 5
+        },
+        {
+          "title": "mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 35383,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:289:58",
+                    "location": {
+                      "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                      "column": 58,
+                      "line": 289
+                    },
+                    "snippet": "  287 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  288 |   await emitir(page, \"Pode destacar o componente?\");\n> 289 |   await expect.poll(async () => (await gestos()).length).toBe(3);\n      |                                                          ^\n  290 |   await expect.poll(async () => (await gestos()).some((e) => e.texto === \"Como chega a solicitação?\")).toBe(true);\n  291 |   await page.screenshot({ path: \"test-results/gestos-no-quadro.png\" });\n  292 |   await expect.poll(() => ouvindo(page)).toBe(true);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                        "column": 58,
+                        "line": 289
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  287 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  288 |   await emitir(page, \"Pode destacar o componente?\");\n> 289 |   await expect.poll(async () => (await gestos()).length).toBe(3);\n      |                                                          ^\n  290 |   await expect.poll(async () => (await gestos()).some((e) => e.texto === \"Como chega a solicitação?\")).toBe(true);\n  291 |   await page.screenshot({ path: \"test-results/gestos-no-quadro.png\" });\n  292 |   await expect.poll(() => ouvindo(page)).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:289:58"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:55:57.952Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts",
+                    "column": 58,
+                    "line": 289
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-5118685e91e6e1d2d54b",
+          "file": "voz.spec.ts",
+          "line": 266,
+          "column": 5
+        },
+        {
+          "title": "abrir o microfone enquanto o Totti prepara a voz cancela a fala, que não toca depois do ditado",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15394,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T18:56:34.940Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e1c4b0e79cacecc89187-00b9eedd9f57e3b35bae",
+          "file": "voz.spec.ts",
+          "line": 303,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-21T18:51:29.370Z",
+    "duration": 321595.286,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "versao": "124",
+  "porRota": {
+    "/api/events": 5,
+    "/api/falar": 7,
+    "/api/chat": 4
+  },
+  "pedidos": [
+    {
+      "rota": "/api/events",
+      "corpo": {
+        "type": "session_started",
+        "configId": "default-backend-pleno",
+        "problemId": "two-sum",
+        "language": "python",
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "t": 1
+      }
+    },
+    {
+      "rota": "/api/events",
+      "corpo": {
+        "type": "speech",
+        "role": "agent",
+        "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.",
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "t": 1947
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Uhum, entendi.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Legal, hmm.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Hum, certo.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Uhum, saquei.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Tá, entendi.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/chat",
+      "corpo": {
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "code": "def two_sum(nums, target):\n    # escreva sua solução aqui\n    pass\n",
+        "language": "python",
+        "messages": [
+          {
+            "role": "agent",
+            "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."
+          },
+          {
+            "role": "candidate",
+            "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          }
+        ],
+        "rascunho": true
+      }
+    },
+    {
+      "rota": "/api/chat",
+      "corpo": {
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "code": "def two_sum(nums, target):\n    # escreva sua solução aqui\n    pass\n",
+        "language": "python",
+        "messages": [
+          {
+            "role": "agent",
+            "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."
+          },
+          {
+            "role": "candidate",
+            "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          }
+        ]
+      }
+    },
+    {
+      "rota": "/api/events",
+      "corpo": {
+        "type": "speech",
+        "role": "candidate",
+        "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+        "latenciaMs": 1137,
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "t": 5963
+      }
+    },
+    {
+      "rota": "/api/falar",
+      "corpo": {
+        "texto": "Como funciona a busca nesse algoritmo?",
+        "velocidade": 1.1,
+        "sessao_id": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "contexto": "coding"
+      }
+    },
+    {
+      "rota": "/api/events",
+      "corpo": {
+        "type": "speech_interrupted",
+        "by": "voz",
+        "heardChars": 0,
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "t": 7330
+      }
+    },
+    {
+      "rota": "/api/chat",
+      "corpo": {
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "code": "def two_sum(nums, target):\n    # escreva sua solução aqui\n    pass\n",
+        "language": "python",
+        "messages": [
+          {
+            "role": "agent",
+            "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."
+          },
+          {
+            "role": "candidate",
+            "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          },
+          {
+            "role": "candidate",
+            "text": "Eu separo a entrada da API para explicar o caminho de cada solicitação."
+          }
+        ],
+        "rascunho": true
+      }
+    },
+    {
+      "rota": "/api/chat",
+      "corpo": {
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "code": "def two_sum(nums, target):\n    # escreva sua solução aqui\n    pass\n",
+        "language": "python",
+        "messages": [
+          {
+            "role": "agent",
+            "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."
+          },
+          {
+            "role": "candidate",
+            "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?"
+          },
+          {
+            "role": "candidate",
+            "text": "Eu separo a entrada da API para explicar o caminho de cada solicitação."
+          }
+        ]
+      }
+    },
+    {
+      "rota": "/api/events",
+      "corpo": {
+        "type": "speech",
+        "role": "candidate",
+        "text": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+        "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+        "t": 10904
+      }
+    }
+  ],
+  "eventosIde": [
+    {
+      "type": "session_started",
+      "configId": "default-backend-pleno",
+      "problemId": "two-sum",
+      "language": "python",
+      "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+      "t": 1
+    },
+    {
+      "type": "speech",
+      "role": "agent",
+      "text": "Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.",
+      "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+      "t": 1947
+    },
+    {
+      "type": "speech",
+      "role": "candidate",
+      "text": "Você pode me perguntar sobre o caminho de entrada que eu estou explicando?",
+      "latenciaMs": 1137,
+      "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+      "t": 5963
+    },
+    {
+      "type": "speech_interrupted",
+      "by": "voz",
+      "heardChars": 0,
+      "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+      "t": 7330
+    },
+    {
+      "type": "speech",
+      "role": "candidate",
+      "text": "Eu separo a entrada da API para explicar o caminho de cada solicitação.",
+      "sessionId": "dae97493-2f92-4e4f-a827-1250b8332b0d",
+      "t": 10904
+    }
+  ],
+  "eventosQuadro": []
+}
