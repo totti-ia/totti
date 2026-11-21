@@ -53,7 +53,7 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
   const blip = { id: "pausa-e2e", preview: "Sobre o seu loop", priority: 1, createdAt: 0 };
   let liberar = false;
   let abriu = false;
-  const pedidos: { blipId?: string; messages: { role: string; text: string }[] }[] = [];
+  const pedidos: { blipId?: string; rascunho?: boolean; messages: { role: string; text: string }[] }[] = [];
   await page.route("**/api/events", async (rota) => {
     if (rota.request().postDataJSON().type === "blip_opened") abriu = true;
     await rota.fulfill({ json: {} });
@@ -62,6 +62,7 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
   await page.route("**/api/chat", async (rota) => {
     const pedido = rota.request().postDataJSON() as (typeof pedidos)[number];
     pedidos.push(pedido);
+    if (pedido.rascunho) return rota.fulfill({ json: {} });
     const ultima = pedido.messages.findLast((m) => m.role === "candidate")?.text ?? "";
     const ouvindo = { reply: "", commands: [], end: false, listening: true };
     if (pedido.blipId) {
@@ -86,8 +87,8 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
 
   // Quem pensa em voz alta é só ouvido; na pausa, a pergunta sai por voz, com o grifo, sem abrir nenhuma barra.
   await emitir(page, "Estou pensando em usar um dicionário aqui.");
-  await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);
-  expect(pedidos[0].messages.some((m) => m.role === "agent" && m.text.includes("pensa em voz alta"))).toBe(true);
+  await expect.poll(() => pedidos.filter((p) => !p.rascunho && !p.blipId).length, { timeout: 8000 }).toBe(1);
+  expect(pedidos.find((p) => !p.rascunho && !p.blipId)!.messages.some((m) => m.role === "agent" && m.text.includes("pensa em voz alta"))).toBe(true);
   // A primeira pergunta espera a leitura depois da apresentação (LEITURA_DEPOIS_DA_APRESENTACAO_MS, 30 s).
   await expect.poll(() => falas(page), { timeout: 45_000 }).toContain(pergunta);
   await expect(page.getByRole("complementary")).toHaveCount(0);
@@ -97,15 +98,16 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
   // Pensando em voz alta dentro da pergunta: só o "uhum" de quem ouviu, e o assunto continua aberto (o grifo fica).
   const antes = (await falas(page)).length;
   await emitir(page, "Hum, deixa eu pensar um pouco.");
-  await expect.poll(() => pedidos.filter((p) => p.blipId).length, { timeout: 8000 }).toBe(2);
+  await expect.poll(() => pedidos.filter((p) => !p.rascunho && p.blipId).length, { timeout: 8000 }).toBe(2);
   await page.waitForTimeout(1200);
-  expect((await falas(page)).slice(antes).every((f) => ["Uhum, entendi.", "Legal, hmm.", "Hum, certo.", "Uhum, saquei.", "Tá, entendi."].includes(f))).toBe(true);
+  // O decodificador do áudio falso pode consumir o U inicial junto ao padding LAME.
+  expect((await falas(page)).slice(antes).every((f) => ["Uhum, entendi.", "hum, entendi.", "Legal, hmm.", "Hum, certo.", "Uhum, saquei.", "hum, saquei.", "Tá, entendi."].includes(f))).toBe(true);
   expect(await grifos(page)).toBeGreaterThan(0);
 
   // Respondeu: a paráfrase sai por voz, o assunto fecha e o grifo some.
   await emitir(page, "Eu guardo cada número num dicionário e procuro o complemento.");
   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(parafrase);
-  const resposta = pedidos.filter((p) => p.blipId).at(-1)!;
+  const resposta = pedidos.filter((p) => !p.rascunho && p.blipId).at(-1)!;
   expect(resposta.messages.map((m) => m.role)).toEqual(["agent", "candidate", "candidate"]);
   await expect.poll(() => grifos(page), { timeout: 6000 }).toBe(0);
 });
@@ -147,7 +149,7 @@ test("IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes
   await page.route("**/api/chat", async (rota) => {
     const pedido = rota.request().postDataJSON() as { blipId?: string; messages: { role: string }[] };
     if (pedido.blipId && !pedido.messages.some((m) => m.role === "candidate")) return rota.fulfill({ json: { reply: pergunta, commands: [], end: false } });
-    if (pedido.blipId) return rota.fulfill({ json: { reply: "Valeu, era isso.", commands: [], end: true } });
+    if (pedido.blipId) return rota.fulfill({ json: { reply: "Combinado, vamos encerrar por aqui. Obrigado pela conversa!", commands: [], end: true, despedida: true } });
     return rota.fulfill({ json: { reply: "", commands: [], end: false, listening: true } });
   });
   await page.goto("/entrevista");
@@ -158,7 +160,6 @@ test("IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes
   expect(eventos).not.toContain("session_ended");
   await expect.poll(() => ouvindo(page)).toBe(true);
   await emitir(page, "Fica linear, porque cada caractere entra e sai da pilha uma vez.");
-  await expect.poll(() => falas(page), { timeout: 8000 }).toContain("Valeu, era isso.");
   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith("Combinado, vamos encerrar por aqui")), { timeout: 8000 }).toBe(true);
   await expect.poll(() => eventos, { timeout: 8000 }).toContain("session_ended");
 });
@@ -169,13 +170,14 @@ test("quadro encaminha transcrição para a conversa da sessão", async ({ page 
   await page.getByRole("button", { name: "Começar", exact: true }).click();
   await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
   await expect.poll(() => ouvindo(page)).toBe(true);
+  await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias.flatMap((stream) => stream.getTracks()).length)).toBeGreaterThan(0);
   const pedido = page.waitForRequest((req) => req.method() === "POST" && req.url().includes("/perguntar"));
   await emitir(page, "O sistema precisa receber mil acessos por minuto.");
   const req = await pedido;
   expect(req.postDataJSON().texto).toBe("O sistema precisa receber mil acessos por minuto.");
   await page.getByRole("button", { name: "Encerrar entrevista", exact: true }).click();
   await page.getByRole("button", { name: "Encerrar", exact: true }).click();
-  await expect(page).toHaveURL(/\/obrigado$/, { timeout: 20000 });
+  await expect(page.getByRole("status")).toContainText("Obrigado");
   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias
     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === "ended"))).toBe(true);
 });
@@ -188,11 +190,14 @@ test("quadro pergunta na pausa, responde no loop rápido e aguarda a continuaç�
   } }));
   let liberar: (() => void) | undefined;
   const aguardar = new Promise<void>((resolver) => { liberar = resolver; });
-  const pedidos: { texto: string; grafo: string; pergunta_ativa?: string }[] = [];
+  const pedidos: { texto: string; grafo: string; pergunta_ativa?: string; rascunho?: boolean }[] = [];
   await page.route("**/perguntar", async (rota) => {
-    pedidos.push(rota.request().postDataJSON());
-    if (pedidos.length === 1) await aguardar;
-    await rota.fulfill({ json: { responder: pedidos.length === 1, texto: pedidos.length === 1 ? "Você descreveu o caminho de entrada da solicitação." : "", requisito: null, concluiu: false } });
+    const pedido = rota.request().postDataJSON() as (typeof pedidos)[number];
+    pedidos.push(pedido);
+    if (pedido.rascunho) return rota.fulfill({ json: {} });
+    const primeiro = pedidos.filter((p) => !p.rascunho).length === 1;
+    if (primeiro) await aguardar;
+    await rota.fulfill({ json: { responder: !primeiro, texto: !primeiro ? "Você descreveu o caminho de entrada da solicitação." : "", requisito: null, concluiu: false } }).catch(() => {});
   });
   await page.goto("/entrevista/system-design");
   await page.getByRole("button", { name: "Começar", exact: true }).click();
@@ -208,19 +213,20 @@ test("quadro pergunta na pausa, responde no loop rápido e aguarda a continuaç�
   await expect.poll(() => falas(page), { timeout: 20000 }).toContain(pergunta);
   await expect.poll(() => ouvindo(page)).toBe(true);
   await emitir(page, "A solicitação entra neste componente pela API.");
-  await expect.poll(() => pedidos.length).toBe(1);
-  expect(pedidos[0].pergunta_ativa).toBe(pergunta);
-  expect(pedidos[0].grafo).toContain("COMPONENTES");
+  await expect.poll(() => pedidos.filter((p) => !p.rascunho).length).toBe(1);
+  const confirmado = pedidos.find((p) => !p.rascunho)!;
+  expect(confirmado.pergunta_ativa).toBe(pergunta);
+  expect(confirmado.grafo).toContain("COMPONENTES");
   await expect(page.getByText("O agente está preparando a resposta…")).toBeVisible();
   await page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.emitirParcial("E também vou explicar"));
   const quantidadeAntes = (await falas(page)).length;
-  liberar!();
-  await expect(page.getByText("O agente está preparando a resposta…")).toBeHidden();
   await page.waitForTimeout(1300);
   expect((await falas(page)).length).toBe(quantidadeAntes);
   await emitir(page, "E também vou explicar como autentico essa solicitação.");
+  await expect.poll(() => pedidos.filter((p) => !p.rascunho).length).toBe(2);
+  expect(pedidos.filter((p) => !p.rascunho)[1].texto).toContain("autentico essa solicitação");
+  liberar!();
   await expect.poll(() => falas(page)).toContain("Você descreveu o caminho de entrada da solicitação.");
-  await expect.poll(() => pedidos.length).toBe(2);
   await expect.poll(() => ouvindo(page)).toBe(true);
 });
 
@@ -232,9 +238,12 @@ test("mão compõe gestos e traços livres, pode só falar e preserva o desenho 
     [{ tipo: "traco", alvo: "r1", pontos: [[0, 0.8], [0.4, 1], [1, 0.2]] }], [],
   ];
   let rodada = 0;
-  await page.route("**/perguntar", (rota) => rota.fulfill({ json: {
-    responder: true, texto: "Estou acompanhando a sua explicação.", requisito: null, concluiu: false, visual: planos[rodada++],
-  } }));
+  await page.route("**/perguntar", (rota) => {
+    if (rota.request().postDataJSON().rascunho) return rota.fulfill({ json: {} });
+    return rota.fulfill({ json: {
+      responder: true, texto: "Estou acompanhando a sua explicação.", requisito: null, concluiu: false, visual: planos[rodada++],
+    } });
+  });
   await page.goto("/entrevista/system-design");
   await page.getByRole("button", { name: "Começar", exact: true }).click();
   await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
@@ -248,7 +257,7 @@ test("mão compõe gestos e traços livres, pode só falar e preserva o desenho 
   await expect.poll(() => ouvindo(page)).toBe(true);
   await emitir(page, "Pode destacar o componente?");
   await expect.poll(async () => (await gestos()).length).toBeGreaterThan(0);
-  await expect.poll(async () => (await gestos()).some((e) => e.texto === "Como chega a solicitação?")).toBe(true);
+  await expect.poll(async () => (await cenaVisual(page)).some((e) => e.grupo?.startsWith("rastro:") && e.texto === "Como chega a solicitação?")).toBe(true);
   await page.screenshot({ path: "test-results/gestos-no-quadro.png" });
   await expect.poll(() => ouvindo(page)).toBe(true);
   await emitir(page, "Agora acompanhe este outro ponto.");
