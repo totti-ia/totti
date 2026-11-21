@@ -77,7 +77,8 @@ async function abrir(page: Page, sala: Sala, scribe?: Awaited<ReturnType<typeof 
   await page.goto(sala === "ide" ? "/entrevista" : "/entrevista/system-design");
   if (sala === "quadro") await page.getByRole("button", { name: "Começar", exact: true }).click();
   await expect.poll(async () => (await falas(page)).length).toBeGreaterThan(0);
-  if (sala === "quadro") await expect(page.getByText("Requisitos", { exact: true })).toBeVisible({ timeout: 45000 });
+  if (sala === "quadro") await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
+  else await expect.poll(async () => (await falas(page)).some((f) => f.includes("pensa em voz alta"))).toBe(true);
   if (scribe) await expect.poll(scribe.conectado).toBe(true);
   else await expect.poll(() => ouvindo(page)).toBe(true);
   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.falando)).toBe(false);
@@ -206,7 +207,7 @@ async function conferirRelatorio(page: Page, dados: Awaited<ReturnType<typeof pr
   await expect(integridade.getByRole("table")).toHaveCount(0);
   const cabecalhoSemMedida = await page.locator('header[data-secao="cabeçalho"]').innerText();
   await page.setContent(render(r));
-  await expect(page.locator('header[data-secao="cabeçalho"]')).toHaveText(cabecalhoSemMedida);
+  await expect(page.locator('header[data-secao="cabeçalho"]')).toHaveText(cabecalhoSemMedida, { useInnerText: true });
   await expect(integridade.getByRole("table")).toBeVisible();
   const linha = integridade.getByRole("row", { name: /Técnicas/ });
   await expect(linha).toBeVisible();
