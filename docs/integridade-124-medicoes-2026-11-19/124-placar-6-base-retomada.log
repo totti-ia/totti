@@ -1,0 +1,485 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+
+== Casos fixos ==
+[featherless] google/gemma-4-26B-A4B-it 6804ms in=4428 out=65 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 6804,
+  tokens_entrada: 4428,
+  tokens_saida: 65,
+  tokens_cache: 4840,
+  custo_usd: 0.0002641,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: quanto tempo dura (6815 ms): Cerca de 35 minutos no total. Pode começar quando quiser.
+[featherless] google/gemma-4-26B-A4B-it 2435ms in=4931 out=71 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2435,
+  tokens_entrada: 4931,
+  tokens_saida: 71,
+  tokens_cache: 4931,
+  custo_usd: 0.00027069,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: quanto tempo falta (2439 ms): A gente tem cerca de vinte e seis minutos pela frente. Pode seguir com o seu desenho.
+[featherless] google/gemma-4-26B-A4B-it 4423ms in=4435 out=96 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4423,
+  tokens_entrada: 4435,
+  tokens_saida: 96,
+  tokens_cache: 4846,
+  custo_usd: 0.00027494,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: como funciona (4423 ms): A ideia é você desenhar a visão geral do sistema primeiro. Depois que você tiver as peças principais e o fluxo, eu vou fazendo algumas perguntas para a gente aprofundar em alguns pontos. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 3324ms in=4485 out=78 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3324,
+  tokens_entrada: 4485,
+  tokens_saida: 78,
+  tokens_cache: 4885,
+  custo_usd: 0.00027077,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3590 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: não sei (pergunta ativa) (3325 ms): Tranquilo, deixa isso de lado. Pode seguir com o desenho ou com a próxima parte que você quiser mostrar.
+[featherless] google/gemma-4-26B-A4B-it 2321ms in=4488 out=70 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2321,
+  tokens_entrada: 4488,
+  tokens_saida: 70,
+  tokens_cache: 4888,
+  custo_usd: 0.0002682,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3590 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: pula (pergunta ativa) (2323 ms): Tranquilo, deixa isso de lado. Pode seguir com a próxima parte do seu desenho.
+[featherless] google/gemma-4-26B-A4B-it 2256ms in=4787 out=63 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2256,
+  tokens_entrada: 4787,
+  tokens_saida: 63,
+  tokens_cache: 5239,
+  custo_usd: 0.00028337,
+  blocos: { conversa: 838, grafo: 357, mudancas: 0, resto: 3918 },
+  foto: 0,
+  falas_no_prompt: 12
+}
+[agente] perguntar_travas { sessao_id: undefined, fase: 'ALTO_NIVEL', travas: [ 'eco' ] }
+FALHA fala: lembra do começo (2258 ms): Pode seguir.
+      -> esqueceu o que ele disse no começo
+[featherless] google/gemma-4-26B-A4B-it 2237ms in=4776 out=65 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2237,
+  tokens_entrada: 4776,
+  tokens_saida: 65,
+  tokens_cache: 5229,
+  custo_usd: 0.00028355,
+  blocos: { conversa: 838, grafo: 357, mudancas: 0, resto: 3918 },
+  foto: 0,
+  falas_no_prompt: 12
+}
+OK    fala: dado já combinado (2238 ms): São 100 milhões de URLs novas por mês. Pode seguir.
+[featherless] google/gemma-4-26B-A4B-it 2058ms in=4785 out=58 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2058,
+  tokens_entrada: 4785,
+  tokens_saida: 58,
+  tokens_cache: 5241,
+  custo_usd: 0.00028177,
+  blocos: { conversa: 838, grafo: 357, mudancas: 0, resto: 3918 },
+  foto: 0,
+  falas_no_prompt: 12
+}
+OK    fala: explicou de novo o que já está na tela (2059 ms): Tá. Pode continuar com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2231ms in=4488 out=62 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2231,
+  tokens_entrada: 4488,
+  tokens_saida: 62,
+  tokens_cache: 4895,
+  custo_usd: 0.00026583,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3508 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: respondeu com justificativa (não insiste) (2232 ms): Saquei. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2366ms in=4430 out=63 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2366,
+  tokens_entrada: 4430,
+  tokens_saida: 63,
+  tokens_cache: 4846,
+  custo_usd: 0.00026372,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: nervoso (2368 ms): Tranquilo, respira. Pode seguir quando estiver pronto.
+[featherless] google/gemma-4-26B-A4B-it 3364ms in=4469 out=64 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3364,
+  tokens_entrada: 4469,
+  tokens_saida: 64,
+  tokens_cache: 4876,
+  custo_usd: 0.00026556,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3508 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: resposta vaga (aprofunda uma vez) (3366 ms): Melhor em que sentido? Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 4603ms in=4437 out=95 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4603,
+  tokens_entrada: 4437,
+  tokens_saida: 95,
+  tokens_cache: 4851,
+  custo_usd: 0.00027485,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: pede o que é avaliado (não vaza) (4603 ms): O foco é ver como você aborda o problema, justifica suas escolhas e lida com as mudanças. Não tem uma resposta única certa, então pode mostrar seu raciocínio livremente. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2400ms in=4942 out=68 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2400,
+  tokens_entrada: 4942,
+  tokens_saida: 68,
+  tokens_cache: 4942,
+  custo_usd: 0.00027022,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: o que acontece depois (2401 ms): Quem cuida do processo dá o retorno depois. Pode seguir com o seu desenho.
+[featherless] google/gemma-4-26B-A4B-it 4192ms in=4437 out=67 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4192,
+  tokens_entrada: 4437,
+  tokens_saida: 67,
+  tokens_cache: 4849,
+  custo_usd: 0.00026523,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[agente] perguntar_turno { sessao_id: undefined, fase: 'ALTO_NIVEL', regras: [ 'pediu_tempo' ] }
+FALHA fala: pensando em voz alta (fica quieto) (4194 ms): Claro, fica à vontade.
+      -> interrompeu quem estava pensando
+[featherless] google/gemma-4-26B-A4B-it 2537ms in=4184 out=70 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2537,
+  tokens_entrada: 4184,
+  tokens_saida: 70,
+  tokens_cache: 4541,
+  custo_usd: 0.00025085,
+  blocos: { conversa: 14, grafo: 17, mudancas: 0, resto: 2715 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: pergunta um dado do problema (2539 ms): A ideia é guardar por cinco anos, por padrão. Pode seguir.
+[featherless] google/gemma-4-26B-A4B-it 2071ms in=4939 out=59 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2071,
+  tokens_entrada: 4939,
+  tokens_saida: 59,
+  tokens_cache: 4939,
+  custo_usd: 0.00026701,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: terminou a visão geral (5591 ms): Tá, olhei: Cliente liga em API de encurtamento. Como você pensou a parte de componentes e fluxo no seu desenho?
+[featherless] google/gemma-4-26B-A4B-it 4906ms in=4342 out=89 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 4906,
+  tokens_entrada: 4342,
+  tokens_saida: 89,
+  tokens_cache: 4714,
+  custo_usd: 0.00026596,
+  blocos: { conversa: 14, grafo: 17, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+FALHA fala: comenta um quadro vazio (4908 ms): O cache está posicionado entre o balanceador e o serviço de redirecionamento. O que você espera que ele armazene exatamente?
+      -> inventou um cache que não está no quadro
+[featherless] google/gemma-4-26B-A4B-it 3880ms in=4942 out=73 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3880,
+  tokens_entrada: 4942,
+  tokens_saida: 73,
+  tokens_cache: 4942,
+  custo_usd: 0.00027192,
+  blocos: { conversa: 14, grafo: 357, mudancas: 0, resto: 3360 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+OK    fala: pede a resposta pronta (3882 ms): O desenho é seu, o que importa é como você resolve o problema. Pode começar por onde achar melhor.
+
+== Conversa: senior_claro ==
+[featherless] deepseek-ai/DeepSeek-V3.2 5199ms in=345 out=45 $0.0001
+  [REQUISITOS] candidato: Oi, tudo bem? Antes de começar o desenho, preciso de um número pra dimensionar o sistema. Tipo, quantas URLs novas por segundo a gente espera criar?
+[featherless] google/gemma-4-26B-A4B-it 3140ms in=4622 out=118 $0.0003
+  [REQUISITOS] Totti (3142 ms): A gente espera ter um volume de 100 milhões de URLs novas por mês, o que dá uma média de 40 por segundo, mas com picos de até 400. Pode seguir com o que você precisar.
+[featherless] google/gemma-4-26B-A4B-it 4877ms in=6553 out=95 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 6013ms in=439 out=68 $0.0001
+  [REQUISITOS] candidato: Beleza, entendi o pico. Antes de definir as peças, mais duas coisas: quanto tempo a gente precisa guardar esses links? E precisa de tracking de cliques, tipo contar quantas vezes cada um foi acessado, ou só redirecionar mesmo?
+[featherless] google/gemma-4-26B-A4B-it 2659ms in=4812 out=91 $0.0004
+  [REQUISITOS] Totti (2659 ms): Os links ficam guardados por cinco anos por padrão. E sim, precisa de estatísticas de cliques, mas elas podem ter alguns minutos de atraso. Pode seguir.
+[featherless] google/gemma-4-26B-A4B-it 3211ms in=7317 out=96 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 6681ms in=544 out=72 $0.0002
+  [REQUISITOS] candidato: Então, perfeito. Já tenho o que eu preciso pra começar o desenho. O volume, o TTL de 5 anos e a necessidade de tracking eventualmente consistente. Vou desenhar a arquitetura de ponta a ponta agora, partindo do cliente.
+[featherless] google/gemma-4-26B-A4B-it 3191ms in=4504 out=55 $0.0004
+  [REQUISITOS] Totti (3192 ms): Tá. Pode seguir.
+[featherless] google/gemma-4-26B-A4B-it 4292ms in=7387 out=163 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 9659ms in=737 out=110 $0.0002
+  [ALTO_NIVEL] candidato: Então, vou botar o cliente chamando nossa API de encurtamento, o serviço principal. A primeira coisa que a API faz ao receber um pedido de redirecionamento é consultar um cache em Redis, porque o volume de leitura é muito maior que o de escrita. Pensando no pico de 400 criações por segundo, mas bilhões de redirecionamentos, faz total sentido colocar esse cache na frente do Postgres pra evitar gargalo.
+[featherless] google/gemma-4-26B-A4B-it 2634ms in=5364 out=80 $0.0004
+  [ALTO_NIVEL] Totti (2635 ms): Por que colocar o Redis antes do Postgres nesse fluxo?
+[featherless] deepseek-ai/DeepSeek-V3.2 7033ms in=865 out=98 $0.0003
+  [ALTO_NIVEL] candidato: Ah, entendi. Então, na criação de um link, a API precisa gerar um código único curto tipo 'abcDeFg'. A forma mais simples é usar um contador sequencial no Postgres e codificar o número em base62, que usa letras e números. Isso gera 7 caracteres, que dá mais de 3 trilhões de combinações, então dura pra sempre com nosso volume.
+[featherless] google/gemma-4-26B-A4B-it 3501ms in=5023 out=59 $0.0004
+  [ALTO_NIVEL] Totti (3503 ms): Saquei. Pode continuar o desenho.
+[featherless] google/gemma-4-26B-A4B-it 14866ms in=7293 out=225 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 4217ms in=1138 out=37 $0.0003
+  [ALTO_NIVEL] candidato: Beleza, então a arquitetura tá bem encaminhada. Só uma dúvida, quanto tempo ainda temos de entrevista?
+[featherless] google/gemma-4-26B-A4B-it 2348ms in=5236 out=67 $0.0004
+  [ALTO_NIVEL] Totti (2350 ms): A gente tem cerca de 29 minutos pela frente. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 4565ms in=8278 out=236 $0.0007
+[featherless] deepseek-ai/DeepSeek-V3.2 5467ms in=1197 out=70 $0.0003
+  [ALTO_NIVEL] candidato: Beleza, então, nesse quadro tá a visão geral de ponta a ponta. Cada caixa representa um serviço ou componente, as setas são as conexões. A gente tem o caminho de criação do link e o caminho de redirecionamento desenhados.
+[featherless] google/gemma-4-26B-A4B-it 2267ms in=5920 out=75 $0.0004
+  [ALTO_NIVEL] Totti (2268 ms): Certo. Pode seguir com o desenho ou, se já estiver satisfeito com essa parte, pode me avisar.
+[featherless] google/gemma-4-26B-A4B-it 4908ms in=8399 out=233 $0.0007
+[featherless] deepseek-ai/DeepSeek-V3.2 12436ms in=1316 out=118 $0.0004
+  [APROFUNDAMENTO] candidato: Sim, coloquei o Redis antes do Postgres porque, pelo volume, a maioria dos acessos vai ser de redirecionamento, tipo 99% ou mais. Se formos direto no banco primário a cada clique, o banco não aguentaria. O cache é tipo um buffer de leitura, reduzindo a latência e descarregando o Postgres. E a réplica de leitura aqui é só pra eventualidade de cache miss, pra não sobrecarregar o primário.
+[featherless] google/gemma-4-26B-A4B-it 4206ms in=5457 out=71 $0.0004
+  [APROFUNDAMENTO] Totti (4208 ms): Tá. Pode seguir com o desenho ou, se já tiver terminado essa parte, pode me avisar.
+[featherless] google/gemma-4-26B-A4B-it 4778ms in=8514 out=168 $0.0007
+[featherless] deepseek-ai/DeepSeek-V3.2 7446ms in=1469 out=121 $0.0004
+  [APROFUNDAMENTO] candidato: Então, sobre a fila de cliques, eu coloquei ela aqui porque o analítico não precisa ser em tempo real. Quando um usuário acessa o link, a API registra o clique na fila Kafka e já faz o redirecionamento, tipo um fire-and-forget. Isso garante que o redirecionamento não fique mais lento por conta do tracking, a latência principal fica só no cache. O worker consome da fila depois e atualiza as estatísticas no banco.
+[featherless] google/gemma-4-26B-A4B-it 2998ms in=6129 out=75 $0.0005
+  [APROFUNDAMENTO] Totti (3000 ms): Entendi. Pode seguir com o desenho ou, se já estiver satisfeito com essa parte, pode me avisar.
+[featherless] google/gemma-4-26B-A4B-it 5627ms in=7870 out=95 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 8476ms in=1595 out=76 $0.0005
+  [APROFUNDAMENTO] candidato: Se o primário cai, a escrita de novos links para, mas o redirecionamento continua funcionando, porque os links já criados estão no cache e na réplica. A gente teria um failover automatizado pra uma réplica virar o novo primário em alguns segundos, usando um VIP ou algo do tipo.
+[featherless] google/gemma-4-26B-A4B-it 3496ms in=5692 out=73 $0.0005
+  [APROFUNDAMENTO] Totti (3496 ms): Tá. Pode seguir com o desenho ou, se já estiver satisfeito com essa parte, pode me avisar.
+[featherless] google/gemma-4-26B-A4B-it 2983ms in=8754 out=96 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 4680ms in=1701 out=51 $0.0005
+  [APROFUNDAMENTO] candidato: Então, o desenho tá aí com todos os componentes e conexões. O que você acha do fluxo geral, faz sentido? Alguma parte que você gostaria que eu aprofundasse?
+[featherless] google/gemma-4-26B-A4B-it 2594ms in=6332 out=69 $0.0005
+  [APROFUNDAMENTO] Totti (2596 ms): O desenho tá completo. Se você estiver satisfeito com ele, pode me avisar.
+[featherless] google/gemma-4-26B-A4B-it 9323ms in=8038 out=235 $0.0007
+
+== Conversa: junior_nervoso ==
+[featherless] deepseek-ai/DeepSeek-V3.2 4242ms in=345 out=44 $0.0001
+  [REQUISITOS] candidato: Oi, bom dia. É... é minha primeira entrevista de system design. Tô bem nervoso, posso fazer umas perguntas antes de começar a desenhar?
+[featherless] google/gemma-4-26B-A4B-it 2655ms in=4620 out=65 $0.0003
+  [REQUISITOS] Totti (2655 ms): Tudo bem, sem problemas. Pode perguntar o que precisar.
+[featherless] google/gemma-4-26B-A4B-it 5384ms in=6508 out=95 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 4604ms in=394 out=46 $0.0001
+  [REQUISITOS] candidato: É... obrigado. Então, pra eu entender melhor o que precisa suportar, quantos usuários e quantos acessos por dia o sistema deve ter, mais ou menos?
+[featherless] google/gemma-4-26B-A4B-it 4769ms in=4273 out=98 $0.0004
+  [REQUISITOS] Totti (4769 ms): A gente espera cerca de 100 milhões de novas URLs por mês. Em termos de acesso, a leitura é 100 vezes maior que a escrita. Pode seguir com suas dúvidas.
+[featherless] google/gemma-4-26B-A4B-it 10050ms in=6601 out=95 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 4981ms in=484 out=52 $0.0001
+  [REQUISITOS] candidato: É... tá bom. Então, são 100 milhões por mês... é muita coisa. Acho que eu... não sei bem por onde começar o desenho. Talvez pelo cliente? Ou pela API?
+[featherless] google/gemma-4-26B-A4B-it 2509ms in=4846 out=68 $0.0004
+  [REQUISITOS] Totti (2510 ms): Fique à vontade para começar por onde fizer mais sentido para você. Pode seguir.
+[featherless] google/gemma-4-26B-A4B-it 2601ms in=7323 out=96 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 7757ms in=623 out=73 $0.0002
+  [ALTO_NIVEL] candidato: Então, é... eu comecei desenhando os básicos aí no quadro. Coloquei o Cliente, a API e o Banco. Mas não tem muito critério não, só coloquei como eu imagino que funciona... o cliente envia pra API, a API salva no banco.
+[featherless] google/gemma-4-26B-A4B-it 2515ms in=5172 out=99 $0.0004
+  [ALTO_NIVEL] Totti (2515 ms): Certo. Como funciona o caminho de um link, desde quando ele é criado até o momento do redirecionamento? Pode seguir com o desenho.
+[featherless] deepseek-ai/DeepSeek-V3.2 5241ms in=724 out=53 $0.0002
+  [ALTO_NIVEL] candidato: É... acho que preciso salvar a URL original e a encurtada, né? Posso usar qualquer banco de dados? Ou tem algum que você recomendaria? Eu... não sei muito sobre bancos não.
+[featherless] google/gemma-4-26B-A4B-it 2339ms in=5287 out=79 $0.0004
+  [ALTO_NIVEL] Totti (2340 ms): Pode assumir o que for mais razoável para o seu desenho. Pode seguir com a parte do banco.
+[featherless] google/gemma-4-26B-A4B-it 5389ms in=7826 out=276 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 7323ms in=817 out=99 $0.0003
+  [ALTO_NIVEL] candidato: Deixa eu ver aqui... então, acho que o banco vai ter uma tabela. Vou colocar uma coluna pro ID curto, que é tipo um código, e outra pra URL original. Como tem muita leitura, eu... não sei se um banco relacional é o melhor. Talvez um NoSQL? Ou um cache? É, acho que vou desenhar um cache do lado do banco.
+[featherless] google/gemma-4-26B-A4B-it 1923ms in=5455 out=59 $0.0004
+  [ALTO_NIVEL] Totti (1924 ms): Tá. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 4669ms in=7962 out=216 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 7181ms in=923 out=64 $0.0003
+  [ALTO_NIVEL] candidato: É... então, acho que terminei a primeira parte? Coloquei o cache ali do lado do banco pra ajudar nas leituras. Mas... não sei se tá certo. Acho que esqueci de falar como gera o código curto, né?
+[featherless] google/gemma-4-26B-A4B-it 2714ms in=5535 out=81 $0.0004
+  [ALTO_NIVEL] Totti (6230 ms): Tá, olhei: Cliente liga em API. Como você pensou a parte de componentes e fluxo no seu desenho?
+[featherless] deepseek-ai/DeepSeek-V3.2 5878ms in=1032 out=59 $0.0003
+  [APROFUNDAMENTO] candidato: É... não sei bem o que mais colocar. Como eu faço a parte de gerar a URL curta? E... também não sei como funciona o redirecionamento na hora de acessar. Acho que tá faltando muita coisa.
+[featherless] google/gemma-4-26B-A4B-it 3084ms in=5680 out=74 $0.0004
+  [APROFUNDAMENTO] Totti (3085 ms): Tranquilo, deixa isso de lado.
+[featherless] google/gemma-4-26B-A4B-it 3794ms in=8099 out=174 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 4278ms in=1112 out=46 $0.0003
+  [APROFUNDAMENTO] candidato: É... acho que fica melhor assim. Talvez o banco relacional ainda dê conta se a gente colocar um índice direito, mas não sei se é a melhor escolha.
+[featherless] google/gemma-4-26B-A4B-it 1868ms in=5749 out=63 $0.0004
+  [APROFUNDAMENTO] Totti (1869 ms): Melhor em que sentido?
+[featherless] deepseek-ai/DeepSeek-V3.2 4024ms in=1138 out=35 $0.0003
+  [APROFUNDAMENTO] candidato: É... desculpa, acho que não sei responder direito. Pode pular essa parte? Eu... me perdi um pouco.
+[featherless] google/gemma-4-26B-A4B-it 2016ms in=5788 out=70 $0.0004
+  [APROFUNDAMENTO] Totti (2017 ms): Tranquilo, deixa isso de lado.
+[featherless] google/gemma-4-26B-A4B-it 4588ms in=8248 out=220 $0.0007
+[featherless] deepseek-ai/DeepSeek-V3.2 4933ms in=1191 out=51 $0.0003
+  [APROFUNDAMENTO] candidato: É... desculpa, acho que me perdi de novo. Tô meio nervoso e não tô lembrando direito o que tem que fazer. Pode me ajudar a voltar no caminho?
+[featherless] google/gemma-4-26B-A4B-it 2411ms in=5821 out=101 $0.0004
+  [APROFUNDAMENTO] Totti (2412 ms): Tudo bem, respira. O que você desenhou até agora foi o fluxo de criação, com o cliente enviando para a API e ela salvando no banco com um cache.
+[featherless] google/gemma-4-26B-A4B-it 4525ms in=8335 out=213 $0.0007
+
+== Conversa: vago_testador ==
+[featherless] deepseek-ai/DeepSeek-V3.2 4828ms in=345 out=52 $0.0001
+  [REQUISITOS] candidato: Então, pra resolver isso, eu normalmente usaria uma arquitetura de microsserviços ou seria mais um monolito? Qual que é o jeito certo de começar a desenhar isso aí?
+[featherless] google/gemma-4-26B-A4B-it 2946ms in=4628 out=67 $0.0003
+  [REQUISITOS] Totti (2947 ms): Pode seguir como você achar melhor. O que você pretende desenhar primeiro?
+[featherless] deepseek-ai/DeepSeek-V3.2 5471ms in=413 out=37 $0.0001
+  [REQUISITOS] candidato: É, tipo, antes de sair desenhando, é bom saber a escala, né? É muito acesso? Pode falar os números?
+[featherless] google/gemma-4-26B-A4B-it 5303ms in=4321 out=146 $0.0004
+  [REQUISITOS] Totti (5304 ms): Tem cerca de 100 milhões de novas URLs por mês, o que dá uns 40 por segundo, com picos de 400. Já os acessos, a leitura é 100 vezes maior que a escrita, então são uns 4 mil acessos por segundo, chegando a 40 mil nos picos. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2492ms in=7301 out=96 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 5252ms in=541 out=54 $0.0002
+  [REQUISITOS] candidato: Então vou começar desenhando, já decidindo que o código vai ter 7 caracteres, é o padrão mesmo. Vou por aqui o cliente, o serviço principal e o banco de dados.
+[featherless] google/gemma-4-26B-A4B-it 2325ms in=4974 out=59 $0.0004
+  [REQUISITOS] Totti (2325 ms): Tá. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 3340ms in=7361 out=96 $0.0005
+[featherless] deepseek-ai/DeepSeek-V3.2 4989ms in=699 out=53 $0.0002
+  [ALTO_NIVEL] candidato: Aí aqui entre a API e o banco, eu botei um cache Redis. É que a leitura é pesada, né? O padrão é cachear a URL curta pra redirecionar rápido.
+[featherless] google/gemma-4-26B-A4B-it 2053ms in=5318 out=67 $0.0004
+  [ALTO_NIVEL] Totti (2055 ms): Por que no Redis?
+[featherless] deepseek-ai/DeepSeek-V3.2 4906ms in=765 out=41 $0.0002
+  [ALTO_NIVEL] candidato: Ah, antes de falar do Redis, uma coisa. Você lembra quantos caracteres eu falei que ia usar no código? Só pra confirmar.
+[featherless] google/gemma-4-26B-A4B-it 2055ms in=5373 out=67 $0.0004
+  [ALTO_NIVEL] Totti (2056 ms): Pode continuar com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 5586ms in=7836 out=259 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 4722ms in=810 out=45 $0.0002
+  [ALTO_NIVEL] candidato: Então, assim, só pra eu me situar, que critérios você tá olhando nesse desenho todo? Tipo, performance, resiliência, essas coisas?
+[featherless] google/gemma-4-26B-A4B-it 2306ms in=5447 out=83 $0.0004
+  [ALTO_NIVEL] Totti (2307 ms): O que eu busco é entender como você resolve o problema, como justifica suas escolhas e como reage quando algo muda. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 4993ms in=7183 out=95 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 5107ms in=888 out=48 $0.0003
+  [ALTO_NIVEL] candidato: Pronto, então aí tá o desenho. É basicamente isso: o cliente chama a API, a API procura no Redis e, se não achar, vai no Postgres.
+[featherless] google/gemma-4-26B-A4B-it 2130ms in=5559 out=70 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3313ms in=5605 out=84 $0.0004
+  [ALTO_NIVEL] Totti (5444 ms): Como você vai garantir que o código de 7 caracteres seja único no Postgres?
+[featherless] deepseek-ai/DeepSeek-V3.2 5104ms in=980 out=49 $0.0003
+  [APROFUNDAMENTO] candidato: Ah, isso é padrão, galera usa hash com base 62, tipo, gera e testa no banco. Mas assim, o desenho tá certo, né? Posso seguir?
+[featherless] google/gemma-4-26B-A4B-it 2160ms in=5621 out=64 $0.0004
+  [APROFUNDAMENTO] Totti (2162 ms): O desenho é seu. O que você pretende detalhar agora?
+[featherless] deepseek-ai/DeepSeek-V3.2 4399ms in=1041 out=37 $0.0003
+  [APROFUNDAMENTO] candidato: Entendi. Só pra eu saber, esse desenho tá atendendo o que você esperava até agora? Tô no caminho certo?
+[featherless] google/gemma-4-26B-A4B-it 2369ms in=5680 out=83 $0.0004
+  [APROFUNDAMENTO] Totti (2371 ms): O que eu busco é entender como você resolve o problema, como justifica suas escolhas e como reage quando algo muda. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2791ms in=8114 out=96 $0.0006
+[featherless] deepseek-ai/DeepSeek-V3.2 6551ms in=1112 out=78 $0.0003
+  [APROFUNDAMENTO] candidato: Então, o Redis é bom porque ele é rápido, né? Ele fica na memória. Aí quando vem um acesso, a API procura no Redis primeiro. Se tiver lá, já redireciona na hora. Só se não achar que vai no Postgres, que é mais lento, mas é persistente.
+[featherless] google/gemma-4-26B-A4B-it 3272ms in=5747 out=72 $0.0004
+  [APROFUNDAMENTO] Totti (3274 ms): Certo. E como você lida com a parte de estatísticas de cliques que o problema pede?
+[featherless] deepseek-ai/DeepSeek-V3.2 5303ms in=1210 out=45 $0.0003
+  [APROFUNDAMENTO] candidato: É, antes de entrar nessa parte mais técnica, só uma curiosidade: depois dessa entrevista, como é que fica? Tem feedback, demora quanto tempo pra saber o resultado?
+[featherless] google/gemma-4-26B-A4B-it 2228ms in=5874 out=67 $0.0004
+  [APROFUNDAMENTO] Totti (2230 ms): Quem cuida do processo dá o retorno depois. Pode seguir com o desenho.
+[featherless] google/gemma-4-26B-A4B-it 2606ms in=8297 out=96 $0.0006
+
+== Juiz (moonshotai/Kimi-K2.6) ==
+[featherless] moonshotai/Kimi-K2.6 145910ms in=5937 out=5830 $0.0222
+[featherless] moonshotai/Kimi-K2.6 185193ms in=6432 out=7401 $0.0277
+[featherless] moonshotai/Kimi-K2.6 169812ms in=4750 out=6498 $0.0239
+[featherless] moonshotai/Kimi-K2.6 319602ms in=6790 out=12441 $0.0460
+[featherless] moonshotai/Kimi-K2.6 193178ms in=2402 out=7006 $0.0251
+[featherless] moonshotai/Kimi-K2.6 397395ms in=6151 out=11716 $0.0426
+
+# Placar do Totti no quadro: 124-placar-6-base-retomada
+
+2026-11-20T01:21:07.653Z · versão v1 · conversa google/gemini-3.5-flash-lite · análise google/gemini-3.7-flash · juiz moonshotai/Kimi-K2.6 · candidato deepseek-ai/DeepSeek-V3.2
+
+| Medida | Valor |
+|---|---|
+| Casos fixos ok | 15/18 |
+| Escuta / Pertinência / Naturalidade / Concisão | 4.2 / 4.16 / 3.84 / 4.73 |
+| Nota média das falas (1–5) | **4.23** (51 falas) |
+| Pareceu pessoa / Conduziu bem / Inteligência | 2.33 / 2.67 / 3 |
+| Violações | ignorou_o_que_ele_disse: 5, vazou_criterio: 3, inventou_fato: 1, repetiu_pergunta: 3, robotico_ou_enlatado: 4 |
+| /perguntar p50 / p95 / máx | 2596 / 5591 / 6815 ms (n=51) |
+| Análise p50 / p95 / máx | 4669 / 10051 / 14866 ms (n=24) |
+| Falhas do Totti (prazo ou provedor) | 0 |
+
+
+Salvo em test-results\placar-quadro\2026-11-20-01-21-124-placar-6-base-retomada.json e test-results\placar-quadro\2026-11-20-01-21-124-placar-6-base-retomada.md

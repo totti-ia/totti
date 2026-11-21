@@ -2,6 +2,7 @@ import { ReacaoRetida } from "../audio/filaDoAgente";
 import type { FocoAudio } from "../audio/foco";
 import { tocarGravacao, type ProvedorVoz, type ReproduzirFala, type ReproduzirGravacao } from "./cliente";
 import { ESPERA_DA_REACAO_MS, juntarReacao, slugDaReacao, urlDaReacao } from "./reacao";
+import type { ObservadorDoAudio } from "../conversa/tempoDeResposta";
 
 export type EstadoVoz = "inativa" | "preparando" | "falando" | "erro";
 export type LegendaAgente = { quem: "agente"; texto: string; ate: number };
@@ -66,6 +67,7 @@ export function criarFilaDeFalas(dependencias: {
   pausaMs?: number;
   esperaDaReacaoMs?: number;
   agora?: () => number;
+  audio?: ObservadorDoAudio;
 }) {
   const { reproduzir, reproduzirGravacao = tocarGravacao, foco, tela, pausaMs = PAUSA_ENTRE_FALAS_MS, esperaDaReacaoMs = ESPERA_DA_REACAO_MS, agora = Date.now } = dependencias;
   /** A fala pedida por último (tocando ou na fila). */
@@ -96,6 +98,7 @@ export function criarFilaDeFalas(dependencias: {
   }
 
   function parar() {
+    if (vez?.emReproducao) dependencias.audio?.terminou(false);
     if (vez?.emReproducao) fimDaUltimaFala = agora();
     const controles = [...vivas];
     vivas.clear();
@@ -145,11 +148,14 @@ export function criarFilaDeFalas(dependencias: {
     if (vez === null) { tela.erro(null); tela.estado("preparando"); }
     let tocou = false;
     let falhou = false;
+    let incompleta = false;
     const eventos = {
+      aoInterromper: () => { incompleta = true; },
       aoIniciar: (fonte: ProvedorVoz) => {
         if (!daVez()) return;
         tocou = true;
         entrada.emReproducao = true;
+        dependencias.audio?.iniciou();
         tela.estado("falando");
         tela.provedor(fonte);
         tela.aviso(null);
@@ -178,8 +184,10 @@ export function criarFilaDeFalas(dependencias: {
       // Reação sem fala seguinte toca a gravação; as demais falas, a síntese.
       if (slug) await reproduzirGravacao(urlDaReacao(slug), texto, controle.signal, eventos, antesDaVez);
       else await reproduzir(texto, controle.signal, eventos, antesDaVez);
+      if (tocou && !controle.signal.aborted) dependencias.audio?.terminou(!incompleta);
       return tocou && !controle.signal.aborted;
     } catch (e) {
+      if (tocou && !controle.signal.aborted) dependencias.audio?.terminou(false);
       // Reação sem gravação que carregue: descartada em silêncio, sem erro na tela e sem síntese.
       if (!controle.signal.aborted && !slug) {
         falhou = true;

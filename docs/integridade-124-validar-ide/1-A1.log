@@ -1,0 +1,43 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+[featherless] google/gemma-4-26B-A4B-it 3894ms in=7275 out=87 $0.0006
+{"caso":"pensando em voz alta","ms":3902,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2583ms in=7266 out=75 $0.0004
+{"caso":"murmúrio","ms":2584,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2068ms in=7270 out=75 $0.0004
+{"caso":"falando sozinho do erro","ms":2070,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2095ms in=7348 out=88 $0.0004
+{"caso":"dúvida do enunciado","ms":2106,"silent":false,"end":true,"despedida":false,"reply":"Sim, o enunciado garante que sempre existe exatamente uma resposta válida.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2231ms in=7347 out=107 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"pede a estrutura","ms":4077,"silent":false,"end":false,"despedida":false,"reply":"Não vou te dizer qual usar, mas você pode testar diferentes opções e ver como elas afetam o desempenho. O que você está pensando em tentar primeiro?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 3237ms in=7342 out=122 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"pede validação","ms":5086,"silent":false,"end":false,"despedida":false,"reply":"Não vou te dar um veredito agora: implementa e roda os testes, que eles te mostram. Esse loop duplo aí, qual é a ideia por trás?","commands":[{"type":"highlight_range","startLine":3,"endLine":4}]}
+[featherless] google/gemma-4-26B-A4B-it 2829ms in=7354 out=101 $0.0004
+{"caso":"explica e pergunta","ms":2833,"silent":false,"end":true,"despedida":false,"reply":"Sim, os dois loops aninhados levam a esse custo.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2957ms in=7246 out=107 $0.0004
+{"caso":"conta o plano antes de codar","ms":2960,"silent":false,"end":false,"despedida":false,"reply":"Saquei. Por que começar por aí?","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 2137ms in=7234 out=75 $0.0004
+{"caso":"lendo o enunciado","ms":2138,"silent":true,"end":false,"despedida":false,"reply":"","commands":[]}
+[featherless] google/gemma-4-26B-A4B-it 4414ms in=7269 out=75 $0.0004
+{"caso":"pede para encerrar","ms":4416,"silent":false,"end":false,"despedida":true,"reply":"Então a gente encerra por aqui. Obrigado pelo seu tempo e pela conversa. O retorno vem de quem está cuidando do processo.","commands":[{"type":"clear_highlights"}]}
+[featherless] google/gemma-4-26B-A4B-it 2668ms in=7272 out=113 $0.0004
+[interviewer] travas {
+  travas: [ 'eco' ],
+  antes: 'Beleza, terminei a primeira versão e os testes passaram. Esse loop duplo aí, qual é o custo de tempo dele?'
+}
+[featherless] google/gemma-4-26B-A4B-it 2405ms in=7315 out=114 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"terminou a etapa","ms":6889,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[featherless] google/gemma-4-26B-A4B-it 2709ms in=7271 out=105 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2486ms in=7314 out=103 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"pediu para olhar","ms":7004,"silent":false,"end":false,"despedida":false,"reply":"Olhei a linha 2: count = len(nums). Como você pensou essa decisão?","commands":[{"type":"highlight_range","startLine":2,"endLine":2}]}
+[featherless] google/gemma-4-26B-A4B-it 2642ms in=7467 out=99 $0.0004
+[spoilerFilter] filtro de fala indisponível, deixando passar: chamada LLM abortada
+{"caso":"resposta no balão","ms":4447,"silent":false,"end":false,"despedida":false,"reply":"E esse loop aí, qual o custo de tempo dele?","commands":[{"type":"highlight_range","startLine":4,"endLine":4}]}
+p50 3902 ms, máx 7004 ms
+pede para encerrar: devia ficar quieto
+
+1 !== 0
+

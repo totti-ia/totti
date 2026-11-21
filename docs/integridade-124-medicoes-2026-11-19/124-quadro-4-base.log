@@ -1,0 +1,79 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+[featherless] google/gemma-4-26B-A4B-it 4020ms in=6071 out=116 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3083ms in=6071 out=112 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2231ms in=4860 out=82 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2231,
+  tokens_entrada: 4860,
+  tokens_saida: 82,
+  tokens_cache: 0,
+  custo_usd: 0.00039874,
+  blocos: { conversa: 129, grafo: 807, mudancas: 0, resto: 4531 },
+  foto: 0,
+  falas_no_prompt: 1
+}
+[featherless] google/gemma-4-26B-A4B-it 2263ms in=6071 out=108 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2651ms in=6071 out=113 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2165ms in=5074 out=84 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2165,
+  tokens_entrada: 5074,
+  tokens_saida: 84,
+  tokens_cache: 0,
+  custo_usd: 0.00041433,
+  blocos: { conversa: 417, grafo: 807, mudancas: 0, resto: 5070 },
+  foto: 0,
+  falas_no_prompt: 4
+}
+[featherless] google/gemma-4-26B-A4B-it 2266ms in=6071 out=107 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3412ms in=6071 out=110 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3118ms in=6071 out=116 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2733ms in=6071 out=117 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2218ms in=4870 out=78 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2218,
+  tokens_entrada: 4870,
+  tokens_saida: 78,
+  tokens_cache: 0,
+  custo_usd: 0.0003992,
+  blocos: { conversa: 137, grafo: 807, mudancas: 0, resto: 4563 },
+  foto: 0,
+  falas_no_prompt: 1
+}
+[featherless] google/gemma-4-26B-A4B-it 2511ms in=6071 out=107 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2266ms in=6071 out=108 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3450ms in=5085 out=72 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3450,
+  tokens_entrada: 5085,
+  tokens_saida: 72,
+  tokens_cache: 0,
+  custo_usd: 0.00040934,
+  blocos: { conversa: 429, grafo: 807, mudancas: 0, resto: 5104 },
+  foto: 0,
+  falas_no_prompt: 4
+}
+[featherless] google/gemma-4-26B-A4B-it 4154ms in=6071 out=110 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 3597ms in=6071 out=110 $0.0004
+{"alvo":"featherless:google/gemma-4-26B-A4B-it","aprovadas":"2/2","erros":0,"p50":3083,"p90":4020,"p95":4154,"acimaDe6s":0,"acimaDe7s":0,"acimaDe8s":0,"chamadas":12,"tokensEntradaMedia":6071,"tokensSaidaMedia":111,"custoUsd":0.0044,"custoTotalUsd":0.006,"falhas":""}
+┌─────────┬─────────────────────────────────────────┬───────────┬───────┬──────┬──────┬──────┬───────────┬───────────┬───────────┬──────────┬────────────────────┬──────────────────┬──────────┬───────────────┬────────┐
+│ (index) │ alvo                                    │ aprovadas │ erros │ p50  │ p90  │ p95  │ acimaDe6s │ acimaDe7s │ acimaDe8s │ chamadas │ tokensEntradaMedia │ tokensSaidaMedia │ custoUsd │ custoTotalUsd │ falhas │
+├─────────┼─────────────────────────────────────────┼───────────┼───────┼──────┼──────┼──────┼───────────┼───────────┼───────────┼──────────┼────────────────────┼──────────────────┼──────────┼───────────────┼────────┤
+│ 0       │ 'featherless:google/gemma-4-26B-A4B-it' │ '2/2'     │ 0     │ 3083 │ 4020 │ 4154 │ 0         │ 0         │ 0         │ 12       │ 6071               │ 111              │ 0.0044   │ 0.006         │ 0      │
+└─────────┴─────────────────────────────────────────┴───────────┴───────┴──────┴──────┴──────┴───────────┴───────────┴───────────┴──────────┴────────────────────┴──────────────────┴──────────┴───────────────┴────────┘

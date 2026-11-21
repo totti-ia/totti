@@ -1,0 +1,249 @@
+{
+  "comparacao": [
+    {
+      "nome": "ide: fim natural mede a primeira fala sem criar um envio de medida",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/chat",
+          "base": 4,
+          "pr": 4
+        },
+        {
+          "rota": "/api/events",
+          "base": 5,
+          "pr": 5
+        },
+        {
+          "rota": "/api/falar",
+          "base": 7,
+          "pr": 7
+        }
+      ],
+      "igual": true,
+      "latenciaMs": 1573,
+      "campoNa124": true,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    },
+    {
+      "nome": "ide: corte manual não envia latência",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/chat",
+          "base": 4,
+          "pr": 4
+        },
+        {
+          "rota": "/api/events",
+          "base": 5,
+          "pr": 5
+        },
+        {
+          "rota": "/api/falar",
+          "base": 7,
+          "pr": 7
+        }
+      ],
+      "igual": true,
+      "latenciaMs": null,
+      "campoNa124": false,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    },
+    {
+      "nome": "ide: voz sobreposta dispara o detector e não envia latência",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/chat",
+          "base": 4,
+          "pr": 4
+        },
+        {
+          "rota": "/api/events",
+          "base": 5,
+          "pr": 5
+        },
+        {
+          "rota": "/api/falar",
+          "base": 7,
+          "pr": 7
+        }
+      ],
+      "igual": true,
+      "latenciaMs": null,
+      "campoNa124": false,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    },
+    {
+      "nome": "quadro: fim natural mede a primeira fala sem criar um envio de medida",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/falar",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes",
+          "base": 1,
+          "pr": 1
+        },
+        {
+          "rota": "/api/sessoes/:id/eventos",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes/:id/perguntar",
+          "base": 4,
+          "pr": 4
+        }
+      ],
+      "igual": true,
+      "latenciaMs": 1578,
+      "campoNa124": true,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    },
+    {
+      "nome": "quadro: corte manual não envia latência",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/falar",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes",
+          "base": 1,
+          "pr": 1
+        },
+        {
+          "rota": "/api/sessoes/:id/eventos",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes/:id/perguntar",
+          "base": 4,
+          "pr": 4
+        }
+      ],
+      "igual": true,
+      "latenciaMs": null,
+      "campoNa124": false,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    },
+    {
+      "nome": "quadro: voz sobreposta dispara o detector e não envia latência",
+      "statusPr": "passed",
+      "statusBase": "passed",
+      "contagem": [
+        {
+          "rota": "/api/falar",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes",
+          "base": 1,
+          "pr": 1
+        },
+        {
+          "rota": "/api/sessoes/:id/eventos",
+          "base": 3,
+          "pr": 3
+        },
+        {
+          "rota": "/api/sessoes/:id/perguntar",
+          "base": 4,
+          "pr": 4
+        }
+      ],
+      "igual": true,
+      "latenciaMs": null,
+      "campoNa124": false,
+      "campoNaBase": false,
+      "latenciaForaDosPedidosDeConversa": true
+    }
+  ],
+  "totalBase": 81,
+  "totalPr": 81,
+  "todosPassaram": true,
+  "contagensIguais": true,
+  "voz": {
+    "passaram": 3,
+    "falharam": 6,
+    "mesmasFalhas": true,
+    "testes": [
+      {
+        "nome": "recrutadora dita a vaga e conversa com Totti sem repetir voz no polling",
+        "status": "passed",
+        "erros": []
+      },
+      {
+        "nome": "IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"O que você está montando nesse loop?\"\u001b[39m\nReceived array: \u001b[31m[\"Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser.\"]\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  89 |   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);\n  90 |   expect(pedidos[0].messages.some((m) => m.role === \"agent\" && m.text.includes(\"pensa em voz alta\"))).toBe(true);\n> 91 |   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);\n     |                                                             ^\n  92 |   await expect(page.getByRole(\"complementary\")).toHaveCount(0);\n  93 |   await expect.poll(() => grifos(page)).toBeGreaterThan(0);\n  94 |   await expect.poll(() => ouvindo(page)).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:91:61"
+        ]
+      },
+      {
+        "nome": "IDE: fala livre com pedido de feedback é respondida por voz e o grifo sai depois",
+        "status": "passed",
+        "erros": []
+      },
+      {
+        "nome": "IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 10000ms exceeded while waiting on the predicate\n\n  162 |     await page.waitForTimeout(3000);\n  163 |   }\n> 164 |   await expect.poll(pediuLicenca, { timeout: 10_000 }).toBe(true);\n      |                                                        ^\n  165 |   expect(pedidosDoBalao.length).toBe(0);\n  166 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  167 |   await emitir(page, \"espera um pouquinho\");\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:164:56"
+        ]
+      },
+      {
+        "nome": "IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 8000ms exceeded while waiting on the predicate\n\n  198 |   await emitir(page, \"Fica linear, porque cada caractere entra e sai da pilha uma vez.\");\n  199 |   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(\"Valeu, era isso.\");\n> 200 |   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith(\"Combinado, vamos encerrar por aqui\")), { timeout: 8000 }).toBe(true);\n      |                                                                                                                                         ^\n  201 |   await expect.poll(() => eventos, { timeout: 8000 }).toContain(\"session_ended\");\n  202 | });\n  203 |\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:200:137"
+        ]
+      },
+      {
+        "nome": "quadro encaminha transcrição para a conversa da sessão",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Entrevista encerrada' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Entrevista encerrada' })\u001b[22m\n\n\n  214 |   await page.getByRole(\"button\", { name: \"Encerrar entrevista\", exact: true }).click();\n  215 |   await page.getByRole(\"button\", { name: \"Encerrar\", exact: true }).click();\n> 216 |   await expect(page.getByRole(\"heading\", { name: \"Entrevista encerrada\" })).toBeVisible();\n      |                                                                             ^\n  217 |   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias\n  218 |     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === \"ended\"))).toBe(true);\n  219 | });\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:216:77"
+        ]
+      },
+      {
+        "nome": "quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Quando terminar uma etapa ou quiser um comentário/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)\u001b[22m\n\n\n  234 |   });\n  235 |   await page.goto(\"/entrevista/system-design\");\n> 236 |   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();\n      |                                                                                     ^\n  237 |   await page.getByRole(\"button\", { name: \"Começar\", exact: true }).click();\n  238 |   await expect(page.locator('[data-janela-chamada][data-fase=\"REQUISITOS\"]')).toBeVisible({ timeout: 45000 });\n  239 |   expect((await falas(page)).some((f) => f.includes(\"é só me avisar\"))).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:236:85"
+        ]
+      },
+      {
+        "nome": "mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato",
+        "status": "failed",
+        "erros": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m3\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  287 |   await expect.poll(() => ouvindo(page)).toBe(true);\n  288 |   await emitir(page, \"Pode destacar o componente?\");\n> 289 |   await expect.poll(async () => (await gestos()).length).toBe(3);\n      |                                                          ^\n  290 |   await expect.poll(async () => (await gestos()).some((e) => e.texto === \"Como chega a solicitação?\")).toBe(true);\n  291 |   await page.screenshot({ path: \"test-results/gestos-no-quadro.png\" });\n  292 |   await expect.poll(() => ouvindo(page)).toBe(true);\n    at C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa\\e2e\\voz.spec.ts:289:58"
+        ]
+      },
+      {
+        "nome": "abrir o microfone enquanto o Totti prepara a voz cancela a fala, que não toca depois do ditado",
+        "status": "passed",
+        "erros": []
+      }
+    ]
+  }
+}

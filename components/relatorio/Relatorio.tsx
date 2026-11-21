@@ -431,10 +431,23 @@ function Integridade({ bloco, desenhar }: { bloco: BlocoDeIntegridade; desenhar:
           {ORIGEM_INTEGRIDADE}
         </h2>
         <p className="text-[13px] text-texto-suave">
-          O que a sala registrou além da conversa: colagens, saídas da janela e o jeito de escrever. Não entra na nota; vale conferir na
+          O que a sala registrou: colagens, saídas da janela, escrita e padrões da conversa. Não entra na nota; vale conferir na
           gravação.
         </p>
       </div>
+
+      {!!bloco.temposDeResposta?.length && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-[13px]">
+            <caption className="pb-2 text-left text-texto-suave">Tempo entre o fim do áudio do Totti e o começo da resposta</caption>
+            <thead><tr><th scope="col">Perguntas</th><th scope="col">Respostas</th><th scope="col">Mediana</th><th scope="col">Intervalo</th></tr></thead>
+            <tbody>{bloco.temposDeResposta.map((d) => (
+              <tr key={d.tipo}><th scope="row" className="py-1 font-normal">{d.tipo === "conversa" ? "Conversa e confirmação" : "Técnicas"}</th><td>{d.quantidade}</td><td>{(d.medianaMs / 1000).toFixed(1)} s</td><td>{(d.minimoMs / 1000).toFixed(1)}–{(d.maximoMs / 1000).toFixed(1)} s</td></tr>
+            ))}</tbody>
+          </table>
+          <p className="mt-1 text-[12px] text-texto-suave">Somente perguntas com categoria reconhecida e latência registrada. Pedidos de tempo ficam fora.</p>
+        </div>
+      )}
 
       {resumo.length > 0 && (
         <dl className="flex flex-wrap gap-1.5">

@@ -10,6 +10,7 @@ let sessaoDaVoz: MetaSessaoVoz | null = null;
 export function definirSessaoDaVoz(meta: MetaSessaoVoz | null): void { sessaoDaVoz = meta; }
 export function obterSessaoDaVoz(): MetaSessaoVoz | null { return sessaoDaVoz; }
 type EventosVoz = {
+  aoInterromper?: () => void;
   aoIniciar: (provedor: ProvedorVoz) => void;
   aoProgresso: (caracteres: number) => void;
   /** O navegador bloqueou o áudio: a fala toca no próximo toque, clique ou tecla. */
@@ -144,6 +145,7 @@ export function criarVoz(dependencias: {
           }
           // Se o áudio já começou, repetir a parte faria o candidato ouvir a frase duas vezes. Dá a parte por falada.
           if (iniciou) {
+            eventos.aoInterromper?.();
             console.warn("[voz] o áudio parou no meio da fala:", erro);
             progresso(parte.texto.length);
             break;

@@ -4,7 +4,10 @@ export type TipoDeSinal =
   | "escrita_linear"
   | "bloco_apos_saida"
   | "canario"
-  | "injecao";
+  | "injecao"
+  | "eco_da_pergunta"
+  | "tempo_plano"
+  | "bloco_sem_fala";
 
 export interface SinalDeIntegridade {
   id: string;
@@ -22,6 +25,7 @@ export interface DestaqueDeIntegridade {
 }
 
 export interface BlocoDeIntegridade {
+  temposDeResposta?: import("./conversa").DistribuicaoDeResposta[];
   destaques: DestaqueDeIntegridade[];
   sinais: SinalDeIntegridade[];
 }

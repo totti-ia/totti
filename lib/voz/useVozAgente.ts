@@ -5,11 +5,13 @@ import { focoAudio } from "../audio/foco";
 import { useLiberarAudio } from "../presenca/useLiberarAudio";
 import { definirSessaoDaVoz, reproduzirFala, type ProvedorVoz } from "./cliente";
 import { criarFilaDeFalas, type EstadoVoz, type FilaDeFalas, type LegendaAgente } from "./filaDeFalas";
+import type { ObservadorDoAudio } from "../conversa/tempoDeResposta";
 
 export { PAUSA_ENTRE_FALAS_MS } from "./filaDeFalas";
 export type FalaAgente = { id: string; texto: string };
 
-export function useVozAgente({ ultimaFala = null, bloqueada = false, sessao = null }: {
+export function useVozAgente({ ultimaFala = null, bloqueada = false, sessao = null, audio }: {
+  audio?: ObservadorDoAudio;
   ultimaFala?: FalaAgente | null;
   bloqueada?: boolean;
   sessao?: { sessao_id: string; contexto: "quadro" | "coding" | "pre" } | null;
@@ -29,10 +31,13 @@ export function useVozAgente({ ultimaFala = null, bloqueada = false, sessao = nu
   const [aviso, setAviso] = useState<string | null>(null);
   const [provedor, setProvedor] = useState<ProvedorVoz | null>(null);
   const [fala, setFala] = useState<LegendaAgente | null>(null);
+  const audioRef = useRef(audio);
+  audioRef.current = audio;
   // Uma fala por vez, com pausa entre elas (lib/voz/filaDeFalas.ts). Os setters do React são estáveis.
   const [fila] = useState<FilaDeFalas>(() => criarFilaDeFalas({
     reproduzir: reproduzirFala,
     foco: focoAudio,
+    audio: { iniciou: () => audioRef.current?.iniciou(), terminou: (completo) => audioRef.current?.terminou(completo) },
     tela: { estado: setEstado, erro: setErro, aviso: setAviso, provedor: setProvedor, fala: setFala },
   }));
   const habilitadaRef = useRef(true);

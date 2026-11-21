@@ -1,0 +1,12 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+Error: Comparação recusada: 124-placar-2-pr está incompleto (faltam casos, conversas ou notas do juiz).
+    at comparar (C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\scripts\placar-quadro\index.ts:192:13)
+    at main (C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\scripts\placar-quadro\index.ts:223:12)
+    at fs (C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\scripts\placar-quadro\index.ts:312:1)
+    at Object.<anonymous> (C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\scripts\placar-quadro\index.ts:315:2)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object.transformer (C:\Users\Nicolas\PROJETOS\totti\node_modules\tsx\dist\register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at loadCJSModuleWithModuleLoad (node:internal/modules/esm/translators:326:3)

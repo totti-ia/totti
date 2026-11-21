@@ -1,0 +1,57 @@
+{
+  "origem": "2026-11-20-00-49-124-placar-5-pr-retomada.json",
+  "falhasEmCasosFixos": 0,
+  "falhas": [
+    {
+      "persona": "senior_claro",
+      "turno": 13,
+      "fase": "ALTO_NIVEL",
+      "fonte": "perguntar",
+      "ms": 8020,
+      "candidatoAnterior": "Então, quando chega uma URL longa, eu preciso gerar um código único. A abordagem mais simples é usar um contador distribuído, tipo no Postgres. Cada vez que preciso de um novo código, eu incremento o contador e converto ele para base62, que dá letras, números, maiúsculas e minúsculas. Com 7 caracteres, você tem 62^7 combinações, tipo 3.5 trilhões de IDs, o que é mais que suficiente para os nossos 100 milhões por mês.",
+      "registro": "falhou=true; código tipado do ErroLlm não persistido pelo simulador",
+      "inferencia": "Duração compatível com teto de 8000 ms; não prova do código de erro."
+    },
+    {
+      "persona": "junior_nervoso",
+      "turno": 8,
+      "fase": "REQUISITOS",
+      "fonte": "perguntar",
+      "ms": 8006,
+      "candidatoAnterior": "Ah tá, obrigado... é, agora eu tô tentando começar... não sei bem por onde começar, mas acho que vou botar primeiro a parte do cliente, tipo um navegador web.",
+      "registro": "falhou=true; código tipado do ErroLlm não persistido pelo simulador",
+      "inferencia": "Duração compatível com teto de 8000 ms; não prova do código de erro."
+    },
+    {
+      "persona": "junior_nervoso",
+      "turno": 30,
+      "fase": "APROFUNDAMENTO",
+      "fonte": "perguntar",
+      "ms": 8014,
+      "candidatoAnterior": "É... senhor, desculpa mesmo, acho que me perdi um pouco. Não tô conseguindo pensar direito nos componentes agora. Peço desculpa.",
+      "registro": "falhou=true; código tipado do ErroLlm não persistido pelo simulador",
+      "inferencia": "Duração compatível com teto de 8000 ms; não prova do código de erro."
+    },
+    {
+      "persona": "vago_testador",
+      "turno": 21,
+      "fase": "APROFUNDAMENTO",
+      "fonte": "perguntar",
+      "ms": 8008,
+      "candidatoAnterior": "Ah, então... a API de encurtamento gera o código e salva, é o padrão. O cache é pra aguentar os acessos. A arquitetura tá certa assim?",
+      "registro": "falhou=true; código tipado do ErroLlm não persistido pelo simulador",
+      "inferencia": "Duração compatível com teto de 8000 ms; não prova do código de erro."
+    },
+    {
+      "persona": "vago_testador",
+      "turno": 22,
+      "fase": "APROFUNDAMENTO",
+      "fonte": "analise",
+      "ms": 15017,
+      "candidatoAnterior": "Ah, então... a API de encurtamento gera o código e salva, é o padrão. O cache é pra aguentar os acessos. A arquitetura tá certa assim?",
+      "registro": "falhou=true; código tipado do ErroLlm não persistido pelo simulador",
+      "inferencia": "Duração compatível com teto de 15000 ms; não prova do código de erro."
+    }
+  ],
+  "limitacao": "simulacao.ts define log: () => {} e só serializa falhou; não se pode recuperar ErroLlm.codigo das medições existentes."
+}

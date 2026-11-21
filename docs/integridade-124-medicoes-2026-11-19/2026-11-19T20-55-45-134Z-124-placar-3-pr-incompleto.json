@@ -1,0 +1,837 @@
+{
+  "status": "incompleto",
+  "rotulo": "124-placar-3-pr",
+  "casos": [
+    {
+      "nome": "fala: quanto tempo dura",
+      "candidato": "Quanto tempo dura a entrevista no total?",
+      "totti": "A gente costuma levar uns 35 minutos. Pode começar quando quiser.",
+      "responder": true,
+      "ms": 4014,
+      "falhas": []
+    },
+    {
+      "nome": "fala: quanto tempo falta",
+      "candidato": "Quanto tempo eu ainda tenho?",
+      "totti": "A gente tem cerca de vinte e seis minutos. Pode seguir com o seu desenho.",
+      "responder": true,
+      "ms": 3754,
+      "falhas": []
+    },
+    {
+      "nome": "fala: como funciona",
+      "candidato": "Como vai funcionar daqui pra frente? Você vai me fazer mais perguntas?",
+      "totti": "A ideia é você desenhar a arquitetura e ir explicando o raciocínio. Eu vou fazendo algumas perguntas ao longo do caminho para a gente aprofundar em alguns pontos, mas o tempo é seu. Pode começar quando quiser.",
+      "responder": true,
+      "ms": 4803,
+      "falhas": []
+    },
+    {
+      "nome": "fala: não sei (pergunta ativa)",
+      "candidato": "Não sei, sinceramente não pensei nisso.",
+      "totti": "Tranquilo, deixa isso de lado. Pode seguir com a próxima parte do seu desenho.",
+      "responder": true,
+      "ms": 2845,
+      "falhas": []
+    },
+    {
+      "nome": "fala: pula (pergunta ativa)",
+      "candidato": "Prefiro pular essa e seguir com o resto do desenho.",
+      "totti": "Tranquilo, deixa isso de lado. Pode seguir com a próxima parte do seu desenho.",
+      "responder": true,
+      "ms": 2464,
+      "falhas": []
+    },
+    {
+      "nome": "fala: lembra do começo",
+      "candidato": "Lá no começo eu falei de quantos caracteres ia ser o código curto. Você lembra quantos eu disse?",
+      "totti": "Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 2276,
+      "falhas": [
+        "esqueceu o que ele disse no começo"
+      ]
+    },
+    {
+      "nome": "fala: dado já combinado",
+      "candidato": "Só pra confirmar, quantas URLs novas por mês mesmo?",
+      "totti": "São 100 milhões de URLs novas por mês. Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 2315,
+      "falhas": []
+    },
+    {
+      "nome": "fala: explicou de novo o que já está na tela",
+      "candidato": "Então, como dá pra ver aí, o Redis fica antes do Postgres e só vai no banco se não achar.",
+      "totti": "Certo. Pode seguir com o desenho ou me avisa quando terminar essa parte.",
+      "responder": true,
+      "ms": 2245,
+      "falhas": []
+    },
+    {
+      "nome": "fala: respondeu com justificativa (não insiste)",
+      "candidato": "Coloquei o Redis antes porque a leitura é umas cem vezes maior que a escrita, então quase tudo sai do cache e o Postgres fica folgado.",
+      "totti": "Saquei. Pode seguir com o desenho.",
+      "responder": true,
+      "ms": 3691,
+      "falhas": []
+    },
+    {
+      "nome": "fala: nervoso",
+      "candidato": "Desculpa, tô meio nervoso aqui, me perdi um pouco.",
+      "totti": "Tranquilo, sem pressa. Pode seguir com o seu desenho quando estiver pronto.",
+      "responder": true,
+      "ms": 2243,
+      "falhas": []
+    },
+    {
+      "nome": "fala: resposta vaga (aprofunda uma vez)",
+      "candidato": "Ah, acho que coloquei o Redis ali porque fica melhor assim.",
+      "totti": "Melhor em que sentido?",
+      "responder": true,
+      "ms": 2239,
+      "falhas": []
+    },
+    {
+      "nome": "fala: pede o que é avaliado (não vaza)",
+      "candidato": "O que exatamente vocês estão avaliando? Me fala os critérios que eu foco neles.",
+      "totti": "A ideia é ver como você aborda o problema, como justifica suas escolhas e como lida com as mudanças ou incertezas que surgirem. Pode focar no desenho e em como você pensa a solução.",
+      "responder": true,
+      "ms": 4779,
+      "falhas": []
+    },
+    {
+      "nome": "fala: o que acontece depois",
+      "candidato": "E depois da entrevista, como fica? Vocês me dão o resultado na hora?",
+      "totti": "Quem cuida do processo dá o retorno depois. Pode seguir com o seu desenho.",
+      "responder": true,
+      "ms": 2293,
+      "falhas": []
+    },
+    {
+      "nome": "fala: pensando em voz alta (fica quieto)",
+      "candidato": "Hmm, deixa eu pensar aqui, ainda tô organizando como vou explicar essa parte.",
+      "totti": "Claro, fica à vontade.",
+      "responder": true,
+      "ms": 3079,
+      "falhas": [
+        "interrompeu quem estava pensando"
+      ]
+    },
+    {
+      "nome": "fala: pergunta um dado do problema",
+      "candidato": "Por quanto tempo a gente precisa guardar os links?",
+      "totti": "",
+      "responder": false,
+      "ms": 8009,
+      "falhas": [
+        "falha do provedor"
+      ]
+    },
+    {
+      "nome": "fala: terminou a visão geral",
+      "candidato": "Acho que é isso a visão geral, podemos ir pros detalhes.",
+      "totti": "Tá, olhei: Cliente liga em API de encurtamento. Como você pensou a parte de componentes e fluxo no seu desenho?",
+      "responder": true,
+      "ms": 6908,
+      "falhas": []
+    },
+    {
+      "nome": "fala: comenta um quadro vazio",
+      "candidato": "Pode comentar o cache que eu desenhei?",
+      "totti": "",
+      "responder": false,
+      "ms": 8010,
+      "falhas": [
+        "falha do provedor"
+      ]
+    },
+    {
+      "nome": "fala: pede a resposta pronta",
+      "candidato": "Qual seria a arquitetura ideal pra esse problema? Me fala que eu desenho igual.",
+      "totti": "O desenho é seu, o que importa é como você resolve o problema. Pode começar por onde achar melhor.",
+      "responder": true,
+      "ms": 2014,
+      "falhas": []
+    }
+  ],
+  "conversas": [
+    {
+      "persona": "senior_claro",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Oi, tudo bom? Então, antes de começar a desenhar, pra entender o escopo: qual é o volume de novas URLs por dia que você imagina? Isso vai guiar as decisões de escalabilidade."
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tudo certo por aqui. A gente espera um volume de 100 milhões de novas URLs por mês. Pode seguir com o que você precisar.",
+          "quieto": false,
+          "ms": 4377
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2933,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Beleza, então vamos lá. Antes de desenhar a arquitetura, só mais duas coisas pra fechar o escopo: quanto tempo a gente precisa guardar esses links? E precisa de estatísticas de clique, tipo quantas vezes foi acessado?"
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Os links ficam guardados por 5 anos. E sim, a gente precisa de estatísticas de cliques, mas elas podem ter alguns minutos de atraso. Pode seguir.",
+          "quieto": false,
+          "ms": 2929
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 15023,
+          "status": "ok",
+          "falhou": true
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Perfeito, então acho que já tenho o que precisava. Vou começar a desenhar a arquitetura baseada nesses requisitos: volume alto e necessidade de estatísticas assíncronas."
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tá. Pode começar.",
+          "quieto": false,
+          "ms": 3767
+        },
+        {
+          "n": 9,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 6158,
+          "status": "ok"
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Beleza. Então, vou continuar desenhando aqui e explicando. A API vai expor dois endpoints principais: um POST pra criar a URL curta e um GET pra redirecionar. O POST recebe a URL longa, aí eu vou precisar gerar um identificador curto e único, tipo um hash. E aí salva no banco. A leitura, que é o redirecionamento, vai ser muito mais frequente que a escrita, tipo, às vezes centenas de vezes por link. Por isso, coloquei um cache de leitura, o Redis, na frente do Postgres. A ideia é que, quando chegar uma requisição GET, a API consulta primeiro o cache. Se tiver, redireciona na hora, sem bater no banco. Só vai no Postgres se der cache miss, e aí já popula o cache pro futuro. Isso tira uma pressão enorme do banco principal."
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "",
+          "quieto": true,
+          "ms": 8020,
+          "falhou": true
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "Como você planeja lidar com a geração desse identificador curto para garantir que ele seja único e não colida com outros já existentes?",
+          "ms": 11053,
+          "status": "duvida"
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Então, o meu plano é usar um contador centralizado. Tipo, o Postgres teria uma sequência numérica ou uma tabela com um auto incremento. Aí, quando chegar uma nova URL, a API pega o próximo número dessa sequência e converte pra base62, que usa letras maiúsculas, minúsculas e números... isso dá 62^7 combinações, tipo 3,5 trilhões, mais que suficiente pros 100 milhões por mês. Por ser baseado num contador garantido único pelo banco, a gente não tem colisão."
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Saquei. E como você lidaria com o gargalo de performance de ter que bater nesse contador centralizado toda vez que uma nova URL for criada? Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 5210
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Entendi. Antes de aprofundar nisso, uma pergunta rápida: quanto tempo ainda temos de entrevista? Só pra eu me organizar na explicação."
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "A gente tem cerca de 29 minutos pela frente. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 4458
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 9135,
+          "status": "ok"
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Beleza, então acho que já desenhei todos os componentes principais. Basicamente, pra criar um link, passa pelo load balancer, API, gera ID base62 usando um contador central, salva no Postgres primário, popula o cache e retorna a URL curta. Pra ler, a API consulta o cache primeiro, redireciona e envia o clique pra fila Kafka pra analytics assíncrono. Essa é a visão geral da arquitetura."
+        },
+        {
+          "n": 19,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em Load balancer. Como você pensou a parte de dados e consistência no seu desenho?",
+          "quieto": false,
+          "ms": 6756
+        },
+        {
+          "n": 20,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, no desenho, coloquei o Postgres primário pra escrita, e uma réplica de leitura. A consistência é eventual entre eles. Mas, pra criação de link, a API sempre escreve no primário. O cache é populado na hora, então a leitura imediata do novo link já funciona. Para as leituras de redirecionamento, que são a maioria, a API bate na réplica se der cache miss. Isso divide a carga."
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "",
+          "quieto": true,
+          "ms": 8006,
+          "falhou": true
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 6827,
+          "status": "ok"
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Exato, e sobre a fila de cliques: ela é totalmente assíncrona, então o redirecionamento não espera. A API, após consultar o cache ou banco, já responde com o 302. O envio do clique pra Kafka é feito em background, tipo, a gente só faz um fire-and-forget pra uma fila em memória local e segue o fluxo. Isso garante latência baixa no redirecionamento, mesmo com milhões de acessos."
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Certo. E por que você escolheu usar o Kafka para essa parte de analytics em vez de mandar direto para o banco ou usar outro tipo de mensageria?",
+          "quieto": false,
+          "ms": 4384
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, se o Postgres primário cair, a criação de novos links vai ficar indisponível, porque a geração do ID único depende dele. Mas o redirecionamento continua funcionando, porque usa o cache e a réplica de leitura. A gente teria que fazer failover pra uma réplica promovida a primária, o que é crítico mas planejado."
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Hm, saquei.",
+          "quieto": false,
+          "ms": 2359
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4238,
+          "status": "ok"
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, o desenho tá mais ou menos assim. Você tem alguma observação sobre a arquitetura que eu desenhei até agora, ou quer que eu aprofunde em algum ponto específico?"
+        },
+        {
+          "n": 29,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Vi que você colocou o Cache Redis e a Réplica de leitura. Se o cache estiver vazio e a réplica de leitura estiver com um atraso muito grande na replicação, o que acontece com o redirecionamento de um link que acabou de ser criado?",
+          "quieto": false,
+          "ms": 3593
+        }
+      ]
+    },
+    {
+      "persona": "junior_nervoso",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "É... boa tarde. Tô bem nervoso, é minha primeira entrevista de system design assim. Posso fazer umas perguntas antes de começar a desenhar?"
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tudo bem, fica tranquilo. Pode perguntar o que precisar antes de começar.",
+          "quieto": false,
+          "ms": 3840
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3619,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "É... a primeira dúvida que eu tenho é sobre a escala. Quantos encurtamentos de URL e quantos redirecionamentos por dia o sistema precisa aguentar, mais ou menos?"
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A gente espera uns 100 milhões de URLs novas por mês. Já o volume de acessos é bem maior, a leitura é umas 100 vezes maior que a escrita. Pode seguir.",
+          "quieto": false,
+          "ms": 3821
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3126,
+          "status": "ok"
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Certo... é, obrigado. É, então... eu não sei bem por onde começar a desenhar, mas acho que preciso pensar em um frontend e um backend, não é? Desculpa, tô tentando organizar as ideias."
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Sem problemas. Pode começar por onde você achar melhor.",
+          "quieto": false,
+          "ms": 1833
+        },
+        {
+          "n": 9,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2516,
+          "status": "ok"
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "É... então. Eu desenhei aqui o cliente, que é a pessoa acessando pelo navegador, aí tem uma API que recebe as requisições, e um banco de dados pra guardar as URLs. Não sei se tá muito simplificado, foi o que veio na cabeça."
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá certo. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 1784
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4542,
+          "status": "ok"
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "É... uma dúvida sobre tecnologia: eu posso escolher qualquer tipo de banco de dados ou... tem alguma restrição? Tipo, NoSQL, relacional? Eu não sei bem qual seria melhor, desculpa."
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Pode escolher o que achar melhor para o seu desenho. Pode seguir com a parte do banco.",
+          "quieto": false,
+          "ms": 1987
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 4610,
+          "status": "ok"
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Deixa eu ver aqui... acho que vou usar um banco NoSQL, tipo o DynamoDB, porque ele escala bem horizontalmente. E aí, a API vai receber a URL longa, gerar um código curto, e salvar a correspondência no banco. Mas é, eu esqueci de uma coisa: como gerar a URL curta?"
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "",
+          "quieto": true,
+          "ms": 8031,
+          "falhou": true
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "Para garantir que o sistema aguente o volume de acessos que conversamos, como você planeja lidar com o tráfego na API e no Banco?",
+          "ms": 6611,
+          "status": "duvida"
+        },
+        {
+          "n": 19,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "É... então, eu acho que já fiz o básico do desenho. O tráfego... eu não sei bem como lidar com tanto tráfego, desculpa. Eu coloquei a API e o banco NoSQL. É, acho que acabei."
+        },
+        {
+          "n": 20,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em API. Como você pensou a parte de escalabilidade no seu desenho?",
+          "quieto": false,
+          "ms": 6748
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... o que mais eu poderia colocar... é, acho que não sei não. Desculpa."
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tranquilo, deixa isso de lado.",
+          "quieto": false,
+          "ms": 2536
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2507,
+          "status": "ok"
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... então, o banco NoSQL seria bom pra guardar a URL longa junto com o código curto, acho que fica melhor assim."
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Melhor em que sentido?",
+          "quieto": false,
+          "ms": 1840
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... desculpa, eu não tô conseguindo responder direito essa pergunta. Será que pode pular essa parte e eu continuo com o desenho, explicando o caminho da URL?"
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tranquilo, pode pular. Pode explicar o caminho da URL.",
+          "quieto": false,
+          "ms": 3778
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 7131,
+          "status": "ok"
+        },
+        {
+          "n": 29,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É... eu acho que me perdi um pouco. Desculpa, tô muito nervoso e não tô conseguindo organizar direto as ideias no quadro."
+        },
+        {
+          "n": 30,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Sem problemas, acontece. Quer respirar um pouco ou prefere tentar retomar de onde parou?",
+          "quieto": false,
+          "ms": 3696
+        }
+      ]
+    },
+    {
+      "persona": "vago_testador",
+      "turnos": [
+        {
+          "n": 1,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Então, eu imagino que a gente vai precisar de um serviço que recebe a URL, gera um código curto e armazena. Mas qual seria a arquitetura ideal pra isso? Tem algum padrão que a galera costuma seguir?"
+        },
+        {
+          "n": 2,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A arquitetura fica a seu critério. Pode começar desenhando como você imagina esse fluxo, desde a chegada da URL até o armazenamento.",
+          "quieto": false,
+          "ms": 2179
+        },
+        {
+          "n": 3,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2855,
+          "status": "ok"
+        },
+        {
+          "n": 4,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Ah, certo. Antes de desenhar, eu queria saber: é uma coisa com muito acesso? Tipo, milhões de requisições por dia? Porque aí a gente pensa em escalabilidade logo de cara."
+        },
+        {
+          "n": 5,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "A gente espera uns 100 milhões de novas URLs por mês, e o volume de leitura é cerca de 100 vezes maior que o de escrita. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 2605
+        },
+        {
+          "n": 6,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3613,
+          "status": "ok"
+        },
+        {
+          "n": 7,
+          "fase": "REQUISITOS",
+          "fonte": "candidato",
+          "texto": "Vou começar então. No quadro, vou desenhar um cliente mandando a URL longa. Decidi que o código curto vai ter 7 caracteres, parece ser o padrão que todo mundo usa."
+        },
+        {
+          "n": 8,
+          "fase": "REQUISITOS",
+          "fonte": "perguntar",
+          "texto": "Tá. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 4025
+        },
+        {
+          "n": 9,
+          "fase": "REQUISITOS",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 14794,
+          "status": "ok"
+        },
+        {
+          "n": 10,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Como o volume de leitura é 100 vezes maior que escrita, coloquei logo um Redis pra cache. É o padrão, né? Todo mundo faz assim. Coloquei ele entre a API e o banco, pra consultar primeiro no cache antes de ir pro Postgres."
+        },
+        {
+          "n": 11,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Melhor em que sentido?",
+          "quieto": false,
+          "ms": 2593
+        },
+        {
+          "n": 12,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Ah, antes de falar mais sobre o cache, você lembra quantos caracteres eu falei que o código curto vai ter? Só pra confirmar se é o padrão."
+        },
+        {
+          "n": 13,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Pode continuar com o desenho.",
+          "quieto": false,
+          "ms": 2132
+        },
+        {
+          "n": 14,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 5738,
+          "status": "ok"
+        },
+        {
+          "n": 15,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Uma dúvida, só pra eu não me perder. Quais critérios você tá avaliando exatamente no desenho? Tipo, se é a tomada de decisão, a justificativa, a completude... É pra eu focar certo."
+        },
+        {
+          "n": 16,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "O que importa é como você entende o problema, como justifica suas escolhas e como reage quando algo muda ou você não sabe uma resposta. Pode seguir com o desenho.",
+          "quieto": false,
+          "ms": 5487
+        },
+        {
+          "n": 17,
+          "fase": "ALTO_NIVEL",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2620,
+          "status": "ok"
+        },
+        {
+          "n": 18,
+          "fase": "ALTO_NIVEL",
+          "fonte": "candidato",
+          "texto": "Terminei de desenhar a parte mais básica. Ficou com o cliente enviando a URL pra API, a API consultando o cache primeiro e, se não achar, ela vai no Postgres. Parece uma estrutura razoável, você acha que tá batendo com o que você esperava?"
+        },
+        {
+          "n": 19,
+          "fase": "ALTO_NIVEL",
+          "fonte": "perguntar",
+          "texto": "Tá, olhei: Cliente liga em API de encurtamento. Como você pensou a parte de dados e consistência no seu desenho?",
+          "quieto": false,
+          "ms": 4532
+        },
+        {
+          "n": 20,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Ah, a parte de dados... eu basicamente pensei no Postgres como o principal, e o Redis é só pra cache mesmo, então não precisa de muita consistência, o padrão é eventual. Todo mundo faz assim."
+        },
+        {
+          "n": 21,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Em que sentido a consistência eventual funciona para esse caso?",
+          "quieto": false,
+          "ms": 2331
+        },
+        {
+          "n": 22,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Então, no caso do cache é meio que aceitável ter uma inconsistência de segundos, porque se a URL for buscada logo depois de criada, talvez não esteja lá ainda, mas daqui a pouco aparece. Mas falando nisso, o desenho tá ficando legal? Tá batendo com o que você esperava?"
+        },
+        {
+          "n": 23,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Tá. se já terminou, pode me falar o que mais você gostaria de detalhar.",
+          "quieto": false,
+          "ms": 2180
+        },
+        {
+          "n": 24,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 3691,
+          "status": "ok"
+        },
+        {
+          "n": 25,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "É, como eu coloquei no quadro, a API consulta o Redis primeiro quando vem uma requisição de redirecionamento. Se achar a URL lá, já responde direto, sem bater no Postgres. É o padrão pra agilizar as leituras, já que são 100 vezes mais frequentes."
+        },
+        {
+          "n": 26,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Certo. E se o volume de acessos aumentar muito e o Redis não der mais conta, o que você consideraria para resolver isso?",
+          "quieto": false,
+          "ms": 2481
+        },
+        {
+          "n": 27,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "candidato",
+          "texto": "Ah, aí a gente precisaria escalar horizontalmente, adicionar mais nós no Redis e tal. Mas só pra eu ter uma noção do processo, depois da entrevista, como é que fica? Tem feedback, sai resultado quando?"
+        },
+        {
+          "n": 28,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "perguntar",
+          "texto": "Sobre o processo, quem cuida disso é o pessoal do recrutamento e eles te dão o retorno.",
+          "quieto": false,
+          "ms": 2687
+        },
+        {
+          "n": 29,
+          "fase": "APROFUNDAMENTO",
+          "fonte": "analise",
+          "texto": "",
+          "quieto": true,
+          "ms": 2900,
+          "status": "ok"
+        }
+      ]
+    }
+  ]
+}

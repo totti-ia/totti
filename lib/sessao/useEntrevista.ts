@@ -57,6 +57,7 @@ import { descreverMudancas, houveMudancaRelevante } from "@/lib/excalidraw/diff"
 import { falaInterrompida } from "@/lib/totti/interrupcao";
 import { useRegistroDeFoco } from "@/lib/foco/useRegistroDeFoco";
 import { eventoDeFoco } from "@/lib/foco/eventoDoQuadro";
+import { criarTempoDeResposta } from "@/lib/conversa/tempoDeResposta";
 
 /** Como uma fala do Totti entra na fila única (ver lib/audio/filaDoAgente.ts). */
 /**
@@ -207,6 +208,7 @@ export function useEntrevista(
   opcoes: { configId?: string; convite?: string } = {},
 ) {
   const { configId, convite } = opcoes;
+  const [tempoDeResposta] = useState(criarTempoDeResposta);
   const [sessao, setSessao] = useState<Sessao | null>(null);
   useEffect(() => { definirSessaoDaVoz(sessao ? { sessao_id: sessao.sessao_id, contexto: "quadro" } : null); return () => definirSessaoDaVoz(null); }, [sessao]);
   const criacaoDaSessao = useRef<Promise<Sessao> | null>(null);
@@ -354,9 +356,9 @@ export function useEntrevista(
       setFalaAtual((atual) => (versao === versaoDaFala.current && atual && atual.texto === texto && atual.ate !== ate ? { ...atual, ate } : atual));
     };
     const reacao = marcas ? null : slugDaReacao(texto);
-    if (marcas) await falarComMarcas(texto, marcas, aoProgresso, antesDeTocar);
-    else if (reacao) await falarReacao(reacao, texto, aoProgresso, antesDeTocar);
-    else await falar(texto, aoProgresso, antesDeTocar);
+    if (marcas) await falarComMarcas(texto, marcas, aoProgresso, antesDeTocar, tempoDeResposta.audio);
+    else if (reacao) await falarReacao(reacao, texto, aoProgresso, antesDeTocar, tempoDeResposta.audio);
+    else await falar(texto, aoProgresso, antesDeTocar, tempoDeResposta.audio);
     if (versao !== versaoDaFala.current) { opcoes.aoTerminar?.(); return; }
     opcoes.aoTerminar?.();
     ultimaFalaDoAgenteEm.current = Date.now();
@@ -377,10 +379,11 @@ export function useEntrevista(
       void dizerRef.current(item.carga.texto, item.carga.marcas, { origem: item.origem, numeroPergunta: item.numeroPergunta, semRetencao: true, aoTerminar: item.carga.aoTerminar });
       item.carga.aoTocar?.();
     }
-  }, [registrarDescarte, registrarDescartes]);
+  }, [registrarDescarte, registrarDescartes, tempoDeResposta]);
   dizerRef.current = dizer;
 
   const silenciar = useCallback(() => {
+    tempoDeResposta.interromper();
     registrarDescartes(filaDoAgente.current.limpar());
     reacaoRetida.current.limpar();
     limparVisualDaConversa();
@@ -392,7 +395,7 @@ export function useEntrevista(
     preparandoVozRef.current = false;
     agenteFalandoRef.current = false;
     setFalaAtual(null);
-  }, [limparVisualDaConversa, registrarDescartes]);
+  }, [limparVisualDaConversa, registrarDescartes, tempoDeResposta]);
   const alternarVoz = useCallback(() => {
     vozHabilitadaRef.current = !vozHabilitadaRef.current;
     setVozHabilitada(vozHabilitadaRef.current);
@@ -1124,6 +1127,8 @@ export function useEntrevista(
       const texto = limparTextoDigitado(bruto);
       const atual = estadoAtual.current;
       if (!texto || !sessao || encerrandoRef.current || atual.fase === "AGUARDANDO" || atual.fase === "ENCERRADA") return { requisito: null };
+      const latenciaMs = tempoDeResposta.tomar(substitui);
+      const medida = latenciaMs !== undefined ? { latenciaMs } : {};
       // Resposta ao pedido de licença: "pode" faz a pergunta; "espera" (ou "agora não") deixa para depois.
       // "Pode encerrar" não responde à licença: segue para o /perguntar, que fecha a entrevista.
       if (licencaPedidaEm.current !== null && pedeParaEncerrar(texto)) {
@@ -1132,7 +1137,7 @@ export function useEntrevista(
       }
       if (licencaPedidaEm.current !== null) {
         licencaPedidaEm.current = null;
-        registrar("fala", { quem: "candidato", texto });
+        registrar("fala", { quem: "candidato", texto, ...medida });
         conversa.current.push({ quem: "candidato", texto });
         if (liberouAPergunta(texto) && atual.plin === "PLIN_PENDENTE") enviar({ tipo: "PLIN_CLICADO" });
         else licencaDeNovoEm.current = Date.now() + LICENCA_DE_NOVO_MS;
@@ -1162,7 +1167,7 @@ export function useEntrevista(
       const falaDoCandidato: FalaRecente = { quem: "candidato", texto };
       conversa.current.push(falaDoCandidato);
       const registrarFalaDoCandidato = () => {
-        registrar("fala", { quem: "candidato", texto });
+        registrar("fala", { quem: "candidato", texto, ...medida });
         return nova("candidato", texto);
       };
 
@@ -1308,7 +1313,7 @@ export function useEntrevista(
       }
       return { requisito: r.responder ? r.requisito : null };
     },
-    [sessao, quadro, cursor, registrar, dizer, registrarDescartes, terminarResposta, agendarFimDaResposta, enviar, limparVisualDaConversa],
+    [sessao, quadro, cursor, registrar, dizer, registrarDescartes, terminarResposta, agendarFimDaResposta, enviar, limparVisualDaConversa, tempoDeResposta],
   );
   /**
    * Resposta antecipada: o rascunho é o /perguntar que o envio final mandaria para este texto agora (mesma montagem,
@@ -1457,6 +1462,7 @@ export function useEntrevista(
     agenteFalando,
     aguardandoResposta: aguardandoResposta || preparandoVoz,
     registrarFalaParcial,
+    registrarInicioDaVoz: tempoDeResposta.inicioDaVoz,
     registrarSom,
     vozHabilitada,
     alternarVoz,

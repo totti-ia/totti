@@ -112,7 +112,7 @@ export const SECOES_CONDICIONAIS_DO_RELATORIO = ["adaptação"] as const;
 
 export interface GravacaoDoQuadro {
   duracaoMs: number;
-  falas: { t: number; role: "candidate" | "agent"; text: string }[];
+  falas: { t: number; role: "candidate" | "agent"; text: string; latenciaMs?: number }[];
   desenho: { t: number; pecas: number; conexoes: number; imagem: string | null }[];
   fases: { t: number; nome: string }[];
   acontecimentos: AcontecimentoComum[];

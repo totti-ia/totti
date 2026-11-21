@@ -33,6 +33,7 @@ import { RECONHECIMENTOS, useConversa } from "./ide/useConversa";
 import { useCodeCapture } from "./ide/useCodeCapture";
 import { useRegistroDeFoco } from "@/lib/foco/useRegistroDeFoco";
 import { nomeDoCanario } from "@/lib/integridade/canario";
+import { criarTempoDeResposta } from "@/lib/conversa/tempoDeResposta";
 import { useSession } from "./ide/useSession";
 
 /** Margem esquerda do editor: o painel do problema (360) mais o respiro. */
@@ -124,7 +125,8 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   // O fim do turno lê o volume mais recente sem recriar o intervalo a cada render.
   const volumeRef = useRef(0);
   volumeRef.current = midia.volume;
-  const voz = useVozAgente({ bloqueada: session.ended && !encerrando, sessao: session.sessionId ? { sessao_id: session.sessionId, contexto: "coding" } : null });
+  const [tempoDeResposta] = useState(criarTempoDeResposta);
+  const voz = useVozAgente({ audio: tempoDeResposta.audio, bloqueada: session.ended && !encerrando, sessao: session.sessionId ? { sessao_id: session.sessionId, contexto: "coding" } : null });
   const [parcial, setParcial] = useState("");
   const vozEstadoRef = useRef(voz.estado);
   vozEstadoRef.current = voz.estado;
@@ -190,6 +192,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
   const conversa = useConversa({
     sessionId: session.sessionId,
     sendEvent: session.sendEvent,
+    tomarLatencia: tempoDeResposta.tomar,
     applyCommands,
     falar: falarNaVez,
     parar: voz.parar,
@@ -278,6 +281,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
     falando: voz.estado === "falando",
     permitida: !session.ended && !encerrando,
     aoInterromper: (como) => {
+      tempoDeResposta.interromper();
       // A vez é dele agora: o Totti não volta a falar logo depois de ser cortado.
       ultimaFalaEmRef.current = Date.now();
       conversa.interromper(vozFalaRef.current?.ate ?? 0);
@@ -291,6 +295,7 @@ export default function IdeApp({ problemId, vaga = DEFAULT_CONFIG, convite }: { 
     sessaoId: session.sessionId,
     aoParcial: receberParcial,
     aoFinal: aoFalar,
+    aoInicioDaVoz: tempoDeResposta.inicioDaVoz,
     interrupcao: interrupcao.escuta,
   });
 

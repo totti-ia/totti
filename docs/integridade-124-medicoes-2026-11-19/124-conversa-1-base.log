@@ -1,0 +1,216 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+[featherless] google/gemma-4-26B-A4B-it 2997ms in=3863 out=51 $0.0003
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2997,
+  tokens_entrada: 3863,
+  tokens_saida: 51,
+  tokens_cache: 0,
+  custo_usd: 0.00028775,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[agente] perguntar_turno { sessao_id: undefined, fase: 'ALTO_NIVEL', regras: [ 'pediu_tempo' ] }
+[agente] perguntar_falhou { sessao_id: undefined, fase: 'ALTO_NIVEL', codigo: 'timeout' }
+[agente] perguntar_falhou { sessao_id: undefined, fase: 'ALTO_NIVEL', codigo: 'timeout' }
+[featherless] google/gemma-4-26B-A4B-it 6199ms in=3503 out=71 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 6199,
+  tokens_entrada: 3503,
+  tokens_saida: 71,
+  tokens_cache: 3779,
+  custo_usd: 0.00021449,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3283 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2658ms in=3506 out=71 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2658,
+  tokens_entrada: 3506,
+  tokens_saida: 71,
+  tokens_cache: 3779,
+  custo_usd: 0.00021477,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 1673ms in=3861 out=75 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1673,
+  tokens_entrada: 3861,
+  tokens_saida: 75,
+  tokens_cache: 3847,
+  custo_usd: 0.00021883,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2396ms in=3866 out=57 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2396,
+  tokens_entrada: 3866,
+  tokens_saida: 57,
+  tokens_cache: 3849,
+  custo_usd: 0.00021302,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 3673ms in=3861 out=97 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 3673,
+  tokens_entrada: 3861,
+  tokens_saida: 97,
+  tokens_cache: 3850,
+  custo_usd: 0.00022625,
+  blocos: { conversa: 14, grafo: 17, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2399ms in=3863 out=76 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2399,
+  tokens_entrada: 3863,
+  tokens_saida: 76,
+  tokens_cache: 3846,
+  custo_usd: 0.00021933,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2087ms in=3496 out=69 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2087,
+  tokens_entrada: 3496,
+  tokens_saida: 69,
+  tokens_cache: 3783,
+  custo_usd: 0.00021352,
+  blocos: { conversa: 260, grafo: 145, mudancas: 0, resto: 4265 },
+  foto: 0,
+  falas_no_prompt: 1
+}
+[featherless] google/gemma-4-26B-A4B-it 2607ms in=7822 out=98 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2607,
+  tokens_entrada: 7822,
+  tokens_saida: 98,
+  tokens_cache: 7729,
+  custo_usd: 0.00042628,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[agente] perguntar_pergunta_sem_resposta { sessao_id: undefined, fase: 'ALTO_NIVEL' }
+[featherless] google/gemma-4-26B-A4B-it 3229ms in=7438 out=108 $0.0004
+[featherless] google/gemma-4-26B-A4B-it 2429ms in=7822 out=98 $0.0004
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2429,
+  tokens_entrada: 7822,
+  tokens_saida: 98,
+  tokens_cache: 7822,
+  custo_usd: 0.00042442,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[agente] perguntar_fechamento {
+  sessao_id: undefined,
+  fase: 'ALTO_NIVEL',
+  etapa: 'ultima_palavra',
+  inicio: true,
+  gatilho: 'pediu_encerrar',
+  encerrar: false,
+  na_fila: 0,
+  origem: undefined
+}
+[featherless] google/gemma-4-26B-A4B-it 1707ms in=3856 out=69 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1707,
+  tokens_entrada: 3856,
+  tokens_saida: 69,
+  tokens_cache: 3849,
+  custo_usd: 0.0002164,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3255 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 1487ms in=3880 out=67 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 1487,
+  tokens_entrada: 3880,
+  tokens_saida: 67,
+  tokens_cache: 3844,
+  custo_usd: 0.0002175,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3292 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+[featherless] google/gemma-4-26B-A4B-it 2498ms in=3510 out=90 $0.0002
+[agente] perguntar_llm {
+  sessao_id: undefined,
+  versao: 'v2',
+  modelo: 'google/gemma-4-26B-A4B-it',
+  provedor: 'featherless',
+  ms: 2498,
+  tokens_entrada: 3510,
+  tokens_saida: 90,
+  tokens_cache: 3781,
+  custo_usd: 0.00022161,
+  blocos: { conversa: 14, grafo: 145, mudancas: 0, resto: 3563 },
+  foto: 0,
+  falas_no_prompt: 0
+}
+featherless:google/gemma-4-26B-A4B-it            p50  3010 ms  p95  8269 ms  acertos 10/14
+    ✗ pensando: intenção de resposta  «Claro, fica à vontade.»
+    ✗ feedback: falha do provedor  «»
+    ✗ pede para encerrar: intenção de resposta  «Tá, olhei: API liga em Cache. Por mim, era isso. Quer acrescentar alguma coisa antes de encerrar?»
+    ✗ continuação: pergunta de continuação no mesmo fio  «Por que o cache antes do banco de dados? Pode seguir com o desenho.»

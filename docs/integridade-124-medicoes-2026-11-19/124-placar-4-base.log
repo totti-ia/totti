@@ -1,0 +1,8 @@
+[gasto] OpenRouter desligada neste script: roda só o que tem na Featherless. A produção pode usar a OpenRouter como reserva; tempos e contagens do script não representam esse fallback. Para medir com os modelos pagos: --pago
+
+== Casos fixos ==
+[featherless] google/gemma-4-26B-A4B-it tentativa 1/3 falhou (erro de rede: fetch failed); nova tentativa em 1000ms
+[agente] perguntar_falhou { sessao_id: undefined, fase: 'ALTO_NIVEL', codigo: 'timeout' }
+[featherless] google/gemma-4-26B-A4B-it tentativa 1/3 falhou (erro de rede: fetch failed); nova tentativa em 1000ms
+FALHA fala: quanto tempo dura (3925197 ms): (quieto)
+      -> falha do provedor

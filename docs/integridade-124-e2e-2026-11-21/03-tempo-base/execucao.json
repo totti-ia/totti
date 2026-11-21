@@ -1,0 +1,77 @@
+{
+  "rotulo": "03-tempo-base",
+  "versao": "base",
+  "suite": "tempo",
+  "inicio": "2026-11-21T18:48:22.302Z",
+  "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-e2e-base",
+  "commit": "5343db307cc6c69455ef380b1445f10fff1cd002",
+  "diff": "",
+  "config": "e2e/playwright.tempo-de-resposta.config.ts",
+  "evidencia": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\03-tempo-base",
+  "comando": [
+    "node",
+    "<clone>/node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "e2e/playwright.tempo-de-resposta.config.ts",
+    "--output",
+    "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\03-tempo-base",
+    "--reporter=line,json"
+  ],
+  "fontes": {
+    "e2e/voz.spec.ts": "a4277f4c1e4c4582b044e4cb45bc9771b69b40e9c3f132812c8424450ab8ce05",
+    "e2e/tempo-de-resposta.spec.ts": "538deea7303ba2a903d15c5a28681c37cf7f04c87ea9b5ac98dc099ea32013a1",
+    "e2e/helpers/voz-falsa.ts": "390154790d767117ebf963d74022c3f74ea3ea9f98fcaf3ae195dcb33bd0a188",
+    "e2e/helpers/scribe-falso.ts": "bbdd590e6eb070670a6f5517823ebeec2774a721782943d77b0b9f4206c0d6d6",
+    "e2e/playwright.tempo-de-resposta.config.ts": "1f88813113a8e4850edd3df4bc957e5f5554c09a593e0a375f4766b9fb62cb62"
+  },
+  "code": 0,
+  "signal": null,
+  "fim": "2026-11-21T18:51:18.523Z",
+  "stats": {
+    "startTime": "2026-11-21T18:48:23.660Z",
+    "duration": 174829.613,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "anexos": [
+    {
+      "teste": "ide: fim natural mede a primeira fala sem criar um envio de medida",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "1-posts.json"
+    },
+    {
+      "teste": "ide: corte manual não envia latência",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "2-posts.json"
+    },
+    {
+      "teste": "ide: voz sobreposta dispara o detector e não envia latência",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "3-posts.json"
+    },
+    {
+      "teste": "quadro: fim natural mede a primeira fala sem criar um envio de medida",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "4-posts.json"
+    },
+    {
+      "teste": "quadro: corte manual não envia latência",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "5-posts.json"
+    },
+    {
+      "teste": "quadro: voz sobreposta dispara o detector e não envia latência",
+      "tentativa": 0,
+      "status": "passed",
+      "arquivo": "6-posts.json"
+    }
+  ]
+}

@@ -1,0 +1,507 @@
+{
+  "protocolo": "protocolo.md",
+  "inicio": "2026-11-19T19:30:00.083Z",
+  "versoes": {
+    "A": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-base-medicao",
+      "commit": "c91d3ce65c802dfd40f342c88f456a118d4f8f40"
+    },
+    "B": {
+      "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa",
+      "commit": "78b30d28407e3cd2f08b74b51c45e174808bfcc8"
+    }
+  },
+  "ambiente": {
+    "arquivo": ".env.local do clone principal (conteúdo privado)",
+    "ARMAZENAMENTO": "memoria"
+  },
+  "execucoes": [
+    {
+      "ordem": 1,
+      "id": "124-conversa-1-base",
+      "instrumento": "conversa",
+      "versao": "A",
+      "inicio": "2026-11-19T19:30:00.252Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-conversa.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 600000,
+      "log": "124-conversa-1-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:30:59.938Z",
+      "duracaoMs": 59682,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 2,
+      "id": "124-conversa-2-pr",
+      "instrumento": "conversa",
+      "versao": "B",
+      "inicio": "2026-11-19T19:30:59.940Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-conversa.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 600000,
+      "log": "124-conversa-2-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:31:52.928Z",
+      "duracaoMs": 52987,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 3,
+      "id": "124-conversa-3-pr",
+      "instrumento": "conversa",
+      "versao": "B",
+      "inicio": "2026-11-19T19:31:52.929Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-conversa.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 600000,
+      "log": "124-conversa-3-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:32:53.095Z",
+      "duracaoMs": 60165,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 4,
+      "id": "124-conversa-4-base",
+      "instrumento": "conversa",
+      "versao": "A",
+      "inicio": "2026-11-19T19:32:53.097Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-conversa.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 600000,
+      "log": "124-conversa-4-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:33:36.809Z",
+      "duracaoMs": 43711,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 5,
+      "id": "124-quadro-1-base",
+      "instrumento": "quadro",
+      "versao": "A",
+      "inicio": "2026-11-19T19:33:36.810Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-quadro.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "2"
+      },
+      "limiteMs": 900000,
+      "log": "124-quadro-1-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:34:31.902Z",
+      "duracaoMs": 55091,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 6,
+      "id": "124-quadro-2-pr",
+      "instrumento": "quadro",
+      "versao": "B",
+      "inicio": "2026-11-19T19:34:31.904Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-quadro.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "2"
+      },
+      "limiteMs": 900000,
+      "log": "124-quadro-2-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:35:12.787Z",
+      "duracaoMs": 40882,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 7,
+      "id": "124-quadro-3-pr",
+      "instrumento": "quadro",
+      "versao": "B",
+      "inicio": "2026-11-19T19:35:12.789Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-quadro.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "2"
+      },
+      "limiteMs": 900000,
+      "log": "124-quadro-3-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:36:18.188Z",
+      "duracaoMs": 65398,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 8,
+      "id": "124-quadro-4-base",
+      "instrumento": "quadro",
+      "versao": "A",
+      "inicio": "2026-11-19T19:36:18.189Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/bench-quadro.ts",
+        "featherless:google/gemma-4-26B-A4B-it"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "2"
+      },
+      "limiteMs": 900000,
+      "log": "124-quadro-4-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:37:05.148Z",
+      "duracaoMs": 46958,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 9,
+      "id": "124-transcricao-1-pr",
+      "instrumento": "transcricao",
+      "versao": "B",
+      "inicio": "2026-11-19T19:37:05.149Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-transcricao.ts",
+        "--pago"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 120000,
+      "log": "124-transcricao-1-pr.log",
+      "status": "erro",
+      "fim": "2026-11-19T19:37:05.973Z",
+      "duracaoMs": 823,
+      "code": 1,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 10,
+      "id": "124-transcricao-2-base",
+      "instrumento": "transcricao",
+      "versao": "A",
+      "inicio": "2026-11-19T19:37:05.975Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-transcricao.ts",
+        "--pago"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 120000,
+      "log": "124-transcricao-2-base.log",
+      "status": "erro",
+      "fim": "2026-11-19T19:37:06.847Z",
+      "duracaoMs": 870,
+      "code": 1,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 11,
+      "id": "124-rascunho-1-base",
+      "instrumento": "rascunho",
+      "versao": "A",
+      "inicio": "2026-11-19T19:37:06.848Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-rascunho.ts",
+        "sala",
+        "ide"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 1200000,
+      "log": "124-rascunho-1-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:38:45.057Z",
+      "duracaoMs": 98208,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 12,
+      "id": "124-rascunho-2-pr",
+      "instrumento": "rascunho",
+      "versao": "B",
+      "inicio": "2026-11-19T19:38:45.058Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-rascunho.ts",
+        "sala",
+        "ide"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 1200000,
+      "log": "124-rascunho-2-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:40:11.587Z",
+      "duracaoMs": 86528,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 13,
+      "id": "124-rascunho-3-pr",
+      "instrumento": "rascunho",
+      "versao": "B",
+      "inicio": "2026-11-19T19:40:11.588Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-rascunho.ts",
+        "sala",
+        "ide"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 1200000,
+      "log": "124-rascunho-3-pr.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:41:31.242Z",
+      "duracaoMs": 79653,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 14,
+      "id": "124-rascunho-4-base",
+      "instrumento": "rascunho",
+      "versao": "A",
+      "inicio": "2026-11-19T19:41:31.243Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/medir-rascunho.ts",
+        "sala",
+        "ide"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 1200000,
+      "log": "124-rascunho-4-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T19:43:06.055Z",
+      "duracaoMs": 94811,
+      "code": 0,
+      "signal": null,
+      "artefatos": []
+    },
+    {
+      "ordem": 15,
+      "id": "124-placar-1-base",
+      "instrumento": "placar",
+      "versao": "A",
+      "inicio": "2026-11-19T19:43:06.057Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-1-base"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-1-base.log",
+      "status": "terminou",
+      "fim": "2026-11-19T20:17:02.166Z",
+      "duracaoMs": 2036108,
+      "code": 0,
+      "signal": null,
+      "artefatos": [
+        "2026-11-19-20-17-124-placar-1-base.json",
+        "2026-11-19-20-17-124-placar-1-base.md"
+      ]
+    },
+    {
+      "ordem": 16,
+      "id": "124-placar-2-pr",
+      "instrumento": "placar",
+      "versao": "B",
+      "inicio": "2026-11-19T20:17:02.173Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-2-pr"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-2-pr.log",
+      "status": "erro",
+      "fim": "2026-11-19T20:54:36.310Z",
+      "duracaoMs": 2254136,
+      "code": 1,
+      "signal": null,
+      "artefatos": [
+        "2026-11-19-20-54-124-placar-2-pr.json",
+        "2026-11-19-20-54-124-placar-2-pr.md",
+        "2026-11-19T20-18-13-435Z-124-placar-2-pr-incompleto.json"
+      ]
+    },
+    {
+      "ordem": 17,
+      "id": "124-placar-3-pr",
+      "instrumento": "placar",
+      "versao": "B",
+      "inicio": "2026-11-19T20:54:36.316Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-3-pr"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-3-pr.log",
+      "status": "limite_excedido",
+      "fim": "2026-11-19T21:49:06.165Z",
+      "duracaoMs": 3269849,
+      "code": 1,
+      "signal": null,
+      "artefatos": [
+        "2026-11-19T20-55-45-134Z-124-placar-3-pr-incompleto.json"
+      ]
+    },
+    {
+      "ordem": 18,
+      "id": "124-placar-4-base",
+      "instrumento": "placar",
+      "versao": "A",
+      "inicio": "2026-11-19T21:49:06.172Z",
+      "comando": [
+        "node",
+        "--env-file=<clone>/.env.local",
+        "<clone>/node_modules/tsx/dist/cli.mjs",
+        "scripts/placar-quadro/index.ts",
+        "--rotulo",
+        "124-placar-4-base"
+      ],
+      "ambiente": {
+        "ARMAZENAMENTO": "memoria",
+        "RODADAS": "1"
+      },
+      "limiteMs": 2700000,
+      "log": "124-placar-4-base.log",
+      "status": "limite_excedido",
+      "fim": "2026-11-19T22:54:35.064Z",
+      "duracaoMs": 3928891,
+      "code": 1,
+      "signal": null,
+      "artefatos": []
+    }
+  ],
+  "fim": "2026-11-19T22:54:35.070Z",
+  "interrompido": false
+}

@@ -1,0 +1,342 @@
+[WebServer] (node:3144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of C:\Users\Nicolas\PROJETOS\totti\package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\package-lock.json
+[WebServer] 
+
+[WebServer] (node:19912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 9 tests using 1 worker
+
+(node:13920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/9] [chromium] › e2e\voz.spec.ts:15:5 › recrutadora dita a vaga e conversa com Totti sem repetir voz no polling
+[2/9] [chromium] › e2e\voz.spec.ts:49:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha
+  1) [chromium] › e2e\voz.spec.ts:49:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected value: "O que você está montando nesse loop?"
+    Received array: ["Oi, eu sou o Totti e vou conduzir sua entrevista de programação, que dura uns 30 minutos. O problema está à esquerda; pensa em voz alta e me chama quando quiser."]
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      89 |   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);
+      90 |   expect(pedidos[0].messages.some((m) => m.role === "agent" && m.text.includes("pensa em voz alta"))).toBe(true);
+    > 91 |   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);
+         |                                                             ^
+      92 |   await expect(page.getByRole("complementary")).toHaveCount(0);
+      93 |   await expect.poll(() => grifos(page)).toBeGreaterThan(0);
+      94 |   await expect.poll(() => ouvindo(page)).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:91:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:15152) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/9] [chromium] › e2e\voz.spec.ts:112:5 › IDE: fala livre com pedido de feedback é respondida por voz e o grifo sai depois
+[4/9] [chromium] › e2e\voz.spec.ts:135:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta
+  2) [chromium] › e2e\voz.spec.ts:135:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      162 |     await page.waitForTimeout(3000);
+      163 |   }
+    > 164 |   await expect.poll(pediuLicenca, { timeout: 10_000 }).toBe(true);
+          |                                                        ^
+      165 |   expect(pedidosDoBalao.length).toBe(0);
+      166 |   await expect.poll(() => ouvindo(page)).toBe(true);
+      167 |   await emitir(page, "espera um pouquinho");
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:164:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:19432) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[5/9] [chromium] › e2e\voz.spec.ts:174:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar
+  3) [chromium] › e2e\voz.spec.ts:174:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 8000ms exceeded while waiting on the predicate
+
+      198 |   await emitir(page, "Fica linear, porque cada caractere entra e sai da pilha uma vez.");
+      199 |   await expect.poll(() => falas(page), { timeout: 8000 }).toContain("Valeu, era isso.");
+    > 200 |   await expect.poll(async () => (await falas(page)).some((f) => f.startsWith("Combinado, vamos encerrar por aqui")), { timeout: 8000 }).toBe(true);
+          |                                                                                                                                         ^
+      201 |   await expect.poll(() => eventos, { timeout: 8000 }).toContain("session_ended");
+      202 | });
+      203 |
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:200:137
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:15484) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[6/9] [chromium] › e2e\voz.spec.ts:204:5 › quadro encaminha transcrição para a conversa da sessão
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '76d781b3-87a0-4ac1-9540-9298206a8a63',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+[WebServer] (node:28412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+  4) [chromium] › e2e\voz.spec.ts:204:5 › quadro encaminha transcrição para a conversa da sessão ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Entrevista encerrada' })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Entrevista encerrada' }) with timeout 15000ms
+      - waiting for getByRole('heading', { name: 'Entrevista encerrada' })
+
+
+      214 |   await page.getByRole("button", { name: "Encerrar entrevista", exact: true }).click();
+      215 |   await page.getByRole("button", { name: "Encerrar", exact: true }).click();
+    > 216 |   await expect(page.getByRole("heading", { name: "Entrevista encerrada" })).toBeVisible();
+          |                                                                             ^
+      217 |   await expect.poll(() => page.evaluate(() => (window as unknown as JanelaTeste).vozTeste.midias
+      218 |     .flatMap((stream) => stream.getTracks()).every((trilha) => trilha.readyState === "ended"))).toBe(true);
+      219 | });
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:216:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:25164) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[7/9] [chromium] › e2e\voz.spec.ts:221:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala
+[WebServer] (node:16364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[WebServer] (node:27868) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:17172) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '5f64e7e7-4cca-4c74-816a-aeaf8eebd22a',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+  5) [chromium] › e2e\voz.spec.ts:221:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Quando terminar uma etapa ou quiser um comentário/)
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Quando terminar uma etapa ou quiser um comentário/) with timeout 15000ms
+      - waiting for getByText(/Quando terminar uma etapa ou quiser um comentário/)
+
+
+      234 |   });
+      235 |   await page.goto("/entrevista/system-design");
+    > 236 |   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();
+          |                                                                                     ^
+      237 |   await page.getByRole("button", { name: "Começar", exact: true }).click();
+      238 |   await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
+      239 |   expect((await falas(page)).some((f) => f.includes("é só me avisar"))).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:236:85
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:9716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[8/9] [chromium] › e2e\voz.spec.ts:266:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato
+[WebServer] [agente] sessao_criada {
+[WebServer]   sessao_id: '664120b2-b74e-44bb-8662-7baf8c6633f6',
+[WebServer]   kit: 'system_design',
+[WebServer]   plano: false,
+[WebServer]   abertura: true
+[WebServer] }
+
+[WebServer] (node:11792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:16072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:19204) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:10148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+  6) [chromium] › e2e\voz.spec.ts:266:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 1
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      287 |   await expect.poll(() => ouvindo(page)).toBe(true);
+      288 |   await emitir(page, "Pode destacar o componente?");
+    > 289 |   await expect.poll(async () => (await gestos()).length).toBe(3);
+          |                                                          ^
+      290 |   await expect.poll(async () => (await gestos()).some((e) => e.texto === "Como chega a solicitação?")).toBe(true);
+      291 |   await page.screenshot({ path: "test-results/gestos-no-quadro.png" });
+      292 |   await expect.poll(() => ouvindo(page)).toBe(true);
+        at C:\Users\Nicolas\PROJETOS\totti\.cate\worktrees\124-conversa\e2e\voz.spec.ts:289:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\..\evidencias-124-e2e\04-voz-124\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\..\evidencias-124-e2e\04-voz-124\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\..\evidencias-124-e2e\04-voz-124\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:2632) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[9/9] [chromium] › e2e\voz.spec.ts:303:5 › abrir o microfone enquanto o Totti prepara a voz cancela a fala, que não toca depois do ditado
+  6 failed
+    [chromium] › e2e\voz.spec.ts:49:5 › IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha 
+    [chromium] › e2e\voz.spec.ts:135:5 › IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta 
+    [chromium] › e2e\voz.spec.ts:174:5 › IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar 
+    [chromium] › e2e\voz.spec.ts:204:5 › quadro encaminha transcrição para a conversa da sessão ────
+    [chromium] › e2e\voz.spec.ts:221:5 › quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala 
+    [chromium] › e2e\voz.spec.ts:266:5 › mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato 
+  3 passed (5.4m)

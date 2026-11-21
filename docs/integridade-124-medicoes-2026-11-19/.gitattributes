@@ -1,0 +1,10 @@
+# Preservar os bytes das saídas originais e dos arquivos conferidos por hash.
+* -text
+# As saídas originais incluem quebras Markdown e espaços de formatação.
+# Conferir o arquivo bruto por hash, sem reformatação para satisfazer diff --check.
+*.log -whitespace
+20*.md -whitespace
+executor-*.mjs -whitespace
+interrupcoes-do-sistema.json -whitespace
+grafo-imports.mjs -whitespace
+solicitacao-revisao.md -whitespace

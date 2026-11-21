@@ -34,9 +34,11 @@ export function gravacaoDoQuadro(eventos: EventoArmazenado[], imagens: { numero:
       const fala = texto(d.texto);
       const role = d.quem === "agente" ? "agent" : "candidate";
       // O fluxo registra a resposta encerrada e a mesma transcrição como fala do candidato.
-      const jaRegistrada = falas.some(f => f.role === role && Math.abs(f.t - t) <= 15_000 && f.text.toLocaleLowerCase("pt-BR") === fala.toLocaleLowerCase("pt-BR"));
+      const jaRegistrada = falas.find(f => f.role === role && Math.abs(f.t - t) <= 15_000 && f.text.toLocaleLowerCase("pt-BR") === fala.toLocaleLowerCase("pt-BR"));
+      const medida = typeof d.latenciaMs === "number" && Number.isFinite(d.latenciaMs) && d.latenciaMs >= 0 ? { latenciaMs: d.latenciaMs } : {};
+      if (jaRegistrada && medida.latenciaMs !== undefined) jaRegistrada.latenciaMs = medida.latenciaMs;
       if (fala && !jaRegistrada) {
-        falas.push({ t, role, text: fala });
+        falas.push({ t, role, text: fala, ...medida });
         if (role === "candidate") atividadeCandidato.push(t);
         else marcosDeConversa.push(t);
       }

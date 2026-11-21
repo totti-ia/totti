@@ -1,0 +1,83 @@
+{
+  "rotulo": "04-voz-124",
+  "versao": "124",
+  "suite": "voz",
+  "inicio": "2026-11-21T18:51:28.506Z",
+  "cwd": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\worktrees\\124-conversa",
+  "commit": "fd9e3b61fd00a057298a62a748a694c628ea31be",
+  "diff": "",
+  "config": "e2e/playwright.voz.config.ts",
+  "evidencia": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124",
+  "comando": [
+    "node",
+    "<clone>/node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "e2e/playwright.voz.config.ts",
+    "--output",
+    "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124",
+    "--reporter=line,json"
+  ],
+  "fontes": {
+    "e2e/voz.spec.ts": "3e6908e3e959488ec89faea07c62f097495251b67332ee86da40e6c99fa9b757",
+    "e2e/tempo-de-resposta.spec.ts": "538deea7303ba2a903d15c5a28681c37cf7f04c87ea9b5ac98dc099ea32013a1",
+    "e2e/helpers/voz-falsa.ts": "390154790d767117ebf963d74022c3f74ea3ea9f98fcaf3ae195dcb33bd0a188",
+    "e2e/helpers/scribe-falso.ts": "bbdd590e6eb070670a6f5517823ebeec2774a721782943d77b0b9f4206c0d6d6",
+    "e2e/playwright.voz.config.ts": "21db017158567a1adb7dd4890f1d80b699ba4debda946e7939d1fea4a34130c4"
+  },
+  "code": 1,
+  "signal": null,
+  "fim": "2026-11-21T18:56:51.005Z",
+  "stats": {
+    "startTime": "2026-11-21T18:51:29.370Z",
+    "duration": 321595.286,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  },
+  "anexos": [
+    {
+      "teste": "IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o grifo some quando o assunto fecha",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "1-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-conversa-só-por-vo-424eb-some-quando-o-assunto-fecha-chromium\\error-context.md"
+    },
+    {
+      "teste": "IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia a pergunta",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "2-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-no-meio-do-código--15b79-m-pouquinho-adia-a-pergunta-chromium\\error-context.md"
+    },
+    {
+      "teste": "IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes de encerrar",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "3-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-IDE-Finalizar-abre-a-ú-2cefb-e-despede-antes-de-encerrar-chromium\\error-context.md"
+    },
+    {
+      "teste": "quadro encaminha transcrição para a conversa da sessão",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "4-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-encaminha-transcrição-para-a-conversa-da-sessão-chromium\\error-context.md"
+    },
+    {
+      "teste": "quadro pergunta na pausa, responde no loop rápido e aguarda a continuação da fala",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "5-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-quadro-pergunta-na-pau-34848-uarda-a-continuação-da-fala-chromium\\error-context.md"
+    },
+    {
+      "teste": "mão compõe gestos e traços livres, pode só falar e preserva o desenho do candidato",
+      "tentativa": 0,
+      "status": "failed",
+      "arquivo": "6-erro.md",
+      "original": "C:\\Users\\Nicolas\\PROJETOS\\totti\\.cate\\evidencias-124-e2e\\04-voz-124\\voz-mão-compõe-gestos-e-tr-b729b-erva-o-desenho-do-candidato-chromium\\error-context.md"
+    }
+  ]
+}
