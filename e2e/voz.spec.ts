@@ -73,8 +73,8 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
   });
 
   await page.goto("/entrevista");
-  // A apresentação: quem é, quanto tempo e que ele acompanha o código, tudo por voz.
-  await expect.poll(async () => (await falas(page)).some((f) => f.includes("acompanhar o seu código"))).toBe(true);
+  // A apresentação: quem é, quanto tempo e como funciona, tudo por voz.
+  await expect.poll(async () => (await falas(page)).some((f) => f.includes("pensa em voz alta"))).toBe(true);
   await expect(page.getByRole("button", { name: "Chamar o Totti" })).toHaveCount(0);
   await expect.poll(() => ouvindo(page)).toBe(true);
 
@@ -87,7 +87,7 @@ test("IDE: conversa só por voz, sem barra lateral; a pergunta sai na pausa e o 
   // Quem pensa em voz alta é só ouvido; na pausa, a pergunta sai por voz, com o grifo, sem abrir nenhuma barra.
   await emitir(page, "Estou pensando em usar um dicionário aqui.");
   await expect.poll(() => pedidos.filter((p) => !p.blipId).length, { timeout: 8000 }).toBe(1);
-  expect(pedidos[0].messages.some((m) => m.role === "agent" && m.text.includes("acompanhar o seu código"))).toBe(true);
+  expect(pedidos[0].messages.some((m) => m.role === "agent" && m.text.includes("pensa em voz alta"))).toBe(true);
   await expect.poll(() => falas(page), { timeout: 15_000 }).toContain(pergunta);
   await expect(page.getByRole("complementary")).toHaveCount(0);
   await expect.poll(() => grifos(page)).toBeGreaterThan(0);
@@ -123,7 +123,7 @@ test("IDE: fala livre com pedido de feedback é respondida por voz e o grifo sai
     return rota.fulfill({ json: { reply: "", commands: [], end: false, listening: true } });
   });
   await page.goto("/entrevista");
-  await expect.poll(async () => (await falas(page)).some((f) => f.includes("acompanhar o seu código"))).toBe(true);
+  await expect.poll(async () => (await falas(page)).some((f) => f.includes("pensa em voz alta"))).toBe(true);
   await expect.poll(() => ouvindo(page)).toBe(true);
   await emitir(page, "Terminei a primeira versão, pode me dar um feedback?");
   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(feedback);
@@ -149,7 +149,7 @@ test("IDE: no meio do código o Totti pede licença; 'espera um pouquinho' adia 
     return rota.fulfill({ json: { reply: "", commands: [], end: false, listening: true } });
   });
   await page.goto("/entrevista");
-  await expect.poll(async () => (await falas(page)).some((f) => f.includes("acompanhar o seu código"))).toBe(true);
+  await expect.poll(async () => (await falas(page)).some((f) => f.includes("pensa em voz alta"))).toBe(true);
   // Ele está no meio do código: digita de tempos em tempos e a pergunta chega numa pausa curta.
   await page.locator(".monaco-editor .view-lines").first().click();
   await page.keyboard.press("End");
@@ -189,7 +189,7 @@ test("IDE: Finalizar abre a última conversa por voz, e o Totti se despede antes
     return rota.fulfill({ json: { reply: "", commands: [], end: false, listening: true } });
   });
   await page.goto("/entrevista");
-  await expect.poll(async () => (await falas(page)).some((f) => f.includes("acompanhar o seu código"))).toBe(true);
+  await expect.poll(async () => (await falas(page)).some((f) => f.includes("pensa em voz alta"))).toBe(true);
   await page.getByRole("button", { name: "Finalizar" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Encerrar", exact: true }).click();
   await expect.poll(() => falas(page), { timeout: 8000 }).toContain(pergunta);
@@ -205,7 +205,7 @@ test("quadro encaminha transcrição para a conversa da sessão", async ({ page 
   await preparar(page);
   await page.goto("/entrevista/system-design");
   await page.getByRole("button", { name: "Começar", exact: true }).click();
-  await expect(page.getByText("Requisitos", { exact: true })).toBeVisible({ timeout: 45000 });
+  await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
   await expect.poll(() => ouvindo(page)).toBe(true);
   const pedido = page.waitForRequest((req) => req.method() === "POST" && req.url().includes("/perguntar"));
   await emitir(page, "O sistema precisa receber mil acessos por minuto.");
@@ -235,7 +235,7 @@ test("quadro pergunta na pausa, responde no loop rápido e aguarda a continuaç�
   await page.goto("/entrevista/system-design");
   await expect(page.getByText(/Quando terminar uma etapa ou quiser um comentário/)).toBeVisible();
   await page.getByRole("button", { name: "Começar", exact: true }).click();
-  await expect(page.getByText("Requisitos", { exact: true })).toBeVisible({ timeout: 45000 });
+  await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
   expect((await falas(page)).some((f) => f.includes("é só me avisar"))).toBe(true);
   await expect.poll(() => ouvindo(page)).toBe(true);
   await page.keyboard.press("r");
@@ -276,7 +276,7 @@ test("mão compõe gestos e traços livres, pode só falar e preserva o desenho 
   } }));
   await page.goto("/entrevista/system-design");
   await page.getByRole("button", { name: "Começar", exact: true }).click();
-  await expect(page.getByText("Requisitos", { exact: true })).toBeVisible({ timeout: 45000 });
+  await expect(page.locator('[data-janela-chamada][data-fase="REQUISITOS"]')).toBeVisible({ timeout: 45000 });
   await expect.poll(() => ouvindo(page)).toBe(true);
   await page.getByRole("radio", { name: "Retângulo", exact: true }).check({ force: true });
   await page.mouse.move(650, 450); await page.mouse.down();
